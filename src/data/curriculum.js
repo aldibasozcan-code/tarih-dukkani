@@ -2,6 +2,14 @@
 // CURRICULUM SEED DATA
 // ═══════════════════════════════════════════════════
 
+export const ALL_BRANCHES = [
+  "Türkçe", "Türk Dili ve Edebiyatı", "Matematik", "Fen Bilimleri", "Fizik", "Kimya", "Biyoloji", 
+  "Sosyal Bilgiler", "T.C. İnkılap Tarihi ve Atatürkçülük", "Tarih", "Coğrafya", "Felsefe", 
+  "Psikoloji", "Sosyoloji", "Mantık", "İngilizce", "Almanca", "Fransızca", "Arapça", 
+  "Din Kültürü ve Ahlak Bilgisi", "Bilişim Teknolojileri", "Görsel Sanatlar", "Müzik", 
+  "Beden Eğitimi ve Spor", "Teknoloji ve Tasarım", "Rehberlik", "Diğer"
+];
+
 export const SUBJECTS = [
   { id: 'sosyal', name: 'Sosyal Bilgiler', icon: '🌍' },
   { id: 'inkılap', name: 'İnkılap Tarihi', icon: '⚡' },

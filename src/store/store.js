@@ -21,14 +21,26 @@ function loadLocal() {
   } catch { return null; }
 }
 
+let _saveTimeout = null;
+
 async function save(state) {
   try { 
-    // Save locally for fast load next time
+    // Save locally immediately for fast load next time
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); 
-    // Save to Firebase
-    await setDoc(docRef, state);
+    
+    // Debounce Firebase remote writes to avoid 1 write/second limit quotas
+    if (_saveTimeout) clearTimeout(_saveTimeout);
+    _saveTimeout = setTimeout(async () => {
+      try {
+        if (auth.currentUser && docRef) {
+          await setDoc(docRef, _state);
+        }
+      } catch (err) {
+        console.error("Firebase debounced save error:", err);
+      }
+    }, 1000);
   } catch (err) {
-    console.error("Firebase save error:", err);
+    console.error("Local save error:", err);
   }
 }
 
@@ -46,6 +58,8 @@ function createDefaultState() {
       rate: '',
       avatar: null,
       onboarded: false,
+      grades: [],
+      branches: [],
     },
     settings: {
       appName: 'Öğretmen Paneli',
@@ -520,80 +534,76 @@ export function getMonthlyStats() {
 
 export function addUnit(subject, grade, name) {
   setState(s => {
-    const curr = { ...s.curriculum };
+    const curr = JSON.parse(JSON.stringify(s.curriculum));
     if (!curr[subject]) curr[subject] = {};
     if (!curr[subject][grade]) curr[subject][grade] = [];
     
-    curr[subject][grade] = [
-      ...curr[subject][grade],
-      { id: generateId(), name, topics: [] }
-    ];
+    curr[subject][grade].push({ id: generateId(), name, topics: [] });
     return { curriculum: curr };
   });
 }
 
 export function updateUnit(subject, grade, unitId, name) {
   setState(s => {
-    const curr = { ...s.curriculum };
-    const gradeUnits = curr[subject]?.[grade] || [];
-    curr[subject][grade] = gradeUnits.map(u => u.id === unitId ? { ...u, name } : u);
+    const curr = JSON.parse(JSON.stringify(s.curriculum));
+    if (curr[subject]?.[grade]) {
+      curr[subject][grade] = curr[subject][grade].map(u => u.id === unitId ? { ...u, name } : u);
+    }
     return { curriculum: curr };
   });
 }
 
 export function deleteUnit(subject, grade, unitId) {
   setState(s => {
-    const curr = { ...s.curriculum };
-    const gradeUnits = curr[subject]?.[grade] || [];
-    curr[subject][grade] = gradeUnits.filter(u => u.id !== unitId);
+    const curr = JSON.parse(JSON.stringify(s.curriculum));
+    if (curr[subject]?.[grade]) {
+      curr[subject][grade] = curr[subject][grade].filter(u => u.id !== unitId);
+    }
     return { curriculum: curr };
   });
 }
 
 export function addTopic(subject, grade, unitId, name) {
   setState(s => {
-    const curr = { ...s.curriculum };
-    const gradeUnits = curr[subject]?.[grade] || [];
-    curr[subject][grade] = gradeUnits.map(u => {
-      if (u.id === unitId) {
-        return { ...u, topics: [...u.topics, { id: generateId(), name }] };
-      }
-      return u;
-    });
+    const curr = JSON.parse(JSON.stringify(s.curriculum));
+    if (curr[subject]?.[grade]) {
+      curr[subject][grade] = curr[subject][grade].map(u => {
+        if (u.id === unitId) {
+          u.topics.push({ id: generateId(), name });
+        }
+        return u;
+      });
+    }
     return { curriculum: curr };
   });
 }
 
 export function updateTopic(subject, grade, unitId, topicId, name) {
   setState(s => {
-    const curr = { ...s.curriculum };
-    const gradeUnits = curr[subject]?.[grade] || [];
-    curr[subject][grade] = gradeUnits.map(u => {
-      if (u.id === unitId) {
-        return {
-          ...u,
-          topics: u.topics.map(t => t.id === topicId ? { ...t, name } : t)
-        };
-      }
-      return u;
-    });
+    const curr = JSON.parse(JSON.stringify(s.curriculum));
+    if (curr[subject]?.[grade]) {
+      curr[subject][grade] = curr[subject][grade].map(u => {
+        if (u.id === unitId) {
+          u.topics = u.topics.map(t => t.id === topicId ? { ...t, name } : t);
+        }
+        return u;
+      });
+    }
     return { curriculum: curr };
   });
 }
 
 export function deleteTopic(subject, grade, unitId, topicId) {
   setState(s => {
-    const curr = { ...s.curriculum };
-    const gradeUnits = curr[subject]?.[grade] || [];
-    curr[subject][grade] = gradeUnits.map(u => {
-      if (u.id === unitId) {
-        return {
-          ...u,
-          topics: u.topics.filter(t => t.id !== topicId)
-        };
-      }
-      return u;
-    });
+    const curr = JSON.parse(JSON.stringify(s.curriculum));
+    if (curr[subject]?.[grade]) {
+      curr[subject][grade] = curr[subject][grade].map(u => {
+        if (u.id === unitId) {
+          u.topics = u.topics.filter(t => t.id !== topicId);
+        }
+        return u;
+      });
+    }
     return { curriculum: curr };
   });
 }

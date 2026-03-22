@@ -417,8 +417,13 @@ function initCurriculumButtons(el, refresh, navigate) {
   el.querySelectorAll('[data-add-unit]').forEach(btn => {
     btn.addEventListener('click', () => {
       openCurriculumPromptModal('Yeni Ünite Ekle', 'Ünite Adı', '', (name) => {
-        addUnit(btn.dataset.subject, btn.dataset.grade, name);
+        // use btn.dataset.addUnit since it holds the subject id (data-add-unit="tarih")
+        addUnit(btn.dataset.addUnit, btn.dataset.grade, name);
         refresh();
+        setTimeout(() => {
+          const scroller = document.querySelector('.page-content');
+          if (scroller) scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'smooth' });
+        }, 100);
       });
     });
   });

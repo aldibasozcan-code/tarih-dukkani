@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════
 // ONBOARDING PAGE (Yeni Öğretmen Profil Kurulumu)
 // ═══════════════════════════════════════════════════
-import { ALL_GRADES, SUBJECTS } from '../data/curriculum.js';
+import { ALL_GRADES, SUBJECTS, ALL_BRANCHES } from '../data/curriculum.js';
 import { icon } from '../components/icons.js';
 
 export function renderOnboarding() {
@@ -32,8 +32,21 @@ export function renderOnboarding() {
           </div>
 
           <div class="form-group">
-            <label for="ob-title">Unvan / Branş</label>
-            <input type="text" id="ob-title" placeholder="Örn: Tarih Öğretmeni" required />
+            <label for="ob-title">Unvan (Sıfat)</label>
+            <input type="text" id="ob-title" placeholder="Örn: Uzman Öğretmen, Danışman" required />
+          </div>
+
+          <div class="form-group">
+            <label style="margin-bottom: 12px; display: block;">Hangi Branşlarda (Derslerde) Eğitim Veriyorsunuz?</label>
+            <div class="multi-select-grid branch-grid">
+              ${ALL_BRANCHES.map(branch => `
+                <label class="checkbox-label">
+                  <input type="checkbox" name="branches" value="${branch}">
+                  <span class="checkbox-custom"></span>
+                  ${branch}
+                </label>
+              `).join('')}
+            </div>
           </div>
 
           <div class="form-group">
@@ -153,7 +166,10 @@ export function initOnboarding(container, onComplete) {
     const gradesBoxes = form.querySelectorAll('input[name="grades"]:checked');
     const selectedGrades = Array.from(gradesBoxes).map(b => b.value);
     
-    if (!name || !title) return;
+    const branchBoxes = form.querySelectorAll('input[name="branches"]:checked');
+    const selectedBranches = Array.from(branchBoxes).map(b => b.value);
+    
+    if (!name) return;
     
     // UI Feedback
     btn.innerHTML = '<div class="spinner" style="width:20px;height:20px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:8px;"></div> Hazırlanıyor...';
@@ -163,10 +179,12 @@ export function initOnboarding(container, onComplete) {
     const profileData = {
       name,
       phone,
-      title,
+      title: title || 'Öğretmen',
+      grades: selectedGrades,
+      branches: selectedBranches,
       // Seçilmeyen diğer alanlar daha sonra Settings sayfasından doldurulabilir
       city: '',
-      bio: selectedGrades.length > 0 ? `${selectedGrades.join(', ')} seviyelerinde ders vermekteyim.` : '',
+      bio: '',
       experience: '',
       rate: '',
       avatar: null

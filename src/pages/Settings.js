@@ -2,6 +2,7 @@
 // SETTINGS PAGE
 // ═════════════════════════════════════════════════
 import { getState, updateSettings, updateProfile } from '../store/store.js';
+import { ALL_GRADES, ALL_BRANCHES } from '../data/curriculum.js';
 import { icon } from '../components/icons.js';
 
 export function renderSettings(navigate) {
@@ -256,10 +257,127 @@ export function renderSettings(navigate) {
 // ═════════════════════════════════════════════════
 // PROFILE PAGE
 // ═════════════════════════════════════════════════
+function renderProfileFormContent(p, editMode) {
+  if (!editMode) {
+    return `
+      <h3 style="font-size:15px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;">
+        <span>İletişim & Bilgiler</span>
+        <span class="badge badge-info text-xs">Okuma Modu</span>
+      </h3>
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div style="display:grid;grid-template-columns:120px 1fr;gap:16px;font-size:14px;align-items:start;">
+          <strong style="color:var(--text-muted);margin-top:2px;">Ad Soyad:</strong>
+          <span style="font-weight:600;">${p.name || '-'}</span>
+          
+          <strong style="color:var(--text-muted);margin-top:2px;">Ünvan:</strong>
+          <span>${p.title || '-'}</span>
+          
+          <strong style="color:var(--text-muted);margin-top:2px;">Branşlar:</strong>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;">
+            ${p.branches && p.branches.length > 0 
+              ? p.branches.map(b => `<span class="badge" style="background:var(--bg-card);border:1px solid var(--border);color:var(--text-secondary);">${b}</span>`).join('')
+              : '<span style="color:var(--text-muted);font-style:italic;">Belirtilmemiş</span>'}
+          </div>
+          
+          <strong style="color:var(--text-muted);margin-top:2px;">Sınıflar:</strong>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;">
+            ${p.grades && p.grades.length > 0 
+              ? p.grades.map(g => `<span class="badge" style="background:var(--bg-card);border:1px solid var(--border);color:var(--text-secondary);">${g}</span>`).join('')
+              : '<span style="color:var(--text-muted);font-style:italic;">Belirtilmemiş</span>'}
+          </div>
+          
+          <strong style="color:var(--text-muted);margin-top:2px;">Telefon:</strong>
+          <span>${p.phone || '-'}</span>
+          
+          <strong style="color:var(--text-muted);margin-top:2px;">E-posta:</strong>
+          <span>${p.email || '-'}</span>
+          
+          <strong style="color:var(--text-muted);margin-top:2px;">Şehir:</strong>
+          <span>${p.city || '-'}</span>
+          
+          <strong style="color:var(--text-muted);margin-top:2px;">Deneyim:</strong>
+          <span>${p.experience || '-'}</span>
+          
+          <strong style="color:var(--text-muted);margin-top:2px;">Hakkımda:</strong>
+          <span style="white-space:pre-wrap;line-height:1.5;">${p.bio || '-'}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  return `
+    <h3 style="font-size:15px;font-weight:700;margin-bottom:16px;">İletişim & Bilgiler (Düzenle)</h3>
+    <div class="form-group">
+      <label>Ad Soyad</label>
+      <input type="text" id="p-name" value="${p.name}">
+    </div>
+    <div class="form-group">
+      <label>Ünvan (Örn: Öğretmen, Danışman)</label>
+      <input type="text" id="p-title" value="${p.title}">
+    </div>
+    
+    <div class="form-group" style="margin-top: 16px;">
+      <label>Branşlar (Dersler)</label>
+      <div class="multi-select-grid" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(130px, 1fr));gap:12px;margin-bottom:8px;">
+        ${ALL_BRANCHES.map(branch => {
+          const isChecked = p.branches && p.branches.includes(branch) ? 'checked' : '';
+          return `
+          <label class="checkbox-label" style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;">
+            <input type="checkbox" name="p-branches" value="${branch}" ${isChecked} style="width:16px;height:16px;accent-color:var(--brand-green);">
+            <span class="checkbox-custom"></span>
+            ${branch}
+          </label>
+        `}).join('')}
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-top: 16px;">
+      <label>Sınıflar</label>
+      <div class="multi-select-grid" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(130px, 1fr));gap:12px;margin-bottom:8px;">
+        ${ALL_GRADES.map(grade => {
+          const isChecked = p.grades && p.grades.includes(grade) ? 'checked' : '';
+          return `
+          <label class="checkbox-label" style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;">
+            <input type="checkbox" name="p-grades" value="${grade}" ${isChecked} style="width:16px;height:16px;accent-color:var(--brand-green);">
+            <span class="checkbox-custom"></span>
+            ${grade}
+          </label>
+        `}).join('')}
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Telefon</label>
+        <input type="tel" id="p-phone" value="${p.phone || ''}">
+      </div>
+      <div class="form-group">
+        <label>E-posta</label>
+        <input type="email" id="p-email" value="${p.email || ''}">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Şehir</label>
+        <input type="text" id="p-city" value="${p.city || ''}">
+      </div>
+      <div class="form-group">
+        <label>Deneyim</label>
+        <input type="text" id="p-exp" value="${p.experience || ''}">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Hakkımda</label>
+      <textarea id="p-bio" rows="3">${p.bio || ''}</textarea>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button class="btn btn-primary" id="btn-save-profile">${icon('check', 14)} Kaydet</button>
+    </div>
+  `;
+}
+
 export function renderProfile(navigate) {
   const state = getState();
   const p = state.profile;
-  let editMode = false;
 
   const html = `
     <div class="fade-in">
@@ -289,44 +407,9 @@ export function renderProfile(navigate) {
           </label>
         </div>
 
-        <!-- Edit Form -->
+        <!-- Edit Form Box -->
         <div class="card" id="profile-form">
-          <h3 style="font-size:15px;font-weight:700;margin-bottom:16px;">İletişim & Bilgiler</h3>
-          <div class="form-group">
-            <label>Ad Soyad</label>
-            <input type="text" id="p-name" value="${p.name}">
-          </div>
-          <div class="form-group">
-            <label>Ünvan / Branş</label>
-            <input type="text" id="p-title" value="${p.title}">
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label>Telefon</label>
-              <input type="tel" id="p-phone" value="${p.phone || ''}">
-            </div>
-            <div class="form-group">
-              <label>E-posta</label>
-              <input type="email" id="p-email" value="${p.email || ''}">
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label>Şehir</label>
-              <input type="text" id="p-city" value="${p.city || ''}">
-            </div>
-            <div class="form-group">
-              <label>Deneyim</label>
-              <input type="text" id="p-exp" value="${p.experience || ''}">
-            </div>
-          </div>
-          <div class="form-group">
-            <label>Hakkımda</label>
-            <textarea id="p-bio" rows="3">${p.bio || ''}</textarea>
-          </div>
-          <div style="display:flex;gap:10px;justify-content:flex-end;">
-            <button class="btn btn-primary" id="btn-save-profile">${icon('check', 14)} Kaydet</button>
-          </div>
+          <!-- Handled dynamically by init -->
         </div>
       </div>
     </div>
@@ -335,23 +418,60 @@ export function renderProfile(navigate) {
   return {
     html,
     init: (el, nav) => {
-      el.querySelector('#btn-save-profile')?.addEventListener('click', () => {
+      let isEditing = false;
+      const editBtn = el.querySelector('#btn-edit-profile');
+      const formContainer = el.querySelector('#profile-form');
+
+      function updateView() {
         import('../store/store.js').then(m => {
-          m.updateProfile({
-            name: el.querySelector('#p-name').value.trim(),
-            title: el.querySelector('#p-title').value.trim(),
-            phone: el.querySelector('#p-phone').value.trim(),
-            email: el.querySelector('#p-email').value.trim(),
-            city: el.querySelector('#p-city').value.trim(),
-            experience: el.querySelector('#p-exp').value.trim(),
-            bio: el.querySelector('#p-bio').value.trim(),
-          });
-          import('../components/Layout.js').then(layout => layout.refreshTopbar(m.getState()));
-          const btn = el.querySelector('#btn-save-profile');
-          btn.innerHTML = `${icon('check', 14)} Kaydedildi!`;
-          btn.style.background = 'var(--success)';
-          setTimeout(() => { btn.innerHTML = `${icon('check', 14)} Kaydet`; btn.style.background = ''; }, 2000);
+          const currentProfile = m.getState().profile;
+          formContainer.innerHTML = renderProfileFormContent(currentProfile, isEditing);
+          
+          if (isEditing) {
+            editBtn.innerHTML = `Vazgeç`;
+            editBtn.classList.replace('btn-primary', 'btn-secondary');
+            
+            // Bind save button since it's now in the DOM
+            formContainer.querySelector('#btn-save-profile')?.addEventListener('click', () => {
+              const selectedGrades = Array.from(el.querySelectorAll('input[name="p-grades"]:checked')).map(b => b.value);
+              const selectedBranches = Array.from(el.querySelectorAll('input[name="p-branches"]:checked')).map(b => b.value);
+
+              m.updateProfile({
+                name: el.querySelector('#p-name').value.trim(),
+                title: el.querySelector('#p-title').value.trim(),
+                grades: selectedGrades,
+                branches: selectedBranches,
+                phone: el.querySelector('#p-phone').value.trim(),
+                email: el.querySelector('#p-email').value.trim(),
+                city: el.querySelector('#p-city').value.trim(),
+                experience: el.querySelector('#p-exp').value.trim(),
+                bio: el.querySelector('#p-bio').value.trim(),
+              });
+              
+              const btn = formContainer.querySelector('#btn-save-profile');
+              btn.innerHTML = `${icon('check', 14)} Kaydedildi!`;
+              btn.style.background = 'var(--success)';
+              
+              setTimeout(() => { 
+                import('../components/Layout.js').then(layout => layout.refreshTopbar(m.getState()));
+                isEditing = false;
+                updateView();
+              }, 600);
+            });
+          } else {
+            editBtn.innerHTML = `${icon('edit', 14)} Düzenle`;
+            editBtn.classList.replace('btn-secondary', 'btn-primary');
+          }
         });
+      }
+
+      // Initial Mount
+      updateView();
+
+      // Edit Toggle
+      editBtn?.addEventListener('click', () => {
+        isEditing = !isEditing;
+        updateView();
       });
 
       el.querySelector('#avatar-upload')?.addEventListener('change', (e) => {
