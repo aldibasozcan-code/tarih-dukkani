@@ -298,7 +298,8 @@ export function initLogin(container) {
       } else if (err.code === 'auth/network-request-failed') {
          alertBox.innerHTML = 'İnternet bağlantınızı kontrol edin.';
       } else {
-         alertBox.innerHTML = 'Google ile giriş yaparken bir hata oluştu.';
+         // Hatanın tam kaynağını ekranda göstermek için err.message yazdırıyoruz
+         alertBox.innerHTML = `Google Hata: ${err.message || 'Bilinmeyen bir hata oluştu.'}`;
       }
       alertBox.style.display = 'block';
       googleBtn.innerHTML = originalContent;

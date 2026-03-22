@@ -325,10 +325,56 @@ export function deleteGroup(id) {
   }));
 }
 
+async function addEventToGoogleCalendar(lesson) {
+  const token = localStorage.getItem('_gcal_token');
+  if (!token) return;
+
+  const start = new Date(`${lesson.date}T${lesson.startTime}:00`);
+  const end = new Date(`${lesson.date}T${lesson.endTime}:00`);
+
+  const event = {
+    summary: `${lesson.title} - Tarih Dükkanı`,
+    description: lesson.notes ? `Ders Notları:\n${lesson.notes}` : 'Tarih Dükkanı üzerinden otomatik oluşturuldu.',
+    start: {
+      dateTime: start.toISOString(),
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Istanbul'
+    },
+    end: {
+      dateTime: end.toISOString(),
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Istanbul'
+    }
+  };
+
+  try {
+    const res = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(event)
+    });
+    
+    if (!res.ok) {
+      if (res.status === 401 || res.status === 403) {
+         console.warn("Google Calendar Yetki Hatası (Token süresi dolmuş olabilir). Lütfen tekrar giriş yapın.", await res.text());
+      } else {
+         console.error("Google Calendar API Error:", await res.text());
+      }
+    }
+  } catch (err) {
+    console.error("Google Calendar Fetch Error:", err);
+  }
+}
+
 export function addLesson(data) {
   const id = generateId();
   const lesson = { id, ...data, status: 'upcoming', homework: null };
   setState(s => ({ lessons: [...s.lessons, lesson] }));
+  
+  // Arkaplanda Google Takvim'e Senkronize Et
+  addEventToGoogleCalendar(lesson);
+  
   return lesson;
 }
 

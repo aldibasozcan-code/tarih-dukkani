@@ -21,11 +21,17 @@ export const loginUser = async (email, password) => {
 // Google ile giriş
 export const loginWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
+    // DİKKAT: Google Cloud Console onay ekranında yetkiler eksik olduğu için
+    // Takvim izni (scope) satırı geçici olarak yorum satırına alındı.
+    // Console ayarları düzeltildiğinde alttaki satır açılacak:
+    // provider.addScope('https://www.googleapis.com/auth/calendar.events');
+    
     return await signInWithPopup(auth, provider);
 };
 
 // Çıkış
 export const logoutUser = async () => {
+    localStorage.removeItem('_gcal_token'); // Temizle
     return await signOut(auth);
 };
 
