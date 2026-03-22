@@ -64,6 +64,12 @@ function renderSidebar(state, currentPage, navigate) {
       `).join('')}
     </nav>
     <div style="margin-top:auto; padding: 12px 16px; border-top: 1px solid var(--border);">
+      <button class="nav-item" id="logout-btn" style="color: var(--danger); margin-bottom: 12px; transition: all 0.2s;">
+        <svg stroke="currentColor" fill="none" viewBox="0 0 24 24" style="width:18px;height:18px;flex-shrink:0;">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+        </svg>
+        Çıkış Yap
+      </button>
       <div style="font-size:11px; color:var(--text-muted);">v1.0 • Tarih Dükkanı</div>
     </div>
   `;

@@ -3,7 +3,7 @@ import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.1/firebase
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAVALC54hJ1BeBUigBAfgoL20zKc96iC7Q",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: "tarih-dukkani.firebaseapp.com",
   projectId: "tarih-dukkani",
   storageBucket: "tarih-dukkani.firebasestorage.app",

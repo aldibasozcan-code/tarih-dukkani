@@ -3,6 +3,7 @@
 // ═══════════════════════════════════════════════════
 import { initStore, getState, subscribe, getPendingLessons, getLessonStatus } from './store/store.js';
 import { renderLayout, toggleNotifPanel, closeNotifPanel, refreshTopbar, refreshSidebar, toggleSidebar, closeSidebar } from './components/Layout.js';
+import { subscribeToAuth } from './lib/auth.js';
 
 // ─── Initialize ───
 // state initialization moved to init()
@@ -102,44 +103,61 @@ async function navigate(page) {
 }
 
 // ─── Initial Render ───
-async function init() {
-  await initStore(); // Load from Firebase or local
+let _appInitialized = false;
 
+async function init() {
   const app = document.getElementById('app');
   if (!app) return;
 
-  app.innerHTML = renderLayout(currentPage, navigate);
-  app._currentPage = currentPage;
+  app.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100vh;"><div class="spinner"></div></div>';
 
-  // Set page from hash
-  const hash = window.location.hash.replace('#', '');
-  const validPages = ['dashboard','courses','students','groups','finance','calendar','chat','liveClass','settings','profile','notifications'];
-  const startPage = validPages.includes(hash) ? hash : 'dashboard';
+  subscribeToAuth(async (user) => {
+    if (user) {
+      if (!_appInitialized) {
+        _appInitialized = true;
+        await initStore(); // Load from Firebase or local
 
-  attachNavEvents();
-  navigate(startPage);
+        app.innerHTML = renderLayout(currentPage, navigate);
+        app._currentPage = currentPage;
 
-  // Subscribe to state changes to update topbar
-  subscribe((newState) => {
-    refreshTopbar(newState);
-    const pendingCount = newState.notifications.filter(n => !n.read).length;
-    // Update notification badge
-    const badge = document.querySelector('.notif-badge');
-    if (badge) badge.textContent = pendingCount;
-    else if (pendingCount > 0) {
-      const notifBtn = document.getElementById('notif-btn');
-      if (notifBtn && !notifBtn.querySelector('.notif-badge')) {
-        const b = document.createElement('span');
-        b.className = 'notif-badge';
-        b.textContent = pendingCount;
-        notifBtn.appendChild(b);
+        // Set page from hash
+        const hash = window.location.hash.replace('#', '');
+        const validPages = ['dashboard','courses','students','groups','finance','calendar','chat','liveClass','settings','profile','notifications'];
+        const startPage = validPages.includes(hash) ? hash : 'dashboard';
+
+        attachNavEvents();
+        navigate(startPage);
+
+        // Subscribe to state changes to update topbar
+        subscribe((newState) => {
+          refreshTopbar(newState);
+          const pendingCount = newState.notifications.filter(n => !n.read).length;
+          // Update notification badge
+          const badge = document.querySelector('.notif-badge');
+          if (badge) badge.textContent = pendingCount;
+          else if (pendingCount > 0) {
+            const notifBtn = document.getElementById('notif-btn');
+            if (notifBtn && !notifBtn.querySelector('.notif-badge')) {
+              const b = document.createElement('span');
+              b.className = 'notif-badge';
+              b.textContent = pendingCount;
+              notifBtn.appendChild(b);
+            }
+          }
+        });
+
+        // Periodic check for pending lessons (every 5 minutes)
+        setInterval(checkPendingLessons, 5 * 60 * 1000);
+        checkPendingLessons();
       }
+    } else {
+      // User is logged out
+      _appInitialized = false;
+      const { renderLogin, initLogin } = await import('./pages/Login.js');
+      app.innerHTML = renderLogin();
+      initLogin(app);
     }
   });
-
-  // Periodic check for pending lessons (every 5 minutes)
-  setInterval(checkPendingLessons, 5 * 60 * 1000);
-  checkPendingLessons();
 }
 
 function attachNavEvents() {
@@ -203,6 +221,23 @@ function attachNavEvents() {
   document.getElementById('sidebar-overlay')?.addEventListener('click', () => {
     closeSidebar();
   });
+
+  // Logout button
+  const logoutBtn = document.getElementById('logout-btn');
+  if (logoutBtn && !logoutBtn._bound) {
+    logoutBtn._bound = true;
+    logoutBtn.addEventListener('click', async () => {
+      logoutBtn.innerHTML = '<div class="spinner" style="width:16px;height:16px;border-width:2px;border-color:var(--danger);border-top-color:transparent;display:inline-block;"></div> Çıkış Yapılıyor...';
+      try {
+        const { logoutUser } = await import('./lib/auth.js');
+        await logoutUser();
+        window.location.reload(); // clear JS memory fully
+      } catch(err) {
+        console.error(err);
+        logoutBtn.innerHTML = 'Hata Oluştu';
+      }
+    });
+  }
 }
 
 function checkPendingLessons() {
