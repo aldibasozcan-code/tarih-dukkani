@@ -52,7 +52,7 @@ function renderSidebar(state, currentPage, navigate) {
       <div class="brand-logo" data-nav="settings">${logo}</div>
       <div>
         <div class="brand-name">${state.settings.appName || 'Tarih Dükkanı'}</div>
-        <div class="brand-sub">Öğretmen Paneli</div>
+        <div class="brand-sub">${state.profile.title || 'Öğretmen Paneli'}</div>
       </div>
     </div>
     <nav class="nav-section">
@@ -104,8 +104,8 @@ function renderTopbar(state, unreadCount) {
       <div class="profile-chip" id="profile-btn">
         <div class="avatar">${getInitials(state.profile.name)}</div>
         <div>
-          <div class="name">${state.profile.name}</div>
-          <div class="role">${state.profile.title}</div>
+          <div class="name">${state.profile.name || 'Öğretmen'}</div>
+          <div class="role">${state.profile.title || ''}</div>
         </div>
       </div>
     </div>
@@ -113,7 +113,7 @@ function renderTopbar(state, unreadCount) {
 }
 
 function getInitials(name) {
-  return (name || 'ÖA').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+  return (name || 'Ö').split(' ').map(w => w ? w[0] : '').slice(0, 2).join('').toUpperCase();
 }
 
 export function toggleNotifPanel(navigate) {

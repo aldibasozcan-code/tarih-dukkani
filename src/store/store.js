@@ -2,13 +2,12 @@
 // GLOBAL APP STATE - Firebase Firestore backed
 // ═══════════════════════════════════════════════════
 import { DEFAULT_CURRICULUM, GRADE_TO_SUBJECTS, CONTENT_TYPES } from '../data/curriculum.js';
-import { db } from '../lib/firebase.js';
-import { doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { db, auth } from '../lib/firebase.js';
+import { doc, getDoc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { deleteUser } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
-const STORAGE_KEY = 'tarih_dukkani_v1';
-const FIREBASE_DOC = 'tarih_dukkani_v1';
-
-const docRef = doc(db, 'appData', FIREBASE_DOC);
+let STORAGE_KEY = 'tarih_dukkani_v1';
+let docRef = null;
 
 // ─── Helpers ───
 function generateId() {
@@ -37,122 +36,38 @@ async function save(state) {
 function createDefaultState() {
   return {
     profile: {
-      name: 'Özcan ALDIBAŞ',
-      title: 'Tarih Öğretmeni',
-      email: 'ozcan@tarihdukkkani.com',
-      phone: '+90 555 123 4567',
-      city: 'İstanbul',
-      bio: 'Tarih, İnkılap, Sosyal Bilgiler alanlarında 10 yıllık deneyimli öğretmen.',
-      experience: '10 yıl',
-      rate: '₺500/saat',
+      name: '',
+      title: 'Öğretmen',
+      email: '',
+      phone: '',
+      city: '',
+      bio: '',
+      experience: '',
+      rate: '',
       avatar: null,
+      onboarded: false,
     },
     settings: {
-      appName: 'Tarih Dükkanı',
+      appName: 'Öğretmen Paneli',
       logo: null,
       calendarId: '',
       calendarApiKey: '',
     },
     notifications: [
-      { id: 'n1', type: 'warning', text: 'Ahmet Yılmaz dersi onay bekliyor', time: new Date(Date.now() - 3600000).toISOString(), read: false, link: 'lessons' },
-      { id: 'n2', type: 'info', text: 'Bugün 3 dersiniz var', time: new Date(Date.now() - 7200000).toISOString(), read: false, link: 'calendar' },
-      { id: 'n3', type: 'success', text: 'Kunduz 8A dersi tamamlandı', time: new Date(Date.now() - 86400000).toISOString(), read: true, link: 'groups' },
+      { id: 'n_welcome', type: 'success', text: 'Sisteme hoş geldiniz! Uygulamayı kendi derslerinize göre şekillendirebilirsiniz.', time: new Date().toISOString(), read: false, link: 'dashboard' }
     ],
     // Curriculum materials: { key: { subject, grade, unitId, topicId, type, title, link, id } }
     materials: {},
     // Custom curriculum structure
     curriculum: JSON.parse(JSON.stringify(DEFAULT_CURRICULUM)),
     // Students list
-    students: [
-      {
-        id: 's1',
-        name: 'Ahmet Yılmaz',
-        phone: '+90 532 111 2233',
-        parentPhone: '+90 532 444 5566',
-        email: 'ahmet@example.com',
-        parentEmail: 'ahmet_parent@example.com',
-        grade: '8. Sınıf',
-        meetLink: 'https://meet.google.com/abc-defg-hij',
-        rate: 500,
-        curriculum: [], // will be auto-assigned
-        completedTopics: ['t3_1', 't3_2'],
-        homework: [],
-        notes: 'Çalışkan öğrenci. Tarih konularını seviyor.',
-      },
-      {
-        id: 's2',
-        name: 'Zeynep Kaya',
-        phone: '+90 533 222 3344',
-        parentPhone: '+90 533 555 6677',
-        email: 'zeynep@example.com',
-        parentEmail: '',
-        grade: '12. Sınıf',
-        meetLink: 'https://meet.google.com/klm-nopq-rst',
-        rate: 600,
-        curriculum: [],
-        completedTopics: ['t1_1'],
-        homework: [],
-        notes: 'YKS hedefi: Hukuk. Yoğun çalışıyor.',
-      },
-    ],
-    // Groups (Kunduz)
-    groups: [
-      {
-        id: 'g1',
-        name: 'Kunduz 8A',
-        grade: '8. Sınıf',
-        dayOfWeek: 2, // Tuesday (0=Sun)
-        time: '14:00',
-        duration: 60,
-        zoomLink: '',
-        rate: 300,
-        curriculum: [],
-        completedTopics: [],
-        notes: 'İnkılap grubu.',
-      },
-      {
-        id: 'g2',
-        name: 'Kunduz 12B',
-        grade: '12. Sınıf',
-        dayOfWeek: 4, // Thursday
-        time: '16:00',
-        duration: 60,
-        zoomLink: '',
-        rate: 300,
-        curriculum: [],
-        completedTopics: [],
-        notes: 'TYT + AYT hazırlık grubu.',
-      },
-    ],
+    students: [],
+    // Groups
+    groups: [],
     // Lessons list: { id, type:'student'|'group', refId, title, date, startTime, endTime, status:'upcoming'|'ongoing'|'waiting'|'completed'|'postponed', subject, grade, unitId, topicId, homework, notes }
     lessons: [],
     // Transactions: { id, type:'income'|'expense', amount, description, date, lessonId }
-    transactions: [
-      {
-        id: 'tr1',
-        type: 'income',
-        amount: 500,
-        description: 'Ahmet Yılmaz - İnkılap Tarihi Dersi',
-        date: new Date(Date.now() - 2 * 86400000).toISOString().split('T')[0],
-        lessonId: null,
-      },
-      {
-        id: 'tr2',
-        type: 'income',
-        amount: 600,
-        description: 'Zeynep Kaya - TYT Dersi',
-        date: new Date(Date.now() - 86400000).toISOString().split('T')[0],
-        lessonId: null,
-      },
-      {
-        id: 'tr3',
-        type: 'expense',
-        amount: 200,
-        description: 'Kitap ve materyal alımı',
-        date: new Date(Date.now() - 3 * 86400000).toISOString().split('T')[0],
-        lessonId: null,
-      },
-    ],
+    transactions: [],
   };
 }
 
@@ -162,6 +77,16 @@ const _listeners = new Set();
 
 export async function initStore() {
   try {
+    const user = auth.currentUser;
+    if (!user) {
+      console.warn("initStore called without authenticated user");
+      return null;
+    }
+    
+    // Set dynamic keys based on UID for Data Isolation
+    STORAGE_KEY = `td_state_${user.uid}`;
+    docRef = doc(db, 'users', user.uid);
+
     // 1. Instantly load local cache if available
     const local = loadLocal();
     if (local) {
@@ -700,4 +625,44 @@ Tarih Dükkanı Uygulamasından eklendi.`);
   return url;
 }
 
-export { setState, subscribe, generateId, _addMinutes };
+async function importData(data) {
+  if (!docRef) return;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  await setDoc(docRef, data);
+  window.location.reload();
+}
+
+async function resetData() {
+  if (!docRef) return;
+  localStorage.removeItem(STORAGE_KEY);
+  await setDoc(docRef, createDefaultState());
+  window.location.reload();
+}
+
+async function deleteAccount() {
+  if (!auth.currentUser || !docRef) return;
+  try {
+    // 1. Delete Firestore Document
+    try {
+      await deleteDoc(docRef);
+    } catch (e) {
+      console.warn("Firestore 'delete' kuralı aktif değil, bulut verisi silinemedi. Devam ediliyor...", e);
+    }
+    
+    // 2. Clear Local Storage
+    localStorage.removeItem(STORAGE_KEY);
+    
+    // 3. Delete Auth User
+    await deleteUser(auth.currentUser);
+    
+    // 4. Return success to triggers UI
+    return true;
+  } catch (error) {
+    if (error.code === 'auth/requires-recent-login') {
+      throw new Error("Güvenlik nedeniyle hesabınızı silebilmek için lütfen önce çıkış yapıp tekrar giriş yapın.");
+    }
+    throw error;
+  }
+}
+
+export { setState, subscribe, generateId, _addMinutes, importData, resetData, deleteAccount };

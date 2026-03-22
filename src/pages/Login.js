@@ -187,6 +187,15 @@ export function renderLogin() {
         color: var(--text-muted);
         font-size: 12px;
       }
+      @media (max-width: 768px) {
+        .login-container {
+          padding: 24px;
+          margin: 16px;
+        }
+        .login-header h2 { font-size: 22px; }
+        .login-logo-circle { width: 56px; height: 56px; margin-bottom: 16px; }
+        .login-logo-circle svg { width: 28px; height: 28px; }
+      }
     </style>
   `;
 }
@@ -257,4 +266,13 @@ export function initLogin(container) {
       submitBtn.disabled = false;
     }
   });
+
+  // Handle URL hash default
+  if (window.location.hash === '#register') {
+    const regTab = Array.from(tabs).find(t => t.dataset.tab === 'register');
+    if (regTab) {
+      regTab.click();
+      window.history.replaceState(null, null, ' '); // remove hash cleanly
+    }
+  }
 }

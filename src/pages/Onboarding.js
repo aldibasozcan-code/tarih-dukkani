@@ -1,0 +1,180 @@
+// ═══════════════════════════════════════════════════
+// ONBOARDING PAGE (Yeni Öğretmen Profil Kurulumu)
+// ═══════════════════════════════════════════════════
+import { ALL_GRADES, SUBJECTS } from '../data/curriculum.js';
+import { icon } from '../components/icons.js';
+
+export function renderOnboarding() {
+  return `
+    <div class="onboarding-wrapper">
+      <div class="onboarding-container glass fade-in">
+        <div class="login-header">
+          <div class="login-logo-circle">
+            ${icon('book', 32)}
+          </div>
+          <h2>Tarih Dükkanı</h2>
+          <p class="login-subtitle" style="font-size: 15px; color: var(--brand-green);">Sisteme Hoş Geldiniz!</p>
+          <p style="font-size: 13px; color: var(--text-muted); margin-top: 8px; line-height: 1.4;">
+            Uygulamayı kendi derslerinize ve öğrencilerinize göre şekillendirebilmemiz için lütfen aşağıdaki bilgileri doldurun.
+          </p>
+        </div>
+
+        <form id="onboarding-form" class="onboarding-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="ob-name">Ad Soyad</label>
+              <input type="text" id="ob-name" placeholder="Örn: Ahmet Yılmaz" required />
+            </div>
+            <div class="form-group">
+              <label for="ob-phone">Telefon Numarası</label>
+              <input type="tel" id="ob-phone" placeholder="0555 123 4567" required />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="ob-title">Unvan / Branş</label>
+            <input type="text" id="ob-title" placeholder="Örn: Tarih Öğretmeni" required />
+          </div>
+
+          <div class="form-group">
+            <label style="margin-bottom: 12px; display: block;">Öncelikli Olarak Hangi Sınıflara Ders Veriyorsunuz?</label>
+            <div class="multi-select-grid">
+              ${ALL_GRADES.map(grade => `
+                <label class="checkbox-label">
+                  <input type="checkbox" name="grades" value="${grade}">
+                  <span class="checkbox-custom"></span>
+                  ${grade}
+                </label>
+              `).join('')}
+            </div>
+            <p style="font-size:11px; color:var(--text-muted); margin-top:6px;">Birden fazla seçenek işaretleyebilirsiniz.</p>
+          </div>
+
+          <button type="submit" class="btn btn-primary login-submit-btn" style="margin-top: 24px;">
+            Kurulumu Tamamla ve Başla ${icon('check', 16)}
+          </button>
+        </form>
+      </div>
+    </div>
+    
+    <style>
+      .onboarding-wrapper {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: url('https://images.unsplash.com/photo-1524901548305-08eed8e01e15?q=80&w=2600&auto=format&fit=crop') center/cover no-repeat;
+        position: relative;
+        padding: 24px;
+      }
+      .onboarding-wrapper::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, rgba(0, 69, 38, 0.9) 0%, rgba(5, 150, 105, 0.75) 100%);
+        backdrop-filter: blur(8px);
+      }
+      .onboarding-container {
+        width: 100%;
+        max-width: 600px;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: var(--radius-xl);
+        padding: 40px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        position: relative;
+        z-index: 10;
+        backdrop-filter: blur(20px);
+        transform: translateY(0);
+        animation: floatUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .multi-select-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        gap: 12px;
+        margin-bottom: 8px;
+      }
+      .checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-primary);
+        cursor: pointer;
+        padding: 8px 12px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        transition: var(--transition);
+        background: #fff;
+      }
+      .checkbox-label:hover {
+        border-color: var(--brand-green-light);
+        background: var(--brand-green-soft);
+      }
+      .checkbox-label input:checked + .checkbox-custom + span {
+        color: var(--brand-green);
+      }
+      .checkbox-label:has(input:checked) {
+        border-color: var(--brand-green);
+        background: var(--brand-green-soft);
+        box-shadow: inset 0 0 0 1px var(--brand-green);
+      }
+      .checkbox-label input {
+        width: 16px;
+        height: 16px;
+        accent-color: var(--brand-green);
+        cursor: pointer;
+      }
+      
+      @media (max-width: 768px) {
+        .onboarding-container {
+          padding: 24px;
+        }
+        .multi-select-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+    </style>
+  `;
+}
+
+export function initOnboarding(container, onComplete) {
+  const form = container.querySelector('#onboarding-form');
+  const btn = container.querySelector('.login-submit-btn');
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    
+    // Gerekli değerleri topla
+    const name = form.querySelector('#ob-name').value.trim();
+    const phone = form.querySelector('#ob-phone').value.trim();
+    const title = form.querySelector('#ob-title').value.trim();
+    
+    const gradesBoxes = form.querySelectorAll('input[name="grades"]:checked');
+    const selectedGrades = Array.from(gradesBoxes).map(b => b.value);
+    
+    if (!name || !title) return;
+    
+    // UI Feedback
+    btn.innerHTML = '<div class="spinner" style="width:20px;height:20px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:8px;"></div> Hazırlanıyor...';
+    btn.disabled = true;
+
+    // Profil objesi oluşturuluyor
+    const profileData = {
+      name,
+      phone,
+      title,
+      // Seçilmeyen diğer alanlar daha sonra Settings sayfasından doldurulabilir
+      city: '',
+      bio: selectedGrades.length > 0 ? `${selectedGrades.join(', ')} seviyelerinde ders vermekteyim.` : '',
+      experience: '',
+      rate: '',
+      avatar: null
+    };
+
+    // Callback ile main.js veya render Layout sürecine haber ver
+    if (typeof onComplete === 'function') {
+      onComplete(profileData);
+    }
+  });
+}

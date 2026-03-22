@@ -116,6 +116,20 @@ async function init() {
       if (!_appInitialized) {
         _appInitialized = true;
         await initStore(); // Load from Firebase or local
+        const state = getState();
+
+        if (state && state.profile && !state.profile.onboarded) {
+          const { renderOnboarding, initOnboarding } = await import('./pages/Onboarding.js');
+          app.innerHTML = renderOnboarding();
+          initOnboarding(app, async (profileData) => {
+            const { updateProfile } = await import('./store/store.js');
+            updateProfile({ ...profileData, onboarded: true });
+            // Soft initialization of UI after onboarding
+            window.location.hash = '';
+            window.location.reload();
+          });
+          return;
+        }
 
         app.innerHTML = renderLayout(currentPage, navigate);
         app._currentPage = currentPage;

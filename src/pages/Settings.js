@@ -69,9 +69,19 @@ export function renderSettings(navigate) {
               </button>
             </div>
             <button class="btn btn-danger" id="btn-reset">
-              ${icon('trash', 14)} Tüm Verileri Sıfırla
+              ${icon('trash', 14)} Sadece Verileri Sıfırla
             </button>
           </div>
+        </div>
+
+        <div class="card" style="border-color:var(--danger)">
+          <h3 style="font-size:15px;font-weight:700;margin-bottom:16px;color:var(--danger);">Tehlikeli Alan</h3>
+          <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">
+            Bu işlem, uygulamadaki **tamamen size ait** veritabanı kasanızı, giriş şifrenizi ve kayıt bilgilerinizi kalıcı olarak yok eder. Geri alınamaz.
+          </p>
+          <button class="btn btn-danger" id="btn-delete-account" style="width:100%;justify-content:center;">
+            ${icon('trash', 14)} HESABIMI KALICI OLARAK SİL
+          </button>
         </div>
 
         <!-- About -->
@@ -150,21 +160,94 @@ export function renderSettings(navigate) {
         const file = e.target.files[0];
         if (!file) return;
         const reader = new FileReader();
-        reader.onload = (ev) => {
+        reader.onload = async (ev) => {
           try {
             const data = JSON.parse(ev.target.result);
-            localStorage.setItem('tarih_dukkani_v1', JSON.stringify(data));
-            nav('dashboard');
-          } catch { alert('Geçersiz dosya.'); }
+            const { importData } = await import('../store/store.js');
+            await importData(data);
+          } catch { alert('Geçersiz dosya. Yalnızca geçerli .json yedeği kabul edilir.'); }
         };
         reader.readAsText(file);
       });
 
-      el.querySelector('#btn-reset')?.addEventListener('click', () => {
-        if (confirm('TÜM verileriniz silinecek! Emin misiniz?')) {
-          localStorage.removeItem('tarih_dukkani_v1');
-          location.reload();
+      el.querySelector('#btn-reset')?.addEventListener('click', async () => {
+        if (confirm('Sadece SİZE AİT olan tüm verileriniz sıfırlanacak! Emin misiniz?')) {
+          const btn = el.querySelector('#btn-reset');
+          btn.innerHTML = 'Sıfırlanıyor...';
+          btn.disabled = true;
+          const { resetData } = await import('../store/store.js');
+          await resetData();
         }
+      });
+
+      el.querySelector('#btn-delete-account')?.addEventListener('click', () => {
+        import('../components/modal.js').then(m => {
+          m.openModal({
+            title: 'Hesabı Sil',
+            body: `
+              <div style="text-align:center; padding: 10px 0;">
+                <div style="color:var(--danger); margin-bottom:16px;">
+                  ${icon('alertCircle', 48)}
+                </div>
+                <h3 style="font-size:18px; margin-bottom:8px; color:var(--text-primary);">Tüm Verileriniz Silinecek!</h3>
+                <p style="color:var(--text-secondary); line-height:1.6;">
+                  Bu işlem sonucunda öğrenci kayıtlarınız, dersleriniz, muhasebe kayıtlarınız ve e-posta kimliğiniz <strong>tamamen ve kalıcı olarak</strong> imha edilecektir. Devam etmek istediğinize emin misiniz?
+                </p>
+              </div>
+            `,
+            footer: `
+              <button class="btn btn-secondary" id="modal-cancel-btn" style="flex:1;">İptal</button>
+              <button class="btn btn-danger" id="modal-delete-btn" style="flex:1;justify-content:center;">Evet, Kalıcı Olarak Sil</button>
+            `
+          });
+
+          document.getElementById('modal-cancel-btn')?.addEventListener('click', m.closeModal);
+          
+          document.getElementById('modal-delete-btn')?.addEventListener('click', async () => {
+            const btn = document.getElementById('modal-delete-btn');
+            btn.innerHTML = '<div class="spinner" style="width:14px;height:14px;border-width:2px;border-color:#fff;border-top-color:transparent;display:inline-block;"></div> Siliniyor...';
+            btn.disabled = true;
+            document.getElementById('modal-cancel-btn').disabled = true;
+            try {
+              const { deleteAccount } = await import('../store/store.js');
+              await deleteAccount();
+              
+              m.openModal({
+                title: 'Veda Vakti',
+                body: `
+                  <div style="text-align:center; padding: 20px 0;">
+                    <div style="color:var(--success); margin-bottom:16px;">
+                      ${icon('checkCircle', 48)}
+                    </div>
+                    <h3 style="font-size:20px; margin-bottom:8px; color:var(--text-primary);">Hesabınız Silindi</h3>
+                    <p style="color:var(--text-secondary); line-height:1.6;">
+                      Tüm verileriniz ve kayıtlarınız güvenle sistemden kaldırılmıştır. Sizi aramızda tekrar görmek dileğiyle, tekrar görüşmek üzere!
+                    </p>
+                  </div>
+                `,
+                footer: `
+                  <button class="btn btn-primary" id="goodbye-btn" style="width:100%;justify-content:center;">Ana Sayfaya Dön</button>
+                `
+              });
+
+              document.getElementById('goodbye-btn')?.addEventListener('click', () => {
+                window.location.hash = '#register';
+                window.location.reload();
+              });
+
+            } catch (err) {
+              btn.innerHTML = 'Silinemedi';
+              btn.disabled = false;
+              document.getElementById('modal-cancel-btn').disabled = false;
+              
+              m.showAlert({ 
+                title: err.message.includes('yeniden giriş') ? 'Güvenlik Uyarısı' : 'Hata', 
+                message: err.message, 
+                buttonText: 'Anladım' 
+              });
+            }
+          });
+        });
       });
     }
   };
@@ -253,7 +336,6 @@ export function renderProfile(navigate) {
     html,
     init: (el, nav) => {
       el.querySelector('#btn-save-profile')?.addEventListener('click', () => {
-        const { updateProfile } = require('../store/store.js');
         import('../store/store.js').then(m => {
           m.updateProfile({
             name: el.querySelector('#p-name').value.trim(),
@@ -292,7 +374,6 @@ export function renderProfile(navigate) {
 // ═════════════════════════════════════════════════
 export function renderNotifications(navigate) {
   const state = getState();
-  const { formatDistanceToNow } = require('../utils/helpers.js');
 
   const html = `
     <div class="fade-in">
