@@ -1,0 +1,94 @@
+// ═════════════════════════════════════════════════
+// ADD STUDENT MODAL
+// ═════════════════════════════════════════════════
+import { getState, addStudent, updateStudent } from '../../store/store.js';
+import { ALL_GRADES } from '../../data/curriculum.js';
+import { openModal, closeModal } from '../../components/modal.js';
+import { escHtml } from '../../utils/helpers.js';
+
+export function openAddStudentModal(onSave, editId = null) {
+  const student = editId ? getState().students.find(s => s.id === editId) : null;
+
+  openModal({
+    title: student ? 'Öğrenci Düzenle' : 'Yeni Öğrenci Ekle',
+    body: `
+      <div class="form-group">
+        <label>Ad Soyad *</label>
+        <input type="text" id="s-name" value="${escHtml(student?.name || '')}" placeholder="Örn: Ahmet Yılmaz">
+      </div>
+      <div class="form-group">
+        <label>Sınıf *</label>
+        <select id="s-grade">
+          <option value="">Sınıf seçin</option>
+          ${ALL_GRADES.map(g => `<option value="${g}" ${student?.grade === g ? 'selected' : ''}>${g}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Telefon (Öğrenci)</label>
+          <input type="tel" id="s-phone" value="${escHtml(student?.phone || '')}" placeholder="+90 5xx xxx xx xx">
+        </div>
+        <div class="form-group">
+          <label>E-posta (Öğrenci)</label>
+          <input type="email" id="s-email" value="${escHtml(student?.email || '')}" placeholder="ornek@mail.com">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Telefon (Veli)</label>
+          <input type="tel" id="s-pphone" value="${escHtml(student?.parentPhone || '')}" placeholder="+90 5xx xxx xx xx">
+        </div>
+        <div class="form-group">
+          <label>E-posta (Veli)</label>
+          <input type="email" id="s-pemail" value="${escHtml(student?.parentEmail || '')}" placeholder="veli@mail.com">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Saatlik Ücret (₺)</label>
+          <input type="number" id="s-rate" value="${student?.rate || 500}" min="0" step="50">
+        </div>
+        <div class="form-group">
+          <label>Google Meet Linki</label>
+          <input type="url" id="s-meet" value="${escHtml(student?.meetLink || '')}" placeholder="https://meet.google.com/...">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Notlar</label>
+        <textarea id="s-notes" rows="2" placeholder="Öğrenci hakkında notlar...">${escHtml(student?.notes || '')}</textarea>
+      </div>
+      ${!student ? '<div style="padding:10px;background:rgba(99,202,183,0.08);border-radius:8px;font-size:12px;color:var(--accent);">Öğrenci eklenince seçilen sınıfa ait tüm müfredat otomatik atanacak.</div>' : ''}
+    `,
+    footer: `
+      <button class="btn btn-secondary" id="s-cancel">İptal</button>
+      <button class="btn btn-primary" id="s-save">${student ? 'Güncelle' : 'Ekle'}</button>
+    `,
+  });
+
+  document.getElementById('s-cancel')?.addEventListener('click', closeModal);
+  document.getElementById('s-save')?.addEventListener('click', () => {
+    const name = document.getElementById('s-name').value.trim();
+    const grade = document.getElementById('s-grade').value;
+    if (!name || !grade) { alert('Ad ve sınıf zorunludur.'); return; }
+
+    const data = {
+      name,
+      grade,
+      phone: document.getElementById('s-phone').value.trim(),
+      email: document.getElementById('s-email').value.trim(),
+      parentPhone: document.getElementById('s-pphone').value.trim(),
+      parentEmail: document.getElementById('s-pemail').value.trim(),
+      rate: parseFloat(document.getElementById('s-rate').value) || 500,
+      meetLink: document.getElementById('s-meet').value.trim(),
+      notes: document.getElementById('s-notes').value.trim(),
+    };
+
+    if (student) {
+      updateStudent(editId, data);
+    } else {
+      addStudent(data);
+    }
+    closeModal();
+    if (onSave) onSave();
+  });
+}
