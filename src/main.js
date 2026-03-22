@@ -124,9 +124,12 @@ async function init() {
           initOnboarding(app, async (profileData) => {
             const { updateProfile } = await import('./store/store.js');
             updateProfile({ ...profileData, onboarded: true });
-            // Soft initialization of UI after onboarding
-            window.location.hash = '';
-            window.location.reload();
+            
+            // Firebase debounced kaydetme mekanizmasının (1sn) işini bitirmesi için bekle
+            setTimeout(() => {
+              window.location.hash = '';
+              window.location.reload();
+            }, 1200);
           });
           return;
         }

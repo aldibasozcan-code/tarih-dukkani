@@ -146,7 +146,13 @@ export function openLessonEvalModal(lessonId, navigate) {
       message: `Bir sonraki hafta için (${getNextWeekDate(lesson.date)}) aynı dersi otomatik ekleyeyim mi?`,
       confirmText: 'Evet, Ekle',
       cancelText: 'Hayır',
-      onConfirm: () => addNextWeekLesson(lesson),
+      onConfirm: () => {
+        addNextWeekLesson(lesson);
+        if (navigate) navigate(window.location.hash.replace('#','') || 'dashboard');
+      },
+      onCancel: () => {
+        if (navigate) navigate(window.location.hash.replace('#','') || 'dashboard');
+      }
     });
 
     // Send WA notification
@@ -169,6 +175,7 @@ export function openLessonEvalModal(lessonId, navigate) {
     postponeLesson(lessonId, newDate, newTime);
     addNotification({ type: 'warning', text: `${lesson.title} dersi ${newDate} tarihine ertelendi.`, link: 'calendar' });
     closeModal();
+    if (navigate) navigate(window.location.hash.replace('#','') || 'dashboard');
   });
 }
 

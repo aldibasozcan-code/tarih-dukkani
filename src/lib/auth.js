@@ -3,7 +3,9 @@ import {
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
     signOut,
-    onAuthStateChanged
+    onAuthStateChanged,
+    GoogleAuthProvider,
+    signInWithPopup
 } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
 // Kullanıcı kayıt
@@ -14,6 +16,12 @@ export const registerUser = async (email, password) => {
 // Kullanıcı giriş
 export const loginUser = async (email, password) => {
     return await signInWithEmailAndPassword(auth, email, password);
+};
+
+// Google ile giriş
+export const loginWithGoogle = async () => {
+    const provider = new GoogleAuthProvider();
+    return await signInWithPopup(auth, provider);
 };
 
 // Çıkış

@@ -5,6 +5,7 @@ import { getState, addLesson } from '../../store/store.js';
 import { SUBJECTS, GRADE_TO_SUBJECTS } from '../../data/curriculum.js';
 import { openModal, closeModal } from '../../components/modal.js';
 import { escHtml } from '../../utils/helpers.js';
+import { icon } from '../../components/icons.js';
 
 export function openAddLessonModal(onSave, prefill = {}) {
   const state = getState();
@@ -13,6 +14,8 @@ export function openAddLessonModal(onSave, prefill = {}) {
   openModal({
     title: 'Ders Ekle',
     body: `
+      <div id="l-conflict-alert" class="login-alert error" style="display: none; margin-bottom: 24px; font-size: 15px; line-height: 1.6; align-items: flex-start; gap: 16px; padding: 20px 24px; border-radius: var(--radius-lg); background: rgba(220, 38, 38, 0.08); border: 1px solid rgba(220, 38, 38, 0.3); color: var(--danger); box-shadow: 0 4px 12px rgba(220,38,38,0.1);"></div>
+      
       <div class="form-row">
         <div class="form-group">
           <label>Tür *</label>
@@ -72,6 +75,7 @@ export function openAddLessonModal(onSave, prefill = {}) {
   const unitSel = document.getElementById('l-subject');
   const topicSel = document.getElementById('l-topic');
   const feeInput = document.getElementById('l-fee');
+  const conflictAlert = document.getElementById('l-conflict-alert');
 
   function updateRefOptions() {
     const type = typeSel.value;
@@ -212,9 +216,20 @@ export function openAddLessonModal(onSave, prefill = {}) {
     });
 
     if (checkConflict) {
-      alert(`Çakışma Hatası!\n${checkConflict.startTime} - ${checkConflict.endTime} saatleri arasında "${checkConflict.title}" dersiniz bulunmaktadır.\nLütfen farklı bir saat seçin.`);
+      conflictAlert.style.display = 'flex';
+      conflictAlert.innerHTML = `
+        <div style="margin-top:2px;">${icon('alertCircle', 28)}</div>
+        <div style="flex:1;">
+          <strong style="display:block; margin-bottom:6px; color:var(--danger); font-size:17px; font-weight: 700;">Zaman Çakışması</strong>
+          ${checkConflict.startTime} - ${checkConflict.endTime} saatleri arasında zaten <strong>"${escHtml(checkConflict.title)}"</strong> adlı dersiniz planlanmış görünüyor.<br>
+          <span style="opacity: 0.9; font-size: 14px; margin-top: 8px; font-weight: 500; display: inline-block; color:var(--text-secondary);">Lütfen çakışmayan farklı bir saat veya tarih seçerek tekrar deneyin.</span>
+        </div>
+      `;
+      document.querySelector('.modal-body').scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
+    
+    conflictAlert.style.display = 'none';
 
     const unitVal = unitSel.value;
     const [subjectId, gradeId, unitId] = (unitVal && unitVal.includes('|')) ? unitVal.split('|') : ['', '', ''];

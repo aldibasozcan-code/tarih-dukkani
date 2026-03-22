@@ -8,64 +8,76 @@ export function renderOnboarding() {
   return `
     <div class="onboarding-wrapper">
       <div class="onboarding-container glass fade-in">
-        <div class="login-header">
-          <div class="login-logo-circle">
-            ${icon('book', 32)}
+        <div class="onboarding-header" style="padding: 24px 32px; border-bottom: 1px solid var(--border); text-align: center; flex-shrink: 0; background: rgba(255,255,255,0.95); position: relative; z-index: 2;">
+          <div class="login-logo-circle" style="margin-bottom: 12px; width: 64px; height: 64px;">
+            ${icon('book', 28)}
           </div>
-          <h2>Tarih Dükkanı</h2>
-          <p class="login-subtitle" style="font-size: 15px; color: var(--brand-green);">Sisteme Hoş Geldiniz!</p>
+          <h2 style="font-size: 22px; font-weight: 800; color: var(--brand-green); margin-bottom: 4px;">Tarih Dükkanı</h2>
+          <p class="login-subtitle" style="font-size: 15px; color: var(--brand-green); margin: 0;">Sisteme Hoş Geldiniz!</p>
           <p style="font-size: 13px; color: var(--text-muted); margin-top: 8px; line-height: 1.4;">
             Uygulamayı kendi derslerinize ve öğrencilerinize göre şekillendirebilmemiz için lütfen aşağıdaki bilgileri doldurun.
           </p>
         </div>
 
-        <form id="onboarding-form" class="onboarding-form">
-          <div class="form-row">
-            <div class="form-group">
-              <label for="ob-name">Ad Soyad</label>
-              <input type="text" id="ob-name" placeholder="Örn: Ahmet Yılmaz" required />
+        <form id="onboarding-form" class="onboarding-form" style="display: flex; flex-direction: column; flex: 1; overflow: hidden; margin: 0;">
+          <div class="onboarding-body" style="flex: 1; overflow-y: auto; padding: 24px 32px;">
+            
+            <!-- 3 Column Info Row -->
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px;">
+              <div class="form-group" style="margin: 0;">
+                <label for="ob-name">Ad Soyad</label>
+                <input type="text" id="ob-name" placeholder="Örn: Ahmet Yılmaz" />
+              </div>
+              <div class="form-group" style="margin: 0;">
+                <label for="ob-phone">Telefon Numarası</label>
+                <input type="tel" id="ob-phone" placeholder="0555 123 4567" />
+              </div>
+              <div class="form-group" style="margin: 0;">
+                <label for="ob-title">Unvan (Sıfat)</label>
+                <input type="text" id="ob-title" placeholder="Örn: Uzman Öğretmen" />
+              </div>
             </div>
-            <div class="form-group">
-              <label for="ob-phone">Telefon Numarası</label>
-              <input type="tel" id="ob-phone" placeholder="0555 123 4567" required />
+
+            <!-- 2 Column Lists Row -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px;">
+              
+              <!-- Branches -->
+              <div class="form-group" style="margin: 0;">
+                <label style="margin-bottom: 12px; display: block; font-size: 14px; font-weight: 700; color: var(--brand-green);">Branşlar (Dersler)</label>
+                <div class="multi-select-grid">
+                  ${ALL_BRANCHES.map(branch => `
+                    <label class="checkbox-label">
+                      <input type="checkbox" name="branches" value="${branch}">
+                      <span class="checkbox-custom"></span>
+                      ${branch}
+                    </label>
+                  `).join('')}
+                </div>
+              </div>
+
+              <!-- Grades -->
+              <div class="form-group" style="margin: 0;">
+                <label style="margin-bottom: 12px; display: block; font-size: 14px; font-weight: 700; color: var(--brand-green);">Sınıflar (Seviyeler)</label>
+                <div class="multi-select-grid">
+                  ${ALL_GRADES.map(grade => `
+                    <label class="checkbox-label">
+                      <input type="checkbox" name="grades" value="${grade}">
+                      <span class="checkbox-custom"></span>
+                      ${grade}
+                    </label>
+                  `).join('')}
+                </div>
+                <p style="font-size:11px; color:var(--text-muted); margin-top:8px;">Birden fazla seçenek işaretleyebilirsiniz.</p>
+              </div>
+
             </div>
           </div>
 
-          <div class="form-group">
-            <label for="ob-title">Unvan (Sıfat)</label>
-            <input type="text" id="ob-title" placeholder="Örn: Uzman Öğretmen, Danışman" required />
+          <div class="onboarding-footer" style="padding: 20px 32px; border-top: 1px solid var(--border); background: #f8fafc; flex-shrink: 0; display: flex; justify-content: flex-end; align-items: center;">
+            <button type="submit" class="btn btn-primary login-submit-btn" style="height: 44px; padding: 0 24px; font-size: 15px;">
+              Kurulumu Tamamla ve Başla ${icon('check', 16)}
+            </button>
           </div>
-
-          <div class="form-group">
-            <label style="margin-bottom: 12px; display: block;">Hangi Branşlarda (Derslerde) Eğitim Veriyorsunuz?</label>
-            <div class="multi-select-grid branch-grid">
-              ${ALL_BRANCHES.map(branch => `
-                <label class="checkbox-label">
-                  <input type="checkbox" name="branches" value="${branch}">
-                  <span class="checkbox-custom"></span>
-                  ${branch}
-                </label>
-              `).join('')}
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label style="margin-bottom: 12px; display: block;">Öncelikli Olarak Hangi Sınıflara Ders Veriyorsunuz?</label>
-            <div class="multi-select-grid">
-              ${ALL_GRADES.map(grade => `
-                <label class="checkbox-label">
-                  <input type="checkbox" name="grades" value="${grade}">
-                  <span class="checkbox-custom"></span>
-                  ${grade}
-                </label>
-              `).join('')}
-            </div>
-            <p style="font-size:11px; color:var(--text-muted); margin-top:6px;">Birden fazla seçenek işaretleyebilirsiniz.</p>
-          </div>
-
-          <button type="submit" class="btn btn-primary login-submit-btn" style="margin-top: 24px;">
-            Kurulumu Tamamla ve Başla ${icon('check', 16)}
-          </button>
         </form>
       </div>
     </div>
@@ -89,10 +101,14 @@ export function renderOnboarding() {
       }
       .onboarding-container {
         width: 100%;
-        max-width: 600px;
+        max-width: 900px;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
         background: rgba(255, 255, 255, 0.95);
         border-radius: var(--radius-xl);
-        padding: 40px;
+        padding: 0;
         box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         position: relative;
         z-index: 10;
@@ -138,13 +154,38 @@ export function renderOnboarding() {
         accent-color: var(--brand-green);
         cursor: pointer;
       }
-      
+      /* Hızlı Kaydırma Çubuğu Stili */
+      .onboarding-body::-webkit-scrollbar {
+        width: 8px;
+      }
+      .onboarding-body::-webkit-scrollbar-track {
+        background: rgba(0,0,0,0.02);
+      }
+      .onboarding-body::-webkit-scrollbar-thumb {
+        background: rgba(0,0,0,0.15);
+        border-radius: 10px;
+      }
+
       @media (max-width: 768px) {
-        .onboarding-container {
-          padding: 24px;
+        .onboarding-header {
+          padding: 20px 24px !important;
+        }
+        .onboarding-body {
+          padding: 20px 24px !important;
+        }
+        .onboarding-footer {
+          padding: 16px 24px !important;
+        }
+        /* Grid çökmelerini engelle */
+        .onboarding-body > div[style*="grid-template-columns: repeat(3"] {
+          grid-template-columns: 1fr !important;
+        }
+        .onboarding-body > div[style*="grid-template-columns: 1fr 1fr"] {
+          grid-template-columns: 1fr !important;
+          gap: 24px !important;
         }
         .multi-select-grid {
-          grid-template-columns: repeat(2, 1fr);
+          grid-template-columns: repeat(2, 1fr) !important;
         }
       }
     </style>
@@ -163,13 +204,16 @@ export function initOnboarding(container, onComplete) {
     const phone = form.querySelector('#ob-phone').value.trim();
     const title = form.querySelector('#ob-title').value.trim();
     
+    if (!name || !phone || !title) {
+      alert('Lütfen Ad Soyad, Telefon ve Unvan alanlarını eksiksiz doldurun.');
+      return;
+    }
+    
     const gradesBoxes = form.querySelectorAll('input[name="grades"]:checked');
     const selectedGrades = Array.from(gradesBoxes).map(b => b.value);
     
     const branchBoxes = form.querySelectorAll('input[name="branches"]:checked');
     const selectedBranches = Array.from(branchBoxes).map(b => b.value);
-    
-    if (!name) return;
     
     // UI Feedback
     btn.innerHTML = '<div class="spinner" style="width:20px;height:20px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:8px;"></div> Hazırlanıyor...';
