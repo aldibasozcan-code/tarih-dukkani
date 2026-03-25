@@ -37,65 +37,89 @@ export const CONTENT_TYPES = [
   { id: 'deneme', label: 'Deneme Sınavı', icon: '📋', color: '#ff5a65' },
 ];
 
-// Default curriculum structure
+// Default curriculum structure (MEB Maarif Modeli'ne uygun - 2024/2025)
 export const DEFAULT_CURRICULUM = {
   'sosyal': {
     '5. Sınıf': [
       {
-        id: 'u1', name: 'Ünite 1: Bireysel Gelişim',
+        id: 'u1', name: '1. Ünite: Birey ve Toplum',
         topics: [
-          { id: 't1_1', name: 'Kişisel Gelişim' },
-          { id: 't1_2', name: 'Aile ve Sosyal Çevre' },
-          { id: 't1_3', name: 'Hak ve Sorumluluklar' },
+          { id: 't1_1', name: 'Sosyal Rollerin Zaman İçindeki Değişimi' },
+          { id: 't1_2', name: 'Kültürel Gelişim' },
+          { id: 't1_3', name: 'Toplumsal Birliktelik' },
+          { id: 't1_4', name: 'Hak ve Sorumluluklarımız' },
         ]
       },
       {
-        id: 'u2', name: 'Ünite 2: Kültür ve Miras',
+        id: 'u2', name: '2. Ünite: Kültür ve Miras',
         topics: [
-          { id: 't2_1', name: 'Kültür Nedir?' },
-          { id: 't2_2', name: 'Somut ve Somut Olmayan Miras' },
-          { id: 't2_3', name: 'Türk Kültürü' },
+          { id: 't2_1', name: 'Anadolu ve Mezopotamya Uygarlıkları' },
+          { id: 't2_2', name: 'Tarihe Yolculuk' },
+          { id: 't2_3', name: 'Kültürel Ögelerimiz' },
         ]
       },
       {
-        id: 'u3', name: 'Ünite 3: İnsanlar, Yerler ve Çevreler',
+        id: 'u3', name: '3. Ünite: İnsanlar, Yerler ve Çevreler',
         topics: [
-          { id: 't3_1', name: 'Türkiye\'nin Coğrafyası' },
-          { id: 't3_2', name: 'Doğal Afetler' },
-          { id: 't3_3', name: 'Çevre ve İnsan' },
+          { id: 't3_1', name: 'Yeryüzü Şekilleri ve İklim' },
+          { id: 't3_2', name: 'Nüfus ve Yerleşme' },
+          { id: 't3_3', name: 'Doğal Afetler ve Çevre' },
+        ]
+      },
+      {
+        id: 'u4', name: '4. Ünite: Bilim, Teknoloji ve Toplum',
+        topics: [
+          { id: 't4_1', name: 'Teknolojinin Topluma Etkisi' },
+          { id: 't4_2', name: 'Doğru Bilgiye Ulaşmak' },
+          { id: 't4_3', name: 'Bilim İnsanları ve Buluşlar' },
         ]
       },
     ],
     '6. Sınıf': [
       {
-        id: 'u1', name: 'Ünite 1: Sosyal Bilgiler Öğreniyorum',
+        id: 'u1', name: '1. Ünite: Birey ve Toplum',
         topics: [
-          { id: 't1_1', name: 'Harita Bilgisi' },
-          { id: 't1_2', name: 'Ülkemiz ve Dünya' },
+          { id: 't1_1', name: 'Rollerimiz ve Sorumluluklarımız' },
+          { id: 't1_2', name: 'Kültür ve Birlik' },
+          { id: 't1_3', name: 'Ön Yargıları Kırmak' },
         ]
       },
       {
-        id: 'u2', name: 'Ünite 2: Yeryüzünde Yaşam',
+        id: 'u2', name: '2. Ünite: Kültür ve Miras',
         topics: [
-          { id: 't2_1', name: 'İklim Bölgeleri' },
-          { id: 't2_2', name: 'Dünya\'da Nüfus' },
-          { id: 't2_3', name: 'Göç' },
+          { id: 't2_1', name: 'Orta Asya İlk Türk Devletleri' },
+          { id: 't2_2', name: 'İslamiyet\'in Doğuşu' },
+          { id: 't2_3', name: 'İlk Türk İslam Devletleri' },
+        ]
+      },
+      {
+        id: 'u3', name: '3. Ünite: İnsanlar, Yerler ve Çevreler',
+        topics: [
+          { id: 't3_1', name: 'Dünyanın Konumu ve Coğrafi Koordinatlar' },
+          { id: 't3_2', name: 'Türkiye\'nin Fiziki Coğrafyası' },
         ]
       },
     ],
     '7. Sınıf': [
       {
-        id: 'u1', name: 'Ünite 1: İletişim ve İnsan İlişkileri',
+        id: 'u1', name: '1. Ünite: Birey ve Toplum',
         topics: [
-          { id: 't1_1', name: 'İletişim Nedir?' },
+          { id: 't1_1', name: 'İletişim ve İnsan İlişkileri' },
           { id: 't1_2', name: 'Kitle İletişim Araçları' },
         ]
       },
       {
-        id: 'u2', name: 'Ünite 2: Ülkemizde Nüfus',
+        id: 'u2', name: '2. Ünite: Kültür ve Miras',
         topics: [
-          { id: 't2_1', name: 'Türkiye Nüfusu' },
-          { id: 't2_2', name: 'Nüfus Hareketleri' },
+          { id: 't2_1', name: 'Osmanlı Devleti\'nin Kuruluşu ve Yükselişi' },
+          { id: 't2_2', name: 'Avrupa\'daki Gelişmeler ve Osmanlı' },
+          { id: 't2_3', name: 'Osmanlı Toplumunda Kültür ve Sanat' },
+        ]
+      },
+      {
+        id: 'u3', name: '3. Ünite: İnsanlar, Yerler ve Çevreler',
+        topics: [
+          { id: 't3_1', name: 'Türkiye\'de Nüfus ve Göç' },
         ]
       },
     ],
@@ -103,36 +127,113 @@ export const DEFAULT_CURRICULUM = {
   'inkılap': {
     '8. Sınıf': [
       {
-        id: 'u1', name: 'Ünite 1: Bir Kahraman Doğuyor',
+        id: 'u1', name: '1. Ünite: Bir Kahraman Doğuyor',
         topics: [
-          { id: 't1_1', name: 'Mustafa Kemal\'in Çocukluğu' },
-          { id: 't1_2', name: 'Askeri Eğitim Yılları' },
-          { id: 't1_3', name: 'İlk Görevler' },
+          { id: 't1_1', name: 'Uyanan Avrupa ve Sarsılan Osmanlı' },
+          { id: 't1_2', name: 'Mustafa Kemal\'in Çocukluğu ve Eğitimi' },
+          { id: 't1_3', name: 'Mustafa Kemal\'in Askerlik Hayatı' },
         ]
       },
       {
-        id: 'u2', name: 'Ünite 2: Milli Uyanış',
+        id: 'u2', name: '2. Ünite: Millî Uyanış - Bağımsızlık Yolunda Atılan Adımlar',
         topics: [
-          { id: 't2_1', name: 'Osmanlı\'nın Son Dönemi' },
-          { id: 't2_2', name: 'Mondros Mütarekesi' },
-          { id: 't2_3', name: 'Mustafa Kemal\'in Samsun\'a Çıkışı' },
+          { id: 't2_1', name: 'Birinci Dünya Savaşı ve Osmanlı' },
+          { id: 't2_2', name: 'Mondros Ateşkes Antlaşması ve İşgaller' },
+          { id: 't2_3', name: 'Kuvâ-yı Millîye ve Cemiyetler' },
+          { id: 't2_4', name: 'Mustafa Kemal\'in Samsun\'a Çıkışı ve Kongreler' },
+          { id: 't2_5', name: 'Misak-ı Millî ve TBMM\'nin Açılışı' },
         ]
       },
       {
-        id: 'u3', name: 'Ünite 3: Ya İstiklal Ya Ölüm',
+        id: 'u3', name: '3. Ünite: Ya İstiklal Ya Ölüm!',
         topics: [
-          { id: 't3_1', name: 'Müdafaa-i Hukuk Cemiyetleri' },
-          { id: 't3_2', name: 'Erzurum ve Sivas Kongreleri' },
-          { id: 't3_3', name: 'Misak-ı Millî' },
+          { id: 't3_1', name: 'Doğu ve Güney Cepheleri' },
+          { id: 't3_2', name: 'Batı Cephesi Savaşları' },
+          { id: 't3_3', name: 'Maarif Kongresi ve Tekâlif-i Millîye' },
+          { id: 't3_4', name: 'Mudanya ve Lozan Barış Antlaşmaları' },
         ]
       },
       {
-        id: 'u4', name: 'Ünite 4: Atatürk İlkeleri ve İnkılaplar',
+        id: 'u4', name: '4. Ünite: Atatürkçülük ve Çağdaşlaşan Türkiye',
         topics: [
-          { id: 't4_1', name: 'Siyasi Alanda İnkılaplar' },
-          { id: 't4_2', name: 'Sosyal Alanda İnkılaplar' },
-          { id: 't4_3', name: 'Ekonomi ve Eğitim İnkılapları' },
+          { id: 't4_1', name: 'Siyasi Alandaki İnkılaplar' },
+          { id: 't4_2', name: 'Hukuk, Eğitim ve Kültür Alanındaki İnkılaplar' },
+          { id: 't4_3', name: 'Toplumsal ve Ekonomik Alandaki İnkılaplar' },
           { id: 't4_4', name: 'Atatürk İlkeleri' },
+        ]
+      },
+      {
+        id: 'u5', name: '5. Ünite: Demokratikleşme Çabaları',
+        topics: [
+          { id: 't5_1', name: 'Çok Partili Hayata Geçiş Denemeleri' },
+          { id: 't5_2', name: 'Cumhuriyete Yönelik Tehditler' },
+        ]
+      },
+      {
+        id: 'u6', name: '6. Ünite: Atatürk Dönemi Türk Dış Politikası',
+        topics: [
+          { id: 't6_1', name: 'Türk Dış Politikasının Temel İlkeleri' },
+          { id: 't6_2', name: 'Atatürk Dönemi Dış Politika Gelişmeleri' },
+        ]
+      },
+      {
+        id: 'u7', name: '7. Ünite: Atatürk\'ün Ölümü ve Sonrası',
+        topics: [
+          { id: 't7_1', name: 'Atatürk\'ün Vefatı' },
+          { id: 't7_2', name: 'İkinci Dünya Savaşı ve Türkiye' },
+        ]
+      },
+    ],
+    '12. Sınıf': [
+      {
+        id: 'u1', name: '1. Ünite: XX. Yüzyıl Başlarında Osmanlı Devleti ve Dünya',
+        topics: [
+          { id: 't1_1', name: 'XX. Yüzyıl Başlarında Dünya' },
+          { id: 't1_2', name: 'Osmanlı Devleti\'nin Son Dönemi Düşünce Akımları' },
+          { id: 't1_3', name: 'Trablusgarp ve Balkan Savaşları' },
+          { id: 't1_4', name: 'I. Dünya Savaşı' },
+        ]
+      },
+      {
+        id: 'u2', name: '2. Ünite: Millî Mücadele',
+        topics: [
+          { id: 't2_1', name: 'Mondros Mütarekesi ve Cemiyetler' },
+          { id: 't2_2', name: 'Mustafa Kemal\'in Samsun\'a Çıkışı ve Genelgeler' },
+          { id: 't2_3', name: 'Büyük Millet Meclisinin Açılması ve İsyanlar' },
+          { id: 't2_4', name: 'Sevr Antlaşması' },
+          { id: 't2_5', name: 'Doğu, Güney ve Batı Cepheleri' },
+          { id: 't2_6', name: 'Mudanya ve Lozan Barış Antlaşmaları' },
+        ]
+      },
+      {
+        id: 'u3', name: '3. Ünite: Atatürkçülük ve Türk İnkılabı',
+        topics: [
+          { id: 't3_1', name: 'Atatürk İlkeleri' },
+          { id: 't3_2', name: 'Siyasi Alandaki İnkılaplar' },
+          { id: 't3_3', name: 'Hukuk ve Eğitim Alanındaki İnkılaplar' },
+          { id: 't3_4', name: 'Toplumsal ve Ekonomik Alandaki Gelişmeler' },
+        ]
+      },
+      {
+        id: 'u4', name: '4. Ünite: İki Savaş Arasındaki Dönemde Türkiye ve Dünya',
+        topics: [
+          { id: 't4_1', name: 'Atatürk Dönemi İç ve Dış Politika' },
+          { id: 't4_2', name: 'İki Savaş Arasındaki Dönemde Dünyadaki Siyasi Gelişmeler' },
+        ]
+      },
+      {
+        id: 'u5', name: '5. Ünite: II. Dünya Savaşı Sürecinde Türkiye ve Dünya',
+        topics: [
+          { id: 't5_1', name: 'II. Dünya Savaşı\'nın Başlaması ve Gelişimi' },
+          { id: 't5_2', name: 'Savaş Yıllarında Türkiye' },
+        ]
+      },
+      {
+        id: 'u6', name: '6. Ünite: II. Dünya Savaşı Sonrasında Türkiye ve Dünya',
+        topics: [
+          { id: 't6_1', name: 'Soğuk Savaş Dönemi Başlangıcı' },
+          { id: 't6_2', name: 'Türkiye\'nin Çok Partili Hayata Geçişi' },
+          { id: 't6_3', name: 'Demokrat Parti Dönemi' },
         ]
       },
     ],
@@ -140,71 +241,216 @@ export const DEFAULT_CURRICULUM = {
   'tarih': {
     '9. Sınıf': [
       {
-        id: 'u1', name: 'Ünite 1: Tarih ve Zaman',
+        id: 'u1', name: '1. Ünite: Tarih ve Zaman',
         topics: [
-          { id: 't1_1', name: 'Tarihin Tanımı ve Önemi' },
-          { id: 't1_2', name: 'Zaman ve Takvim' },
-          { id: 't1_3', name: 'Tarih Bilimine Yardımcı Bilimler' },
+          { id: 't1_1', name: 'Tarih Nedir?' },
+          { id: 't1_2', name: 'Zamanın Taksimi' },
+          { id: 't1_3', name: 'İnsanlığın Hafızası: Tarih' },
         ]
       },
       {
-        id: 'u2', name: 'Ünite 2: İnsanlığın İlk Dönemleri',
+        id: 'u2', name: '2. Ünite: Kadim Dünyada İnsan',
         topics: [
-          { id: 't2_1', name: 'İnsanın Ortaya Çıkışı' },
-          { id: 't2_2', name: 'Yapılan Keşifler' },
-          { id: 't2_3', name: 'İlk Uygarlıklar' },
+          { id: 't2_1', name: 'İnsanın İlk İzleri ve Yerleşik Hayata Geçiş' },
+          { id: 't2_2', name: 'Uygarlık Havzaları' },
+        ]
+      },
+      {
+        id: 'u3', name: '3. Ünite: İlk Çağ ve Göçler',
+        topics: [
+          { id: 't3_1', name: 'Göçlerin Nedenleri ve Sonuçları' },
+          { id: 't3_2', name: 'İlk Çağ\'ın Tüccar Toplulukları' },
+          { id: 't3_3', name: 'Kabileden Devlete' },
+          { id: 't3_4', name: 'Kanunlar Doğuyor' },
+        ]
+      },
+      {
+        id: 'u4', name: '4. Ünite: Türklerin Ana Yurdu ve İlk Türk Devletleri',
+        topics: [
+          { id: 't4_1', name: 'Avrasya\'da İlk Türk İzleri' },
+          { id: 't4_2', name: 'Asya Hun Devleti' },
+          { id: 't4_3', name: 'Kök Türk ve Uygur Devletleri' },
+          { id: 't4_4', name: 'İlk Türk Devletlerinde Teşkilat ve Kültür' },
+        ]
+      },
+      {
+        id: 'u5', name: '5. Ünite: İslamiyet\'in Doğuşu ve İlk İslam Devletleri',
+        topics: [
+          { id: 't5_1', name: 'İslamiyet Öncesi Arap Yarımadası' },
+          { id: 't5_2', name: 'Hz. Muhammed Dönemi ve Dört Halife Dönemi' },
+          { id: 't5_3', name: 'Emeviler ve Abbasiler' },
+        ]
+      },
+      {
+        id: 'u6', name: '6. Ünite: Türklerin İslamiyet\'i Kabulü ve İlk Türk İslam Devletleri',
+        topics: [
+          { id: 't6_1', name: 'Türk-Arap İlişkileri ve İslamiyet\'in Kabulü' },
+          { id: 't6_2', name: 'Karahanlılar ve Gazneliler' },
+          { id: 't6_3', name: 'Büyük Selçuklu Devleti' },
+          { id: 't6_4', name: 'İlk Türk İslam Devletlerinde Kültür ve Medeniyet' },
         ]
       },
     ],
     '10. Sınıf': [
       {
-        id: 'u1', name: 'Ünite 1: Osmanlı Devleti\'nin Kuruluşu',
+        id: 'u1', name: '1. Ünite: Yerleşme ve Devletleşme Sürecinde Selçuklu Türkiyesi',
         topics: [
-          { id: 't1_1', name: 'Kuruluş Dönemi' },
-          { id: 't1_2', name: 'Beylikten Devlete' },
+          { id: 't1_1', name: '1071 Malazgirt Sonrası Anadolu' },
+          { id: 't1_2', name: 'Anadolu Selçuklu Devleti\'nin Kuruluşu' },
+          { id: 't1_3', name: 'Anadolu Selçuklularında Teşkilat ve Kültür' },
+          { id: 't1_4', name: 'Haçlı Seferleri ve Etkileri' },
+          { id: 't1_5', name: 'Moğol İstilası ve Kösedağ Savaşı' },
         ]
       },
       {
-        id: 'u2', name: 'Ünite 2: Osmanlı Devleti\'nin Yükselme Dönemi',
+        id: 'u2', name: '2. Ünite: Beylikten Devlete Osmanlı Siyaseti (1302-1453)',
         topics: [
-          { id: 't2_1', name: 'Fatih Sultan Mehmet' },
-          { id: 't2_2', name: 'İstanbul\'un Fethi' },
-          { id: 't2_3', name: 'Kanuni Sultan Süleyman' },
+          { id: 't2_1', name: 'Osmanlı Devleti\'nin Kuruluş Macerası' },
+          { id: 't2_2', name: 'Balkanlarda Fetih ve İskan Siyaseti' },
+          { id: 't2_3', name: 'Anadolu\'da Siyasi Birlik Çabaları' },
+          { id: 't2_4', name: 'Ankara Savaşı ve Fetret Devri' },
+        ]
+      },
+      {
+        id: 'u3', name: '3. Ünite: Devletleşme Sürecinde Savaşçılar ve Askerler',
+        topics: [
+          { id: 't3_1', name: 'Tımar Sistemi' },
+          { id: 't3_2', name: 'Yeniçeri Ocağı ve Kapıkulu Askerleri' },
+        ]
+      },
+      {
+        id: 'u4', name: '4. Ünite: Beylikten Devlete Osmanlı Medeniyeti',
+        topics: [
+          { id: 't4_1', name: 'Osmanlı Toplum Yapısı' },
+          { id: 't4_2', name: 'İlim ve İrfan Erbapları' },
+          { id: 't4_3', name: 'Sözlü ve Yazılı Kültür' },
+        ]
+      },
+      {
+        id: 'u5', name: '5. Ünite: Dünya Gücü Osmanlı (1453-1595)',
+        topics: [
+          { id: 't5_1', name: 'İstanbul\'un Fethi' },
+          { id: 't5_2', name: 'Yavuz Sultan Selim ve Mısır Seferi' },
+          { id: 't5_3', name: 'Kanuni Sultan Süleyman Dönemi' },
+          { id: 't5_4', name: 'Akdeniz\'de Hakimiyet' },
+        ]
+      },
+      {
+        id: 'u6', name: '6. Ünite: Sultan ve Osmanlı Merkez Teşkilatı',
+        topics: [
+          { id: 't6_1', name: 'Topkapı Sarayı ve İşlevleri' },
+          { id: 't6_2', name: 'Divan-ı Hümayun' },
+          { id: 't6_3', name: 'Merkezî Otoritenin Güçlendirilmesi' },
+        ]
+      },
+      {
+        id: 'u7', name: '7. Ünite: Klasik Çağda Osmanlı Toplum Düzeni',
+        topics: [
+          { id: 't7_1', name: 'Millet Sistemi' },
+          { id: 't7_2', name: 'Osmanlı Ekonomisinde Lonca Teşkilatı ve Tarım' },
         ]
       },
     ],
     '11. Sınıf': [
       {
-        id: 'u1', name: 'Ünite 1: Osmanlı\'nın Duraklama ve Gerileme Dönemi',
+        id: 'u1', name: '1. Ünite: Değişen Dünya Dengeleri Karşısında Osmanlı Siyaseti (1595-1774)',
         topics: [
-          { id: 't1_1', name: 'Duraklama Dönemi Nedenleri' },
-          { id: 't1_2', name: 'Islahat Hareketleri' },
+          { id: 't1_1', name: 'XVII. Yüzyıl Siyasi Ortamında Osmanlı Devleti' },
+          { id: 't1_2', name: 'Uzun Savaşlardan Diplomasiye' },
+          { id: 't1_3', name: 'Karlofça Antlaşması Sonrası Dış Politika' },
         ]
       },
       {
-        id: 'u2', name: 'Ünite 2: Tanzimat ve Reform Dönemi',
+        id: 'u2', name: '2. Ünite: Değişim Çağında Avrupa ve Osmanlı',
         topics: [
-          { id: 't2_1', name: 'Tanzimat Fermanı' },
-          { id: 't2_2', name: 'Islahat Fermanı' },
-          { id: 't2_3', name: 'Meşrutiyet Dönemi' },
+          { id: 't2_1', name: 'Avrupa\'da Değişim Süreci' },
+          { id: 't2_2', name: 'Osmanlı Sosyo-Ekonomik Yapısında Değişiklikler' },
+          { id: 't2_3', name: 'İsyanlar ve Değişim Çabaları' },
+        ]
+      },
+      {
+        id: 'u3', name: '3. Ünite: Uluslararası İlişkilerde Denge Stratejisi (1774-1914)',
+        topics: [
+          { id: 't3_1', name: 'XIX. Yüzyıl Siyasi Gelişmeleri ve Şark Meselesi' },
+          { id: 't3_2', name: 'Osmanlı Devleti ve Denge Politikası' },
+          { id: 't3_3', name: 'Kırım Savaşı ve Paris Antlaşması' },
+          { id: 't3_4', name: '93 Harbi ve Berlin Antlaşması' },
+        ]
+      },
+      {
+        id: 'u4', name: '4. Ünite: Devrimler Çağında Değişen Devlet-Toplum İlişkileri',
+        topics: [
+          { id: 't4_1', name: 'Sanayi İnkılabı ve Fransız İhtilali\'nin Etkileri' },
+          { id: 't4_2', name: 'Osmanlı Devleti\'nde İdari ve Askeri Islahatlar' },
+          { id: 't4_3', name: 'Tanzimat, Islahat ve Meşrutiyet Dönemleri' },
+        ]
+      },
+      {
+        id: 'u5', name: '5. Ünite: Sermaye ve Emek',
+        topics: [
+          { id: 't5_1', name: 'Kapitalizm ve Klasik Üretimden Endüstriyel Üretime' },
+          { id: 't5_2', name: 'Osmanlı Ekonomisinde Değişimler ve Duyun-ı Umumiye' },
+        ]
+      },
+      {
+        id: 'u6', name: '6. Ünite: XIX. ve XX. Yüzyılda Değişen Gündelik Hayat',
+        topics: [
+          { id: 't6_1', name: 'Ulus Devletleşme ve Modern Ordular' },
+          { id: 't6_2', name: 'Osmanlı Modernleşmesi ve Nüfus Hareketleri' },
+          { id: 't6_3', name: 'Matbuat ve İletişim' },
         ]
       },
     ],
     '12. Sınıf': [
       {
-        id: 'u1', name: 'Ünite 1: Osmanlı\'nın Çöküşü ve Millî Mücadele',
+        id: 'u1', name: '1. Ünite: XX. Yüzyıl Başlarında Osmanlı Devleti ve Dünya',
         topics: [
-          { id: 't1_1', name: 'Birinci Dünya Savaşı' },
-          { id: 't1_2', name: 'Mondros ve Sevr' },
-          { id: 't1_3', name: 'Millî Mücadele\'nin Başlaması' },
+          { id: 't1_1', name: 'XX. Yüzyıl Başlarında Dünya' },
+          { id: 't1_2', name: 'Osmanlı Devleti\'nin Son Dönemi Düşünce Akımları' },
+          { id: 't1_3', name: 'Trablusgarp ve Balkan Savaşları' },
+          { id: 't1_4', name: 'I. Dünya Savaşı' },
         ]
       },
       {
-        id: 'u2', name: 'Ünite 2: Türkiye Cumhuriyeti\'nin Kuruluşu',
+        id: 'u2', name: '2. Ünite: Millî Mücadele',
         topics: [
-          { id: 't2_1', name: 'Lozan Barışı' },
-          { id: 't2_2', name: 'Cumhuriyetin İlanı' },
-          { id: 't2_3', name: 'Atatürk Dönemi Politikaları' },
+          { id: 't2_1', name: 'Mondros Mütarekesi ve Cemiyetler' },
+          { id: 't2_2', name: 'Mustafa Kemal\'in Samsun\'a Çıkışı ve Genelgeler' },
+          { id: 't2_3', name: 'Büyük Millet Meclisinin Açılması ve İsyanlar' },
+          { id: 't2_4', name: 'Sevr Antlaşması' },
+          { id: 't2_5', name: 'Doğu, Güney ve Batı Cepheleri' },
+          { id: 't2_6', name: 'Mudanya ve Lozan Barış Antlaşmaları' },
+        ]
+      },
+      {
+        id: 'u3', name: '3. Ünite: Atatürkçülük ve Türk İnkılabı',
+        topics: [
+          { id: 't3_1', name: 'Atatürk İlkeleri' },
+          { id: 't3_2', name: 'Siyasi Alandaki İnkılaplar' },
+          { id: 't3_3', name: 'Hukuk ve Eğitim Alanındaki İnkılaplar' },
+          { id: 't3_4', name: 'Toplumsal ve Ekonomik Alandaki Gelişmeler' },
+        ]
+      },
+      {
+        id: 'u4', name: '4. Ünite: İki Savaş Arasındaki Dönemde Türkiye ve Dünya',
+        topics: [
+          { id: 't4_1', name: 'Atatürk Dönemi İç ve Dış Politika' },
+          { id: 't4_2', name: 'İki Savaş Arasındaki Dönemde Dünyadaki Siyasi Gelişmeler' },
+        ]
+      },
+      {
+        id: 'u5', name: '5. Ünite: II. Dünya Savaşı Sürecinde Türkiye ve Dünya',
+        topics: [
+          { id: 't5_1', name: 'II. Dünya Savaşı\'nın Başlaması ve Gelişimi' },
+          { id: 't5_2', name: 'Savaş Yıllarında Türkiye' },
+        ]
+      },
+      {
+        id: 'u6', name: '6. Ünite: II. Dünya Savaşı Sonrasında Türkiye ve Dünya',
+        topics: [
+          { id: 't6_1', name: 'Soğuk Savaş Dönemi Başlangıcı' },
+          { id: 't6_2', name: 'Türkiye\'nin Çok Partili Hayata Geçişi' },
+          { id: 't6_3', name: 'Demokrat Parti Dönemi' },
         ]
       },
     ],
@@ -214,19 +460,57 @@ export const DEFAULT_CURRICULUM = {
       {
         id: 'u1', name: 'TYT Tarih Konuları',
         topics: [
-          { id: 't1_1', name: 'Tarih Öncesi ve İlk Çağ' },
-          { id: 't1_2', name: 'Orta Çağ Tarihi' },
-          { id: 't1_3', name: 'Osmanlı Tarihi Temel Konular' },
-          { id: 't1_4', name: 'Millî Mücadele' },
+          { id: 't1_1', name: 'Tarih ve Zaman' },
+          { id: 't1_2', name: 'İnsanlığın İlk Dönemleri' },
+          { id: 't1_3', name: 'Orta Çağ\'da Dünya' },
+          { id: 't1_4', name: 'İlk ve Orta Çağlarda Türk Dünyası' },
+          { id: 't1_5', name: 'İslam Medeniyetinin Doğuşu' },
+          { id: 't1_6', name: 'Türklerin İslamiyet\'i Kabulü ve İlk Türk İslam Devletleri' },
+          { id: 't1_7', name: 'Yerleşme ve Devletleşme Sürecinde Selçuklu Türkiyesi' },
+          { id: 't1_8', name: 'Beylikten Devlete Osmanlı Siyaseti' },
+          { id: 't1_9', name: 'Devletleşme Sürecinde Savaşçılar ve Askerler' },
+          { id: 't1_10', name: 'Beylikten Devlete Osmanlı Medeniyeti' },
+          { id: 't1_11', name: 'Dünya Gücü Osmanlı' },
+          { id: 't1_12', name: 'Sultan ve Osmanlı Merkez Teşkilatı' },
+          { id: 't1_13', name: 'Klasik Çağda Osmanlı Toplum Düzeni' },
+          { id: 't1_14', name: 'Değişen Dünya Dengeleri Karşısında Osmanlı Siyaseti' },
+          { id: 't1_15', name: 'Değişim Çağında Avrupa ve Osmanlı' },
+          { id: 't1_16', name: 'Uluslararası İlişkilerde Denge Stratejisi (1774-1914)' },
+          { id: 't1_17', name: 'Devrimler Çağında Değişen Devlet-Toplum İlişkileri' },
+          { id: 't1_18', name: 'Sermaye ve Emek' },
+          { id: 't1_19', name: 'XIX. ve XX. Yüzyılda Değişen Gündelik Hayat' },
+          { id: 't1_20', name: 'XX. Yüzyıl Başlarında Osmanlı Devleti ve Dünya' },
+          { id: 't1_21', name: 'Millî Mücadele' },
+          { id: 't1_22', name: 'Atatürkçülük ve Türk İnkılabı' },
         ]
       },
     ],
     'Mezun': [
       {
-        id: 'u1', name: 'TYT Tarih Konuları (Tekrar)',
+        id: 'u1', name: 'TYT Tarih Mezun Konuları',
         topics: [
-          { id: 't1_1', name: 'Tüm konuların özeti' },
-          { id: 't1_2', name: 'Soru tipi analizi' },
+          { id: 't1_1', name: 'Tarih ve Zaman' },
+          { id: 't1_2', name: 'İnsanlığın İlk Dönemleri' },
+          { id: 't1_3', name: 'Orta Çağ\'da Dünya' },
+          { id: 't1_4', name: 'İlk ve Orta Çağlarda Türk Dünyası' },
+          { id: 't1_5', name: 'İslam Medeniyetinin Doğuşu' },
+          { id: 't1_6', name: 'Türklerin İslamiyet\'i Kabulü ve İlk Türk İslam Devletleri' },
+          { id: 't1_7', name: 'Yerleşme ve Devletleşme Sürecinde Selçuklu Türkiyesi' },
+          { id: 't1_8', name: 'Beylikten Devlete Osmanlı Siyaseti' },
+          { id: 't1_9', name: 'Devletleşme Sürecinde Savaşçılar ve Askerler' },
+          { id: 't1_10', name: 'Beylikten Devlete Osmanlı Medeniyeti' },
+          { id: 't1_11', name: 'Dünya Gücü Osmanlı' },
+          { id: 't1_12', name: 'Sultan ve Osmanlı Merkez Teşkilatı' },
+          { id: 't1_13', name: 'Klasik Çağda Osmanlı Toplum Düzeni' },
+          { id: 't1_14', name: 'Değişen Dünya Dengeleri Karşısında Osmanlı Siyaseti' },
+          { id: 't1_15', name: 'Değişim Çağında Avrupa ve Osmanlı' },
+          { id: 't1_16', name: 'Uluslararası İlişkilerde Denge Stratejisi (1774-1914)' },
+          { id: 't1_17', name: 'Devrimler Çağında Değişen Devlet-Toplum İlişkileri' },
+          { id: 't1_18', name: 'Sermaye ve Emek' },
+          { id: 't1_19', name: 'XIX. ve XX. Yüzyılda Değişen Gündelik Hayat' },
+          { id: 't1_20', name: 'XX. Yüzyıl Başlarında Osmanlı Devleti ve Dünya' },
+          { id: 't1_21', name: 'Millî Mücadele' },
+          { id: 't1_22', name: 'Atatürkçülük ve Türk İnkılabı' },
         ]
       },
     ],
@@ -236,19 +520,67 @@ export const DEFAULT_CURRICULUM = {
       {
         id: 'u1', name: 'AYT Tarih Konuları',
         topics: [
-          { id: 't1_1', name: 'Osmanlı\'nın Yükselme Dönemi' },
-          { id: 't1_2', name: 'Osmanlı\'da Reform Hareketleri' },
-          { id: 't1_3', name: 'Millî Mücadele Detaylı' },
-          { id: 't1_4', name: 'Cumhuriyet Dönemi' },
+          { id: 't1_1', name: 'Tarih ve Zaman' },
+          { id: 't1_2', name: 'İnsanlığın İlk Dönemleri' },
+          { id: 't1_3', name: 'Orta Çağ\'da Dünya' },
+          { id: 't1_4', name: 'İlk ve Orta Çağlarda Türk Dünyası' },
+          { id: 't1_5', name: 'İslam Medeniyetinin Doğuşu' },
+          { id: 't1_6', name: 'Türklerin İslamiyet\'i Kabulü ve İlk Türk İslam Devletleri' },
+          { id: 't1_7', name: 'Yerleşme ve Devletleşme Sürecinde Selçuklu Türkiyesi' },
+          { id: 't1_8', name: 'Beylikten Devlete Osmanlı Siyaseti' },
+          { id: 't1_9', name: 'Devletleşme Sürecinde Savaşçılar ve Askerler' },
+          { id: 't1_10', name: 'Beylikten Devlete Osmanlı Medeniyeti' },
+          { id: 't1_11', name: 'Dünya Gücü Osmanlı' },
+          { id: 't1_12', name: 'Sultan ve Osmanlı Merkez Teşkilatı' },
+          { id: 't1_13', name: 'Klasik Çağda Osmanlı Toplum Düzeni' },
+          { id: 't1_14', name: 'Değişen Dünya Dengeleri Karşısında Osmanlı Siyaseti' },
+          { id: 't1_15', name: 'Değişim Çağında Avrupa ve Osmanlı' },
+          { id: 't1_16', name: 'Uluslararası İlişkilerde Denge Stratejisi (1774-1914)' },
+          { id: 't1_17', name: 'Devrimler Çağında Değişen Devlet-Toplum İlişkileri' },
+          { id: 't1_18', name: 'Sermaye ve Emek' },
+          { id: 't1_19', name: 'XIX. ve XX. Yüzyılda Değişen Gündelik Hayat' },
+          { id: 't1_20', name: 'XX. Yüzyıl Başlarında Osmanlı Devleti ve Dünya' },
+          { id: 't1_21', name: 'Millî Mücadele' },
+          { id: 't1_22', name: 'Atatürkçülük ve Türk İnkılabı' },
+          { id: 't1_23', name: 'İki Savaş Arasındaki Dönemde Türkiye ve Dünya' },
+          { id: 't1_24', name: 'II. Dünya Savaşı Sürecinde Türkiye ve Dünya' },
+          { id: 't1_25', name: 'II. Dünya Savaşı Sonrasında Türkiye ve Dünya' },
+          { id: 't1_26', name: 'Toplumsal Devrim Çağında Dünya ve Türkiye' },
+          { id: 't1_27', name: 'XXI Yüzyılın Eşiğinde Türkiye ve Dünya' },
         ]
       },
     ],
     'Mezun': [
       {
-        id: 'u1', name: 'AYT Tarih (Pekiştirme)',
+        id: 'u1', name: 'AYT Tarih Mezun Konuları',
         topics: [
-          { id: 't1_1', name: 'Kronoloji ve Bağlantılar' },
-          { id: 't1_2', name: 'Zor Sorular Analizi' },
+          { id: 't1_1', name: 'Tarih ve Zaman' },
+          { id: 't1_2', name: 'İnsanlığın İlk Dönemleri' },
+          { id: 't1_3', name: 'Orta Çağ\'da Dünya' },
+          { id: 't1_4', name: 'İlk ve Orta Çağlarda Türk Dünyası' },
+          { id: 't1_5', name: 'İslam Medeniyetinin Doğuşu' },
+          { id: 't1_6', name: 'Türklerin İslamiyet\'i Kabulü ve İlk Türk İslam Devletleri' },
+          { id: 't1_7', name: 'Yerleşme ve Devletleşme Sürecinde Selçuklu Türkiyesi' },
+          { id: 't1_8', name: 'Beylikten Devlete Osmanlı Siyaseti' },
+          { id: 't1_9', name: 'Devletleşme Sürecinde Savaşçılar ve Askerler' },
+          { id: 't1_10', name: 'Beylikten Devlete Osmanlı Medeniyeti' },
+          { id: 't1_11', name: 'Dünya Gücü Osmanlı' },
+          { id: 't1_12', name: 'Sultan ve Osmanlı Merkez Teşkilatı' },
+          { id: 't1_13', name: 'Klasik Çağda Osmanlı Toplum Düzeni' },
+          { id: 't1_14', name: 'Değişen Dünya Dengeleri Karşısında Osmanlı Siyaseti' },
+          { id: 't1_15', name: 'Değişim Çağında Avrupa ve Osmanlı' },
+          { id: 't1_16', name: 'Uluslararası İlişkilerde Denge Stratejisi (1774-1914)' },
+          { id: 't1_17', name: 'Devrimler Çağında Değişen Devlet-Toplum İlişkileri' },
+          { id: 't1_18', name: 'Sermaye ve Emek' },
+          { id: 't1_19', name: 'XIX. ve XX. Yüzyılda Değişen Gündelik Hayat' },
+          { id: 't1_20', name: 'XX. Yüzyıl Başlarında Osmanlı Devleti ve Dünya' },
+          { id: 't1_21', name: 'Millî Mücadele' },
+          { id: 't1_22', name: 'Atatürkçülük ve Türk İnkılabı' },
+          { id: 't1_23', name: 'İki Savaş Arasındaki Dönemde Türkiye ve Dünya' },
+          { id: 't1_24', name: 'II. Dünya Savaşı Sürecinde Türkiye ve Dünya' },
+          { id: 't1_25', name: 'II. Dünya Savaşı Sonrasında Türkiye ve Dünya' },
+          { id: 't1_26', name: 'Toplumsal Devrim Çağında Dünya ve Türkiye' },
+          { id: 't1_27', name: 'XXI Yüzyılın Eşiğinde Türkiye ve Dünya' },
         ]
       },
     ],
@@ -256,18 +588,19 @@ export const DEFAULT_CURRICULUM = {
   'osmanlıca': {
     'Diğer': [
       {
-        id: 'u1', name: 'Osmanlı Türkçesi Temel',
+        id: 'u1', name: '1. Seviye: Osmanlı Türkçesine Giriş',
         topics: [
-          { id: 't1_1', name: 'Alfabe ve Harfler' },
-          { id: 't1_2', name: 'Kelime Hazinesi' },
-          { id: 't1_3', name: 'Metin Okuma' },
+          { id: 't1_1', name: 'Osmanlı Alfabesi ve Yazılışı' },
+          { id: 't1_2', name: 'Harflerin Birleşimi' },
+          { id: 't1_3', name: 'Okutucu Harfler (Elif, He, Vav, Ye)' },
         ]
       },
       {
-        id: 'u2', name: 'Osmanlı Türkçesi İleri',
+        id: 'u2', name: '2. Seviye: Temel Okuma',
         topics: [
-          { id: 't2_1', name: 'Divan Edebiyatı Metinleri' },
-          { id: 't2_2', name: 'Belgeler ve Fermanlar' },
+          { id: 't2_1', name: 'Türkçe Kelimelerin Yazılışı' },
+          { id: 't2_2', name: 'Arapça ve Farsça Asıllı Kelimeler' },
+          { id: 't2_3', name: 'Gündelik Metinler ve Tabelalar' },
         ]
       },
     ],
@@ -279,6 +612,40 @@ export const ALL_GRADES = [
   '5. Sınıf', '6. Sınıf', '7. Sınıf', '8. Sınıf',
   '9. Sınıf', '10. Sınıf', '11. Sınıf', '12. Sınıf', 'Mezun', 'Diğer'
 ];
+
+// Belirli bir branşa göre aktif edilecek dersleri döndüren yardımcı fonksiyon
+export function getSubjectsForBranches(branches = []) {
+  if (!branches || branches.length === 0) {
+    // Eğer branş seçilmemişse tüm dersleri göster
+    return SUBJECTS.map(s => s.id);
+  }
+
+  const activeSubjects = new Set();
+
+  branches.forEach(branch => {
+    const branchUpper = branch.toUpperCase();
+    if (branchUpper.includes('TARİH') || branchUpper.includes('TARIH')) {
+      if (branchUpper.includes('İNKILAP') || branchUpper.includes('INKILAP')) {
+        activeSubjects.add('inkılap');
+      } else {
+        // Genel Tarih
+        activeSubjects.add('tarih');
+        activeSubjects.add('tyt');
+        activeSubjects.add('ayt');
+        activeSubjects.add('osmanlıca');
+        activeSubjects.add('inkılap'); // Tarihçiler genelde İnkılap da anlatır
+      }
+    }
+    if (branchUpper.includes('SOSYAL BİLGİLER') || branchUpper.includes('SOSYAL BILGILER')) {
+      activeSubjects.add('sosyal');
+      activeSubjects.add('inkılap');
+    }
+    // Buraya diğer branşlar (Matematik, Fizik vb.) eklenebilir. 
+    // Ancak veri yapısı şu an ağırlıklı olarak Tarih/Sosyal üzerine kurulu.
+  });
+
+  return Array.from(activeSubjects);
+}
 
 // Grade → Subject mapping for auto-curriculum assignment
 export const GRADE_TO_SUBJECTS = {

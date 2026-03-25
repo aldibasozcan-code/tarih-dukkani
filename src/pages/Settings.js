@@ -36,21 +36,19 @@ export function renderSettings(navigate) {
 
         <!-- Google Calendar Integration -->
         <div class="card">
-          <h3 style="font-size:15px;font-weight:700;margin-bottom:16px;">Google Takvim Entegrasyonu</h3>
-          <div style="background:rgba(255,159,67,0.08);border:1px solid rgba(255,159,67,0.3);border-radius:10px;padding:16px;margin-bottom:16px;">
+          <h3 style="font-size:15px;font-weight:700;margin-bottom:16px;">Google Takvim Bağlantısı</h3>
+          <div style="background:rgba(5,150,105,0.08);border:1px solid rgba(5,150,105,0.3);border-radius:10px;padding:16px;margin-bottom:16px;">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-              ${icon('alertCircle', 16)}
-              <span style="font-weight:600;color:var(--warning);">Google Calendar API</span>
+              ${icon('calendar', 16)}
+              <span style="font-weight:600;color:var(--brand-green);">Bağımsız Takvim (Iframe)</span>
             </div>
-            <p style="font-size:13px;color:var(--text-muted);">Google Calendar entegrasyonu için OAuth2 yapılandırması gereklidir. Bu özellik yakında aktif edilecek.</p>
+            <p style="font-size:13px;color:var(--text-muted);">
+              Takvim sayfasında kendi Google Takviminizi doğrudan görmek için Takvim ID'nizi buraya yazın. Google Takvim ayarlarından takviminizi <strong>Herkesin erişimine açık</strong> yapmayı unutmayın.
+            </p>
           </div>
           <div class="form-group">
-            <label>Google API Anahtarı</label>
-            <input type="password" id="g-api-key" value="${state.settings.calendarApiKey || ''}" placeholder="AIza... (isteğe bağlı, okuma için)">
-          </div>
-          <div class="form-group">
-            <label>Takvim ID'si</label>
-            <input type="text" id="g-cal-id" value="${state.settings.calendarId || ''}" placeholder="örn: name@gmail.com veya özel ID">
+            <label>Google Takvim ID (Örn: mailiniz@gmail.com)</label>
+            <input type="text" id="g-cal-id" value="${state.settings.calendarId || ''}" placeholder="adınız@gmail.com veya özel takvim ID'si">
           </div>
           <button class="btn btn-primary" id="btn-save-calendar">${icon('check', 14)} Takvim Ayarlarını Kaydet</button>
         </div>
@@ -60,6 +58,9 @@ export function renderSettings(navigate) {
           <h3 style="font-size:15px;font-weight:700;margin-bottom:16px;">Veri Yönetimi</h3>
           <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">Tüm veriler tarayıcı belleğinde (localStorage) tutulmaktadır.</p>
           <div style="display:flex;flex-direction:column;gap:10px;">
+            <button class="btn btn-primary" id="btn-sync-meb">
+              ${icon('refresh', 14)} MEB Müfredatını Yenile (Değişiklikleri Ezer)
+            </button>
             <button class="btn btn-secondary" id="btn-export">
               ${icon('download', 14)} Veriyi Dışa Aktar (JSON)
             </button>
@@ -130,7 +131,6 @@ export function renderSettings(navigate) {
 
       el.querySelector('#btn-save-calendar')?.addEventListener('click', () => {
         updateSettings({
-          calendarApiKey: el.querySelector('#g-api-key').value.trim(),
           calendarId: el.querySelector('#g-cal-id').value.trim(),
         });
         const btn = el.querySelector('#btn-save-calendar');
@@ -140,6 +140,25 @@ export function renderSettings(navigate) {
           btn.innerHTML = `${icon('check', 14)} Takvim Ayarlarını Kaydet`;
           btn.style.background = '';
         }, 2000);
+      });
+
+      el.querySelector('#btn-sync-meb')?.addEventListener('click', async () => {
+        if (confirm('MEB müfredatı varsayılan haline dönecektir. Kendinizin eklediği ünite isimleri vb. üzerine yazılabilir. Emin misiniz?')) {
+          const btn = el.querySelector('#btn-sync-meb');
+          btn.innerHTML = 'Yenileniyor...';
+          btn.disabled = true;
+          const { syncCurriculumWithBranches } = await import('../store/store.js');
+          syncCurriculumWithBranches(getState().profile.branches || [], getState().profile.grades || [], true);
+          setTimeout(() => {
+            btn.innerHTML = `${icon('check', 14)} Yenilendi`;
+            btn.style.background = 'var(--success)';
+            setTimeout(() => {
+              btn.innerHTML = `${icon('refresh', 14)} MEB Müfredatını Yenile`;
+              btn.style.background = '';
+              btn.disabled = false;
+            }, 2000);
+          }, 500);
+        }
       });
 
       el.querySelector('#btn-export')?.addEventListener('click', () => {

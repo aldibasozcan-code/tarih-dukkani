@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════
 // GLOBAL APP STATE - Firebase Firestore backed
 // ═══════════════════════════════════════════════════
-import { DEFAULT_CURRICULUM, GRADE_TO_SUBJECTS, CONTENT_TYPES } from '../data/curriculum.js';
+import { DEFAULT_CURRICULUM, GRADE_TO_SUBJECTS, CONTENT_TYPES, getSubjectsForBranches } from '../data/curriculum.js';
 import { db, auth } from '../lib/firebase.js';
 import { doc, getDoc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { deleteUser } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
@@ -327,7 +327,16 @@ export function deleteGroup(id) {
 
 async function addEventToGoogleCalendar(lesson) {
   const token = localStorage.getItem('_gcal_token');
-  if (!token) return;
+  const state = getState();
+  const calId = state.settings?.calendarId || 'primary';
+  const encodedCalId = encodeURIComponent(calId);
+
+  // Doğrudan yetki yoksa (veya süresi dolduysa) Google Takvim Ekleme sayfasını yeni sekmede aç.
+  if (!token) {
+    const url = generateGoogleCalendarUrl(lesson);
+    window.open(url, '_blank');
+    return;
+  }
 
   const start = new Date(`${lesson.date}T${lesson.startTime}:00`);
   const end = new Date(`${lesson.date}T${lesson.endTime}:00`);
@@ -346,7 +355,7 @@ async function addEventToGoogleCalendar(lesson) {
   };
 
   try {
-    const res = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+    const res = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodedCalId}/events`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -356,14 +365,18 @@ async function addEventToGoogleCalendar(lesson) {
     });
     
     if (!res.ok) {
-      if (res.status === 401 || res.status === 403) {
-         console.warn("Google Calendar Yetki Hatası (Token süresi dolmuş olabilir). Lütfen tekrar giriş yapın.", await res.text());
+      if (res.status === 401 || res.status === 403 || res.status === 404) {
+         console.warn("Google Takvim Yetki Hatası veya Takvim Bulunamadı. Otomatik sekme açılıyor.");
+         const url = generateGoogleCalendarUrl(lesson);
+         window.open(url, '_blank');
       } else {
          console.error("Google Calendar API Error:", await res.text());
       }
     }
   } catch (err) {
     console.error("Google Calendar Fetch Error:", err);
+    const url = generateGoogleCalendarUrl(lesson);
+    window.open(url, '_blank');
   }
 }
 
@@ -514,6 +527,64 @@ export function markAllNotificationsRead() {
 
 export function updateProfile(data) {
   setState(s => ({ profile: { ...s.profile, ...data } }));
+  if (data.branches || data.grades) {
+    syncCurriculumWithBranches(data.branches || getState().profile.branches, data.grades || getState().profile.grades);
+  }
+}
+
+export function syncCurriculumWithBranches(branches, grades, force = false) {
+  const activeSubjects = getSubjectsForBranches(branches);
+  if (!activeSubjects || activeSubjects.length === 0) return;
+  const activeGrades = grades || [];
+
+  setState(s => {
+    let curr = s.curriculum;
+    if (!curr) curr = {};
+    else curr = JSON.parse(JSON.stringify(curr));
+
+    let changed = false;
+
+    // Remove subjects completely if they are no longer in our branches (when force is true)
+    if (force) {
+      Object.keys(curr).forEach(subj => {
+        if (!activeSubjects.includes(subj)) {
+           delete curr[subj];
+           changed = true;
+        }
+      });
+    }
+
+    activeSubjects.forEach(subj => {
+      // 1) Ensure the subject object exists
+      if (!curr[subj]) {
+         curr[subj] = {};
+         changed = true;
+      }
+
+      if (DEFAULT_CURRICULUM[subj]) {
+        // Iterate only through the grades available in the MEB template for this subject
+        Object.keys(DEFAULT_CURRICULUM[subj]).forEach(grade => {
+          // If the teacher has selected this grade in their profile
+          if (activeGrades.includes(grade)) {
+            // Populate if it doesn't exist or if force is true
+            if (force || !curr[subj][grade] || curr[subj][grade].length === 0) {
+                curr[subj][grade] = JSON.parse(JSON.stringify(DEFAULT_CURRICULUM[subj][grade]));
+                changed = true;
+            }
+          } else {
+             // If forcefully resetting and the user doesn't have this grade, clean it up
+             if (force && curr[subj][grade]) {
+                 delete curr[subj][grade];
+                 changed = true;
+             }
+          }
+        });
+      }
+    });
+
+    if (changed) return { curriculum: curr };
+    return {};
+  });
 }
 
 export function updateSettings(data) {

@@ -7,6 +7,39 @@ import { MONTHS_TR, DAYS_SHORT } from '../data/curriculum.js';
 import { getMonthDays, addDays, getLessonStatusInfo } from '../utils/helpers.js';
 
 export function renderCalendar(navigate) {
+  const state = getState();
+  const calId = state?.settings?.calendarId;
+
+  if (calId) {
+    return {
+      html: `
+        <div class="fade-in" style="height: 100%; display: flex; flex-direction: column;">
+          <div class="page-header" style="flex-shrink: 0;">
+            <div>
+              <h2>Takvim</h2>
+              <p>Bağlı Google Takvimi Görüntüleniyor</p>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <button class="btn btn-primary" id="btn-add-lesson">${icon('plus', 14)} Ders Ekle</button>
+              <button class="btn btn-secondary" id="btn-settings-link">${icon('settings', 14)} Ayarlar</button>
+            </div>
+          </div>
+          <div class="card" style="flex: 1; padding: 0; overflow: hidden; display: flex; min-height: calc(100vh - 200px);">
+            <iframe src="https://calendar.google.com/calendar/embed?src=${encodeURIComponent(calId)}&ctz=${Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Istanbul'}&showTitle=0&showPrint=0&showTabs=1&showCalendars=0&showTz=0" style="border: 0; width: 100%; height: 100%;" frameborder="0" scrolling="no"></iframe>
+          </div>
+        </div>
+      `,
+      init: (el, nav) => {
+        el.querySelector('#btn-add-lesson')?.addEventListener('click', () => {
+          import('./modals/AddLessonModal.js').then(m => m.openAddLessonModal(() => nav('calendar')));
+        });
+        el.querySelector('#btn-settings-link')?.addEventListener('click', () => {
+          nav('settings');
+        });
+      }
+    };
+  }
+
   const now = new Date();
   let viewYear = now.getFullYear();
   let viewMonth = now.getMonth();

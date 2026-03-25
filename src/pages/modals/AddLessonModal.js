@@ -2,7 +2,7 @@
 // ADD LESSON MODAL
 // ═════════════════════════════════════════════════
 import { getState, addLesson } from '../../store/store.js';
-import { SUBJECTS, GRADE_TO_SUBJECTS } from '../../data/curriculum.js';
+import { SUBJECTS, GRADE_TO_SUBJECTS, getSubjectsForBranches } from '../../data/curriculum.js';
 import { openModal, closeModal } from '../../components/modal.js';
 import { escHtml } from '../../utils/helpers.js';
 import { icon } from '../../components/icons.js';
@@ -101,7 +101,9 @@ export function openAddLessonModal(onSave, prefill = {}) {
     }
 
     const completedSet = new Set(entity.completedTopics || []);
-    const subjectsForGrade = GRADE_TO_SUBJECTS[entity.grade] || [];
+    const activeSubjects = getSubjectsForBranches(state.profile.branches || []);
+    const allSubjectsForGrade = GRADE_TO_SUBJECTS[entity.grade] || [];
+    const subjectsForGrade = allSubjectsForGrade.filter(s => activeSubjects.includes(s.subject));
     
     let unitHtml = '<option value="" disabled selected hidden>Ünite Seçiniz...</option>';
     let hasUnits = false;
@@ -236,7 +238,7 @@ export function openAddLessonModal(onSave, prefill = {}) {
     const topicId = topicSel.value;
     
     // Fetch descriptive titles
-    const topicText = topicSel.options[topicSel.selectedIndex]?.text.replace('✓ ', '').trim() || '';
+    const topicText = topicSel.options[topicSel.selectedIndex]?.text?.replace('✓ ', '').trim() || '';
 
     const refEntity = type === 'student'
       ? state.students.find(s => s.id === refId)

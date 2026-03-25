@@ -3,13 +3,18 @@
 // ═════════════════════════════════════════════════
 import { getState, addMaterial, deleteMaterial, addUnit, updateUnit, deleteUnit, addTopic, updateTopic, deleteTopic } from '../store/store.js';
 import { icon } from '../components/icons.js';
-import { SUBJECTS, GRADE_TO_SUBJECTS, ALL_GRADES, CONTENT_TYPES } from '../data/curriculum.js';
+import { SUBJECTS, GRADE_TO_SUBJECTS, ALL_GRADES, CONTENT_TYPES, getSubjectsForBranches } from '../data/curriculum.js';
 import { escHtml } from '../utils/helpers.js';
 import { openModal, closeModal } from '../components/modal.js';
 
 export function renderCourses(navigate) {
   const state = getState();
-  const availableGrades = ALL_GRADES.filter(g => GRADE_TO_SUBJECTS[g] && GRADE_TO_SUBJECTS[g].length > 0);
+  const activeSubjectIds = getSubjectsForBranches(state.profile.branches || []);
+  const activeGrades = state.profile.grades || [];
+  const availableGrades = ALL_GRADES.filter(g => {
+    const subjectsInGrade = GRADE_TO_SUBJECTS[g] || [];
+    return activeGrades.includes(g) && subjectsInGrade.some(s => activeSubjectIds.includes(s.subject));
+  });
   let activeGrade = availableGrades[0];
 
   const html = `
@@ -43,7 +48,9 @@ export function renderCourses(navigate) {
 }
 
 function renderCurriculumContent(state, grade) {
-  const subjects = GRADE_TO_SUBJECTS[grade] || [];
+  const activeSubjectIds = getSubjectsForBranches(state.profile.branches || []);
+  const allSubjects = GRADE_TO_SUBJECTS[grade] || [];
+  const subjects = allSubjects.filter(s => activeSubjectIds.includes(s.subject));
   let html = '';
 
   if (subjects.length === 0) {
@@ -166,7 +173,12 @@ function renderCurriculumContent(state, grade) {
 }
 
 function initCourses(el, navigate, state) {
-  const availableGrades = ALL_GRADES.filter(g => GRADE_TO_SUBJECTS[g] && GRADE_TO_SUBJECTS[g].length > 0);
+  const activeSubjectIds = getSubjectsForBranches(state.profile.branches || []);
+  const activeGrades = state.profile.grades || [];
+  const availableGrades = ALL_GRADES.filter(g => {
+    const subjectsInGrade = GRADE_TO_SUBJECTS[g] || [];
+    return activeGrades.includes(g) && subjectsInGrade.some(s => activeSubjectIds.includes(s.subject));
+  });
   let activeGrade = availableGrades[0];
 
   function refresh() {
@@ -193,7 +205,9 @@ function initCourses(el, navigate, state) {
 
   // Global Add Material
   el.querySelector('#btn-add-material')?.addEventListener('click', () => {
-    const defaultSubject = GRADE_TO_SUBJECTS[activeGrade]?.[0]?.subject;
+    const activeSubjects = getSubjectsForBranches(getState().profile.branches || []);
+    const subjList = (GRADE_TO_SUBJECTS[activeGrade] || []).filter(s => activeSubjects.includes(s.subject));
+    const defaultSubject = subjList[0]?.subject;
     openAddMaterialModal(defaultSubject, activeGrade, null, null, navigate, () => refresh());
   });
 
@@ -222,9 +236,7 @@ function openAddMaterialModal(defSubject, defGrade, targetUnitId, targetTopicId,
     <div class="form-group row-group" style="display:flex; gap:16px;">
       <div style="flex:1;">
         <label>Sınıf</label>
-        <select id="mat-grade">
-          ${ALL_GRADES.filter(g => GRADE_TO_SUBJECTS[g]?.length > 0).map(g => `<option value="${g}" ${g === defGrade ? 'selected' : ''}>${g}</option>`).join('')}
-        </select>
+        <select id="mat-grade"></select>
       </div>
       <div style="flex:1;">
         <label>Ders</label>
@@ -293,9 +305,20 @@ function openAddMaterialModal(defSubject, defGrade, targetUnitId, targetTopicId,
     }
   });
 
+  function updateGrades() {
+    const activeSubjects = getSubjectsForBranches(getState().profile.branches || []);
+    const validGrades = ALL_GRADES.filter(g => {
+      const s = GRADE_TO_SUBJECTS[g] || [];
+      return s.some(x => activeSubjects.includes(x.subject));
+    });
+    gradeSel.innerHTML = validGrades.map(g => `<option value="${g}" ${g === defGrade ? 'selected' : ''}>${g}</option>`).join('');
+    updateSubjects();
+  }
+
   function updateSubjects() {
     const gr = gradeSel.value;
-    const subjects = GRADE_TO_SUBJECTS[gr] || [];
+    const activeSubjects = getSubjectsForBranches(getState().profile.branches || []);
+    const subjects = (GRADE_TO_SUBJECTS[gr] || []).filter(s => activeSubjects.includes(s.subject));
     subjSel.innerHTML = subjects.map(s => {
       const sinfo = SUBJECTS.find(x => x.id === s.subject);
       return `<option value="${s.subject}" ${s.subject === defSubject ? 'selected' : ''}>${sinfo?.icon || ''} ${sinfo?.name || s.subject}</option>`;
@@ -331,7 +354,7 @@ function openAddMaterialModal(defSubject, defGrade, targetUnitId, targetTopicId,
   unitSel?.addEventListener('change', updateTopics);
 
   // Init dropdowns
-  updateSubjects();
+  updateGrades();
 
   document.getElementById('mat-cancel')?.addEventListener('click', closeModal);
   document.getElementById('mat-save')?.addEventListener('click', () => {
