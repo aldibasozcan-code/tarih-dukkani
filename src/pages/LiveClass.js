@@ -23,11 +23,14 @@ export function renderLiveClass(navigate) {
         <div>
           <div class="section-title" style="margin-bottom:12px;">
             <h3 style="display:flex;align-items:center;gap:8px;">
-              <span style="color:#1a73e8;">●</span> Google Meet - Bireysel Dersler
+              <span style="color:#1a73e8;">●</span> Jitsi Meet - Bireysel Dersler
             </h3>
           </div>
           ${state.students.length === 0 ? `<div class="empty-state">${icon('video', 32)}<p>Öğrenci yok</p></div>` : ''}
-          ${state.students.map(s => `
+          ${state.students.map(s => {
+            const roomName = `TarihDukkani-${s.id.replace(/[^a-zA-Z0-9]/g, '')}`;
+            const roomUrl = `https://meet.jit.si/${roomName}`;
+            return `
             <div class="card" style="margin-bottom:10px;">
               <div style="display:flex;align-items:center;gap:12px;">
                 <div class="person-avatar" style="background:${getAvatarColor(s.name)};border-radius:10px;">
@@ -38,26 +41,20 @@ export function renderLiveClass(navigate) {
                   <div style="font-size:12px;color:var(--text-muted);">${s.grade}</div>
                 </div>
                 <div style="display:flex;gap:8px;align-items:center;">
-                  ${s.meetLink ? `
-                    <a href="${escHtml(s.meetLink)}" target="_blank" class="btn btn-primary btn-sm">
-                      ${icon('video', 13)} Katıl
-                    </a>
-                    <button class="btn btn-ghost btn-sm btn-icon" data-edit-meet="${s.id}">${icon('edit', 13)}</button>
-                  ` : `
-                    <button class="btn btn-secondary btn-sm" data-edit-meet="${s.id}">${icon('plus', 13)} Link Ekle</button>
-                  `}
-                </div>
-              </div>
-              ${s.meetLink ? `
-                <div style="margin-top:8px;padding:8px;background:rgba(255,255,255,0.03);border-radius:8px;display:flex;align-items:center;gap:8px;">
-                  <span style="font-size:11px;color:var(--text-muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(s.meetLink)}</span>
-                  <button class="btn btn-ghost btn-sm btn-icon" onclick="navigator.clipboard.writeText('${escHtml(s.meetLink)}')">
-                    ${icon('copy', 11)}
+                  <button class="btn btn-primary btn-sm" data-jitsi-meet="${s.id}" data-jitsi-name="${s.name}">
+                    ${icon('video', 13)} Dersi Başlat
                   </button>
                 </div>
-              ` : ''}
+              </div>
+              <div style="margin-top:8px;padding:8px;background:rgba(255,255,255,0.03);border-radius:8px;display:flex;align-items:center;gap:8px;">
+                <span style="font-size:11px;color:var(--text-muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Öğrenci Linki: ${escHtml(roomUrl)}</span>
+                <button class="btn btn-ghost btn-sm btn-icon" onclick="navigator.clipboard.writeText('${escHtml(roomUrl)}')" title="Öğrenci Linkini Kopyala">
+                  ${icon('copy', 11)}
+                </button>
+              </div>
             </div>
-          `).join('')}
+            `;
+          }).join('')}
         </div>
 
         <!-- Groups - Zoom -->
@@ -109,28 +106,24 @@ export function renderLiveClass(navigate) {
   return {
     html,
     init: (el, nav) => {
-      // Edit Meet link
-      el.querySelectorAll('[data-edit-meet]').forEach(btn => {
+      // Jitsi Meet Embedded
+      el.querySelectorAll('[data-jitsi-meet]').forEach(btn => {
         btn.addEventListener('click', () => {
-          const s = getState().students.find(x => x.id === btn.dataset.editMeet);
+          const sId = btn.dataset.jitsiMeet;
+          const sName = btn.dataset.jitsiName;
+          const roomName = `TarihDukkani-${sId.replace(/[^a-zA-Z0-9]/g, '')}`;
           openModal({
-            title: 'Google Meet Linki Güncelle',
+            title: `${escHtml(sName)} - Canlı Ders`,
+            size: 'xl',
             body: `
-              <div class="form-group">
-                <label>Öğrenci: ${escHtml(s?.name)}</label>
-                <input type="url" id="meet-link-input" value="${escHtml(s?.meetLink || '')}" placeholder="https://meet.google.com/...">
+              <div style="height: 75vh; width: 100%; border-radius: 8px; overflow: hidden; background: #000;">
+                <iframe allow="camera; microphone; display-capture; fullscreen; autoplay" 
+                        src="https://meet.jit.si/${roomName}" 
+                        style="width: 100%; height: 100%; border: 0;" 
+                        allowfullscreen="true">
+                </iframe>
               </div>
-            `,
-            footer: `
-              <button class="btn btn-secondary" id="meet-cancel">İptal</button>
-              <button class="btn btn-primary" id="meet-save">Kaydet</button>
-            `,
-          });
-          document.getElementById('meet-cancel')?.addEventListener('click', closeModal);
-          document.getElementById('meet-save')?.addEventListener('click', () => {
-            updateStudent(btn.dataset.editMeet, { meetLink: document.getElementById('meet-link-input').value.trim() });
-            closeModal();
-            nav('liveClass');
+            `
           });
         });
       });
