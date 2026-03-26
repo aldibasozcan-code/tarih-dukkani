@@ -331,38 +331,56 @@ function renderProfileFormContent(p, editMode) {
       <input type="text" id="p-name" value="${p.name}">
     </div>
     <div class="form-group">
-      <label>Ünvan (Örn: Öğretmen, Danışman)</label>
-      <input type="text" id="p-title" value="${p.title}">
+      <label>Ünvan / Branş</label>
+      <select id="p-title" style="height: 44px; width: 100%;">
+        ${ALL_BRANCHES.map(branch => {
+          const optionText = `${branch} Öğretmeni`;
+          const isSelected = p.title === optionText ? 'selected' : '';
+          return `<option value="${branch}" ${isSelected}>${optionText}</option>`;
+        }).join('')}
+        <option value="Öğretmen" ${p.title === 'Öğretmen' ? 'selected' : ''}>Diğer / Sadece Öğretmen</option>
+      </select>
     </div>
     
-    <div class="form-group" style="margin-top: 16px;">
-      <label>Branşlar (Dersler)</label>
-      <div class="multi-select-grid" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(130px, 1fr));gap:12px;margin-bottom:8px;">
-        ${ALL_BRANCHES.map(branch => {
-          const isChecked = p.branches && p.branches.includes(branch) ? 'checked' : '';
-          return `
-          <label class="checkbox-label" style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;">
-            <input type="checkbox" name="p-branches" value="${branch}" ${isChecked} style="width:16px;height:16px;accent-color:var(--brand-green);">
-            <span class="checkbox-custom"></span>
-            ${branch}
-          </label>
-        `}).join('')}
+    <div class="form-group" style="margin-top: 24px; border-top: 1px solid var(--border); padding-top: 20px;">
+      <div class="grid grid-2" style="gap: 32px;">
+        <!-- Branches -->
+        <div class="form-group">
+          <label style="margin-bottom: 12px; display: block; font-size: 14px; font-weight: 700; color: var(--brand-green);">Branşlar / Dersler</label>
+          <div class="selection-list">
+            ${ALL_BRANCHES.map(branch => {
+              const isChecked = p.branches && p.branches.includes(branch) ? 'checked' : '';
+              return `
+              <label class="selection-item">
+                <input type="checkbox" name="p-branches" value="${branch}" ${isChecked}>
+                <div class="selection-box">
+                  <span class="selection-label">${branch}</span>
+                  <div class="selection-check">${icon('check', 14)}</div>
+                </div>
+              </label>
+            `}).join('')}
+          </div>
+        </div>
+        
+        <!-- Grades -->
+        <div class="form-group">
+          <label style="margin-bottom: 12px; display: block; font-size: 14px; font-weight: 700; color: var(--brand-green);">Sınıflar / Seviyeler</label>
+          <div class="selection-list">
+            ${ALL_GRADES.map(grade => {
+              const isChecked = p.grades && p.grades.includes(grade) ? 'checked' : '';
+              return `
+              <label class="selection-item">
+                <input type="checkbox" name="p-grades" value="${grade}" ${isChecked}>
+                <div class="selection-box">
+                  <span class="selection-label">${grade}</span>
+                  <div class="selection-check">${icon('check', 14)}</div>
+                </div>
+              </label>
+            `}).join('')}
+          </div>
+        </div>
       </div>
-    </div>
-
-    <div class="form-group" style="margin-top: 16px;">
-      <label>Sınıflar</label>
-      <div class="multi-select-grid" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(130px, 1fr));gap:12px;margin-bottom:8px;">
-        ${ALL_GRADES.map(grade => {
-          const isChecked = p.grades && p.grades.includes(grade) ? 'checked' : '';
-          return `
-          <label class="checkbox-label" style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;">
-            <input type="checkbox" name="p-grades" value="${grade}" ${isChecked} style="width:16px;height:16px;accent-color:var(--brand-green);">
-            <span class="checkbox-custom"></span>
-            ${grade}
-          </label>
-        `}).join('')}
-      </div>
+      <p style="font-size:11px; color:var(--text-muted); margin-top:8px;">Birden fazla branş ve sınıf işaretleyebilirsiniz.</p>
     </div>
     <div class="form-row">
       <div class="form-group">
@@ -450,14 +468,22 @@ export function renderProfile(navigate) {
             editBtn.innerHTML = `Vazgeç`;
             editBtn.classList.replace('btn-primary', 'btn-secondary');
             
-            // Bind save button since it's now in the DOM
             formContainer.querySelector('#btn-save-profile')?.addEventListener('click', () => {
+              const titleSelect = el.querySelector('#p-title');
+              const titleValue = titleSelect ? titleSelect.options[titleSelect.selectedIndex].text : p.title;
+              const branchKey = titleSelect ? titleSelect.value : '';
+
               const selectedGrades = Array.from(el.querySelectorAll('input[name="p-grades"]:checked')).map(b => b.value);
               const selectedBranches = Array.from(el.querySelectorAll('input[name="p-branches"]:checked')).map(b => b.value);
+              
+              // Unvan değiştiğinde ilgili branşı otomatik ekle (eğer listede yoksa)
+              if (branchKey !== "Öğretmen" && !selectedBranches.includes(branchKey)) {
+                selectedBranches.push(branchKey);
+              }
 
               m.updateProfile({
                 name: el.querySelector('#p-name').value.trim(),
-                title: el.querySelector('#p-title').value.trim(),
+                title: titleValue,
                 grades: selectedGrades,
                 branches: selectedBranches,
                 phone: el.querySelector('#p-phone').value.trim(),
@@ -476,6 +502,15 @@ export function renderProfile(navigate) {
                 isEditing = false;
                 updateView();
               }, 600);
+            });
+
+            // Ünvan değiştiğinde ilgili branşı otomatik işaretle
+            el.querySelector('#p-title')?.addEventListener('change', (e) => {
+              const branchVal = e.target.value;
+              if (branchVal !== "Öğretmen") {
+                const checkbox = el.querySelector(`input[name="p-branches"][value="${branchVal}"]`);
+                if (checkbox) checkbox.checked = true;
+              }
             });
           } else {
             editBtn.innerHTML = `${icon('edit', 14)} Düzenle`;

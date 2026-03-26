@@ -7,7 +7,7 @@ export const ALL_BRANCHES = [
   "Sosyal Bilgiler", "T.C. İnkılap Tarihi ve Atatürkçülük", "Tarih", "Coğrafya", "Felsefe", 
   "Psikoloji", "Sosyoloji", "Mantık", "İngilizce", "Almanca", "Fransızca", "Arapça", 
   "Din Kültürü ve Ahlak Bilgisi", "Bilişim Teknolojileri", "Görsel Sanatlar", "Müzik", 
-  "Beden Eğitimi ve Spor", "Teknoloji ve Tasarım", "Rehberlik", "Diğer"
+  "Beden Eğitimi ve Spor", "Teknoloji ve Tasarım", "Rehberlik", "Osmanlı Türkçesi"
 ];
 
 export const SUBJECTS = [
@@ -25,7 +25,7 @@ export const SUBJECT_GRADES = {
   'tarih':     ['9. Sınıf', '10. Sınıf', '11. Sınıf', '12. Sınıf'],
   'tyt':       ['12. Sınıf', 'Mezun'],
   'ayt':       ['12. Sınıf', 'Mezun'],
-  'osmanlıca': ['Diğer'],
+  'osmanlıca': ['Osmanlı Türkçesi'],
 };
 
 // Content types for each topic
@@ -586,7 +586,7 @@ export const DEFAULT_CURRICULUM = {
     ],
   },
   'osmanlıca': {
-    'Diğer': [
+    'Osmanlı Türkçesi': [
       {
         id: 'u1', name: '1. Seviye: Osmanlı Türkçesine Giriş',
         topics: [
@@ -610,7 +610,7 @@ export const DEFAULT_CURRICULUM = {
 // All possible grade values (for student form dropdown)
 export const ALL_GRADES = [
   '5. Sınıf', '6. Sınıf', '7. Sınıf', '8. Sınıf',
-  '9. Sınıf', '10. Sınıf', '11. Sınıf', '12. Sınıf', 'Mezun', 'Diğer'
+  '9. Sınıf', '10. Sınıf', '11. Sınıf', '12. Sınıf', 'Mezun', 'Osmanlı Türkçesi'
 ];
 
 // Belirli bir branşa göre aktif edilecek dersleri döndüren yardımcı fonksiyon
@@ -665,7 +665,7 @@ export const GRADE_TO_SUBJECTS = {
     { subject: 'tyt', grade: 'Mezun' },
     { subject: 'ayt', grade: 'Mezun' },
   ],
-  'Diğer':     [{ subject: 'osmanlıca', grade: 'Diğer' }],
+  'Osmanlı Türkçesi': [{ subject: 'osmanlıca', grade: 'Osmanlı Türkçesi' }],
 };
 
 export const DAYS_TR = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];

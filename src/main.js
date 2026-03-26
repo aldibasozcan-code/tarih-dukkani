@@ -111,6 +111,21 @@ async function init() {
 
   app.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100vh;"><div class="spinner"></div></div>';
 
+  // Redirect sonucunu yakala (Google Takvim tokenı için gerekli)
+  try {
+    const { getRedirectResult, GoogleAuthProvider } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js");
+    const { auth } = await import("./lib/firebase.js");
+    const result = await getRedirectResult(auth);
+    if (result) {
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      if (credential?.accessToken) {
+        localStorage.setItem('_gcal_token', credential.accessToken);
+      }
+    }
+  } catch (err) {
+    console.error("Redirect handler error:", err);
+  }
+
   subscribeToAuth(async (user) => {
     if (user) {
       if (!_appInitialized) {

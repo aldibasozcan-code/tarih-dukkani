@@ -214,7 +214,7 @@ function _getSubjectForGrade(grade) {
     '5. Sınıf': 'sosyal', '6. Sınıf': 'sosyal', '7. Sınıf': 'sosyal',
     '8. Sınıf': 'inkılap',
     '9. Sınıf': 'tarih', '10. Sınıf': 'tarih', '11. Sınıf': 'tarih', '12. Sınıf': 'tarih',
-    'Mezun': 'ayt', 'Diğer': 'osmanlıca',
+    'Mezun': 'ayt', 'Osmanlı Türkçesi': 'osmanlıca',
   };
   return mapping[grade] || 'tarih';
 }

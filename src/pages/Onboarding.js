@@ -33,37 +33,45 @@ export function renderOnboarding() {
                 <input type="tel" id="ob-phone" placeholder="0555 123 4567" />
               </div>
               <div class="form-group" style="margin: 0;">
-                <label for="ob-title">Unvan (Sıfat)</label>
-                <input type="text" id="ob-title" placeholder="Örn: Uzman Öğretmen" />
+                <label for="ob-title">Unvan / Branş</label>
+                <select id="ob-title" style="height: 48px; width: 100%;">
+                  <option value="" disabled selected>Branş Seçin...</option>
+                  ${ALL_BRANCHES.map(branch => `<option value="${branch}">${branch} Öğretmeni</option>`).join('')}
+                  <option value="Öğretmen">Diğer / Sadece Öğretmen</option>
+                </select>
               </div>
             </div>
 
-            <!-- 2 Column Lists Row -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px;">
+            <!-- 2 Column Selection Lists -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px; max-width: 800px; margin: 0 auto;">
               
-              <!-- Branches -->
+              <!-- Branches (Selection List) -->
               <div class="form-group" style="margin: 0;">
-                <label style="margin-bottom: 12px; display: block; font-size: 14px; font-weight: 700; color: var(--brand-green);">Branşlar (Dersler)</label>
-                <div class="multi-select-grid">
+                <label style="margin-bottom: 12px; display: block; font-size: 14px; font-weight: 700; color: var(--brand-green);">Branşlar / Dersler (Seçim Listesi)</label>
+                <div class="selection-list" style="display: flex; flex-direction: column; gap: 8px;">
                   ${ALL_BRANCHES.map(branch => `
-                    <label class="checkbox-label">
+                    <label class="selection-item">
                       <input type="checkbox" name="branches" value="${branch}">
-                      <span class="checkbox-custom"></span>
-                      ${branch}
+                      <div class="selection-box">
+                        <span class="selection-label">${branch}</span>
+                        <div class="selection-check">${icon('check', 14)}</div>
+                      </div>
                     </label>
                   `).join('')}
                 </div>
               </div>
 
-              <!-- Grades -->
+              <!-- Grades (Selection List) -->
               <div class="form-group" style="margin: 0;">
-                <label style="margin-bottom: 12px; display: block; font-size: 14px; font-weight: 700; color: var(--brand-green);">Sınıflar (Seviyeler)</label>
-                <div class="multi-select-grid">
+                <label style="margin-bottom: 12px; display: block; font-size: 14px; font-weight: 700; color: var(--brand-green);">Sınıflar / Seviyeler (Seçim Listesi)</label>
+                <div class="selection-list" style="display: flex; flex-direction: column; gap: 8px;">
                   ${ALL_GRADES.map(grade => `
-                    <label class="checkbox-label">
+                    <label class="selection-item">
                       <input type="checkbox" name="grades" value="${grade}">
-                      <span class="checkbox-custom"></span>
-                      ${grade}
+                      <div class="selection-box">
+                        <span class="selection-label">${grade}</span>
+                        <div class="selection-check">${icon('check', 14)}</div>
+                      </div>
                     </label>
                   `).join('')}
                 </div>
@@ -116,55 +124,7 @@ export function renderOnboarding() {
         transform: translateY(0);
         animation: floatUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
       }
-      .multi-select-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-        gap: 12px;
-        margin-bottom: 8px;
-      }
-      .checkbox-label {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--text-primary);
-        cursor: pointer;
-        padding: 8px 12px;
-        border: 1px solid var(--border);
-        border-radius: var(--radius-sm);
-        transition: var(--transition);
-        background: #fff;
-      }
-      .checkbox-label:hover {
-        border-color: var(--brand-green-light);
-        background: var(--brand-green-soft);
-      }
-      .checkbox-label input:checked + .checkbox-custom + span {
-        color: var(--brand-green);
-      }
-      .checkbox-label:has(input:checked) {
-        border-color: var(--brand-green);
-        background: var(--brand-green-soft);
-        box-shadow: inset 0 0 0 1px var(--brand-green);
-      }
-      .checkbox-label input {
-        width: 16px;
-        height: 16px;
-        accent-color: var(--brand-green);
-        cursor: pointer;
-      }
-      /* Hızlı Kaydırma Çubuğu Stili */
-      .onboarding-body::-webkit-scrollbar {
-        width: 8px;
-      }
-      .onboarding-body::-webkit-scrollbar-track {
-        background: rgba(0,0,0,0.02);
-      }
-      .onboarding-body::-webkit-scrollbar-thumb {
-        background: rgba(0,0,0,0.15);
-        border-radius: 10px;
-      }
+
 
       @media (max-width: 768px) {
         .onboarding-header {
@@ -177,15 +137,9 @@ export function renderOnboarding() {
           padding: 16px 24px !important;
         }
         /* Grid çökmelerini engelle */
-        .onboarding-body > div[style*="grid-template-columns: repeat(3"] {
-          grid-template-columns: 1fr !important;
-        }
-        .onboarding-body > div[style*="grid-template-columns: 1fr 1fr"] {
+        .onboarding-body > div[style*="max-width: 800px"] {
           grid-template-columns: 1fr !important;
           gap: 24px !important;
-        }
-        .multi-select-grid {
-          grid-template-columns: repeat(2, 1fr) !important;
         }
       }
     </style>
@@ -202,10 +156,12 @@ export function initOnboarding(container, onComplete) {
     // Gerekli değerleri topla
     const name = form.querySelector('#ob-name').value.trim();
     const phone = form.querySelector('#ob-phone').value.trim();
-    const title = form.querySelector('#ob-title').value.trim();
+    const titleSelect = form.querySelector('#ob-title');
+    const titleValue = titleSelect.options[titleSelect.selectedIndex].text;
+    const branchValue = titleSelect.value;
     
-    if (!name || !phone || !title) {
-      alert('Lütfen Ad Soyad, Telefon ve Unvan alanlarını eksiksiz doldurun.');
+    if (!name || !phone || !branchValue) {
+      alert('Lütfen Ad Soyad, Telefon ve Branş/Unvan alanlarını eksiksiz doldurun.');
       return;
     }
     
@@ -213,7 +169,12 @@ export function initOnboarding(container, onComplete) {
     const selectedGrades = Array.from(gradesBoxes).map(b => b.value);
     
     const branchBoxes = form.querySelectorAll('input[name="branches"]:checked');
-    const selectedBranches = Array.from(branchBoxes).map(b => b.value);
+    let selectedBranches = Array.from(branchBoxes).map(b => b.value);
+    
+    // Unvan seçimi ile seçilen ana branşı listeye ekle (yoksa)
+    if (branchValue !== "Öğretmen" && !selectedBranches.includes(branchValue)) {
+      selectedBranches.push(branchValue);
+    }
     
     // UI Feedback
     btn.innerHTML = '<div class="spinner" style="width:20px;height:20px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:8px;"></div> Hazırlanıyor...';
@@ -223,7 +184,7 @@ export function initOnboarding(container, onComplete) {
     const profileData = {
       name,
       phone,
-      title: title || 'Öğretmen',
+      title: titleValue,
       grades: selectedGrades,
       branches: selectedBranches,
       // Seçilmeyen diğer alanlar daha sonra Settings sayfasından doldurulabilir
@@ -237,6 +198,15 @@ export function initOnboarding(container, onComplete) {
     // Callback ile main.js veya render Layout sürecine haber ver
     if (typeof onComplete === 'function') {
       onComplete(profileData);
+    }
+  });
+
+  // Ünvan değiştiğinde ilgili branşı otomatik işaretle
+  form.querySelector('#ob-title')?.addEventListener('change', (e) => {
+    const branchVal = e.target.value;
+    if (branchVal !== "Öğretmen") {
+      const checkbox = form.querySelector(`input[name="branches"][value="${branchVal}"]`);
+      if (checkbox) checkbox.checked = true;
     }
   });
 }
