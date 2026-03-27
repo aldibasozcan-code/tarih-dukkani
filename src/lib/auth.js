@@ -21,7 +21,6 @@ export const loginUser = async (email, password) => {
 // Google ile giriş
 export const loginWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
-    provider.addScope('https://www.googleapis.com/auth/calendar.events');
     
     try {
         // Pop-up bazen domain/cookie engellerine takılabiliyor, Redirect daha garantidir.
