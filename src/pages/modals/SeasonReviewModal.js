@@ -1,7 +1,7 @@
-import { getState, setState, updateStudent, updateGroup, updateSettings } from '../store/store.js';
-import { icon } from '../components/icons.js';
-import { openModal, closeModal } from '../components/modal.js';
-import { escHtml } from '../utils/helpers.js';
+import { getState, setState, updateStudent, updateGroup, updateSettings } from '../../store/store.js';
+import { icon } from '../../components/icons.js';
+import { openModal, closeModal } from '../../components/modal.js';
+import { escHtml } from '../../utils/helpers.js';
 
 export function openSeasonReviewModal() {
   const state = getState();
