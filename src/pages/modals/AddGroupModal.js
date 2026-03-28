@@ -45,9 +45,18 @@ export function openAddGroupModal(onSave, editId = null) {
         <label>Ders Süresi (dakika)</label>
         <input type="number" id="g-duration" value="${group?.duration || 60}" min="30" step="30">
       </div>
-      <div class="form-group">
-        <label>Zoom Linki (opsiyonel)</label>
-        <input type="url" id="g-zoom" value="${escHtml(group?.zoomLink || '')}" placeholder="https://zoom.us/j/...">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Zoom Linki (opsiyonel)</label>
+          <input type="url" id="g-zoom" value="${escHtml(group?.zoomLink || '')}" placeholder="https://zoom.us/j/...">
+        </div>
+        <div class="form-group">
+          <label>Durum</label>
+          <select id="g-status">
+            <option value="active" ${group?.status === 'active' ? 'selected' : ''}>Aktif</option>
+            <option value="passive" ${group?.status === 'passive' ? 'selected' : ''}>Pasif</option>
+          </select>
+        </div>
       </div>
       <div class="form-group">
         <label>Notlar</label>
@@ -76,6 +85,7 @@ export function openAddGroupModal(onSave, editId = null) {
       rate: parseFloat(document.getElementById('g-rate').value) || 300,
       zoomLink: document.getElementById('g-zoom').value.trim(),
       notes: document.getElementById('g-notes').value.trim(),
+      status: document.getElementById('g-status').value,
     };
 
     if (group) {

@@ -49,9 +49,16 @@ export function openAddStudentModal(onSave, editId = null) {
           <input type="number" id="s-rate" value="${student?.rate || 500}" min="0" step="50">
         </div>
         <div class="form-group">
-          <label>Google Meet Linki</label>
-          <input type="url" id="s-meet" value="${escHtml(student?.meetLink || '')}" placeholder="https://meet.google.com/...">
+          <label>Durum</label>
+          <select id="s-status">
+            <option value="active" ${student?.status === 'active' ? 'selected' : ''}>Aktif</option>
+            <option value="passive" ${student?.status === 'passive' ? 'selected' : ''}>Pasif</option>
+          </select>
         </div>
+      </div>
+      <div class="form-group">
+        <label>Google Meet Linki</label>
+        <input type="url" id="s-meet" value="${escHtml(student?.meetLink || '')}" placeholder="https://meet.google.com/...">
       </div>
       <div class="form-group">
         <label>Notlar</label>
@@ -81,6 +88,7 @@ export function openAddStudentModal(onSave, editId = null) {
       rate: parseFloat(document.getElementById('s-rate').value) || 500,
       meetLink: document.getElementById('s-meet').value.trim(),
       notes: document.getElementById('s-notes').value.trim(),
+      status: document.getElementById('s-status').value,
     };
 
     if (student) {

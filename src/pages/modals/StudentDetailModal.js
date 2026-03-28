@@ -5,20 +5,58 @@ import { getState } from '../../store/store.js';
 import { icon } from '../../components/icons.js';
 import { openModal, closeModal } from '../../components/modal.js';
 import { escHtml, getAvatarColor, getInitials, formatCurrency } from '../../utils/helpers.js';
-import { DEFAULT_CURRICULUM, GRADE_TO_SUBJECTS, CONTENT_TYPES } from '../../data/curriculum.js';
+import { ALL_GRADES, SUBJECTS, getSubjectsForBranches, CONTENT_TYPES } from '../../data/curriculum.js';
 
 export function openStudentDetail(studentId, navigate) {
   const state = getState();
   const student = state.students.find(s => s.id === studentId);
   if (!student) return;
 
-  const subjects = GRADE_TO_SUBJECTS[student.grade] || [];
+  const activeSubjects = getSubjectsForBranches(state.profile.branches || []);
+  const subjects = (student.curriculum && student.curriculum.length > 0)
+    ? student.curriculum
+    : activeSubjects.map(s => ({ subject: s, grade: student.grade }));
 
   openModal({
     title: '',
     size: 'xl',
     body: buildDetailBody(student, subjects, state),
   });
+  // After modal opens, init toggles
+  setTimeout(() => {
+    // Edit Student
+    const editBtn = document.getElementById('btn-edit-student-detail');
+    if (editBtn) {
+      editBtn.addEventListener('click', () => {
+        import('./AddStudentModal.js').then(m => {
+          closeModal();
+          m.openAddStudentModal(() => {
+            if (navigate) navigate('students');
+          }, studentId);
+        });
+      });
+    }
+
+    document.querySelectorAll('[data-toggle-topic]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const topicId = btn.dataset.toggleTopic;
+        const sId = btn.dataset.studentId;
+        import('../../store/store.js').then(store => {
+          const s = store.getState().students.find(x => x.id === sId);
+          if (!s) return;
+          const completed = s.completedTopics || [];
+          const newCompleted = completed.includes(topicId)
+            ? completed.filter(id => id !== topicId)
+            : [...completed, topicId];
+          store.updateStudent(sId, { completedTopics: newCompleted });
+          // Refresh button locally
+          btn.style.background = newCompleted.includes(topicId) ? 'var(--success)' : 'rgba(255,255,255,0.05)';
+          btn.style.borderColor = newCompleted.includes(topicId) ? 'var(--success)' : 'var(--border)';
+          btn.innerHTML = newCompleted.includes(topicId) ? icon('check', 12) : '';
+        });
+      });
+    });
+  }, 100);
 }
 
 function buildDetailBody(student, subjects, state) {
@@ -31,7 +69,7 @@ function buildDetailBody(student, subjects, state) {
   let totalTopics = 0;
   let totalCompletedTopics = 0;
   subjects.forEach(({ subject, grade }) => {
-    const units = DEFAULT_CURRICULUM[subject]?.[grade] || [];
+    const units = state.curriculum[subject]?.[grade] || [];
     units.forEach(u => {
       totalTopics += u.topics.length;
       totalCompletedTopics += u.topics.filter(t => completedSet.has(t.id)).length;
@@ -49,10 +87,12 @@ function buildDetailBody(student, subjects, state) {
       </div>
       <div style="flex:1;">
         <h2 style="font-size:20px;font-weight:800;">${escHtml(student.name)}</h2>
-        <div style="display:flex;gap:10px;margin-top:4px;flex-wrap:wrap;">
+        <div style="display:flex;gap:10px;margin-top:4px;flex-wrap:wrap;align-items:center;">
           <span class="badge badge-info">${student.grade}</span>
           <span class="badge badge-muted">${formatCurrency(student.rate)}/saat</span>
+          <span class="badge ${student.status === 'passive' ? 'badge-danger' : 'badge-success'}">${student.status === 'passive' ? 'PASİF' : 'AKTİF'}</span>
           ${student.meetLink ? `<a href="${escHtml(student.meetLink)}" target="_blank" class="badge badge-success" style="text-decoration:none;">🎥 Google Meet</a>` : ''}
+          <button class="btn btn-ghost btn-sm" id="btn-edit-student-detail" style="padding:2px 8px; font-size:11px; margin-left:auto;">${icon('edit', 12)} Profili Düzenle</button>
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;text-align:right;">
@@ -84,13 +124,17 @@ function buildDetailBody(student, subjects, state) {
     <!-- Subject Progress Details -->
     <div class="grid grid-2" style="margin-bottom:20px;">
       ${subjects.map(({ subject, grade }) => {
-        const units = DEFAULT_CURRICULUM[subject]?.[grade] || [];
+        const units = state.curriculum[subject]?.[grade] || [];
         const allTopics = units.flatMap(u => u.topics);
         const completed = allTopics.filter(t => completedSet.has(t.id)).length;
         const pct = allTopics.length > 0 ? Math.round((completed / allTopics.length) * 100) : 0;
+        
+        let sinfo = SUBJECTS.find(s => s.id === subject);
+        if (!sinfo) sinfo = { name: subject.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '), icon: '📚' };
+
         return `
           <div class="card card-sm">
-            <div style="font-size:12px;font-weight:600;margin-bottom:8px;color:var(--accent);">${grade}</div>
+            <div style="font-size:12px;font-weight:600;margin-bottom:8px;color:var(--accent);">${sinfo.icon} ${sinfo.name} (${grade})</div>
             <div class="progress-bar" style="margin-bottom:6px;">
               <div class="progress-fill" style="width:${pct}%;background:linear-gradient(90deg,var(--accent),var(--accent2));"></div>
             </div>
@@ -102,11 +146,13 @@ function buildDetailBody(student, subjects, state) {
 
     <!-- Curriculum Detail -->
     ${subjects.map(({ subject, grade }) => {
-      const units = DEFAULT_CURRICULUM[subject]?.[grade] || [];
+      const units = state.curriculum[subject]?.[grade] || [];
+      let sinfo = SUBJECTS.find(s => s.id === subject);
+      if (!sinfo) sinfo = { name: subject.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '), icon: '📚' };
       const materials = Object.values(state.materials).filter(m => m.subject === subject && m.grade === grade);
 
       return `
-        <h3 style="font-size:14px;font-weight:700;color:var(--accent);margin:16px 0 10px;">${grade} Müfredatı</h3>
+        <h3 style="font-size:14px;font-weight:700;color:var(--accent);margin:16px 0 10px;">${sinfo.icon} ${sinfo.name} (${grade}) Müfredatı</h3>
         ${units.map(unit => `
           <div class="card card-sm" style="margin-bottom:10px;">
             <div style="font-weight:700;font-size:13px;margin-bottom:10px;color:var(--text-secondary);">${escHtml(unit.name)}</div>
@@ -159,26 +205,3 @@ function buildDetailBody(student, subjects, state) {
     ` : ''}
   `;
 }
-
-// After modal opens, init topic toggles
-setTimeout(() => {
-  document.querySelectorAll('[data-toggle-topic]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const topicId = btn.dataset.toggleTopic;
-      const studentId = btn.dataset.studentId;
-      import('../../store/store.js').then(m => {
-        const s = m.getState().students.find(x => x.id === studentId);
-        if (!s) return;
-        const completed = s.completedTopics || [];
-        const newCompleted = completed.includes(topicId)
-          ? completed.filter(id => id !== topicId)
-          : [...completed, topicId];
-        m.updateStudent(studentId, { completedTopics: newCompleted });
-        // Refresh button
-        btn.style.background = newCompleted.includes(topicId) ? 'var(--success)' : 'rgba(255,255,255,0.05)';
-        btn.style.borderColor = newCompleted.includes(topicId) ? 'var(--success)' : 'var(--border)';
-        btn.innerHTML = newCompleted.includes(topicId) ? icon('check', 12) : '';
-      });
-    });
-  });
-}, 100);

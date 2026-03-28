@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════
 // GLOBAL APP STATE - Firebase Firestore backed
 // ═══════════════════════════════════════════════════
-import { DEFAULT_CURRICULUM, GRADE_TO_SUBJECTS, CONTENT_TYPES, getSubjectsForBranches } from '../data/curriculum.js';
+import { DEFAULT_CURRICULUM, CONTENT_TYPES, getSubjectsForBranches, SUBJECT_GRADES } from '../data/curriculum.js';
 import { db, auth } from '../lib/firebase.js';
 import { doc, getDoc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { deleteUser } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
@@ -61,11 +61,15 @@ function createDefaultState() {
       grades: [],
       branches: [],
     },
+    showSeasonReview: false,
     settings: {
       appName: 'Öğretmen Paneli',
       logo: null,
+      brandColor: '#004526',
+      footerText: 'v1.0 • Öğretmen Paneli',
       calendarId: '',
       calendarApiKey: '',
+      lastSeasonPromptYear: 0,
     },
     notifications: [
       { id: 'n_welcome', type: 'success', text: 'Sisteme hoş geldiniz! Uygulamayı kendi derslerinize göre şekillendirebilirsiniz.', time: new Date().toISOString(), read: false, link: 'dashboard' }
@@ -138,6 +142,21 @@ export async function initStore() {
       // First time on Firebase: upload the default state
       await setDoc(docRef, _state);
     }
+    
+    // 4. Migration: Ensure all students/groups have a status
+    let migrationNeeded = false;
+    _state.students = _state.students.map(s => {
+      if (!s.status) { s.status = 'active'; migrationNeeded = true; }
+      return s;
+    });
+    _state.groups = _state.groups.map(g => {
+      if (!g.status) { g.status = 'active'; migrationNeeded = true; }
+      return g;
+    });
+    if (migrationNeeded) await setDoc(docRef, _state);
+
+    // 5. Check Season Renewal
+    checkSeasonRenewal();
 
     // 3. Listen for changes from other devices/tabs
     onSnapshot(docRef, (docSnap) => {
@@ -193,7 +212,7 @@ function _generateGroupLessons() {
         startTime: group.time,
         endTime: _addMinutes(group.time, group.duration || 60),
         status: d < today ? 'completed' : 'upcoming',
-        subject: _getSubjectForGrade(group.grade),
+        subject: _getSubjectForGrade(group.grade, getState().profile.branches || []),
         grade: group.grade,
         unitId: null,
         topicId: null,
@@ -209,14 +228,9 @@ function _generateStudentLessons() {
   // No auto-generation for individual students (flexible scheduling)
 }
 
-function _getSubjectForGrade(grade) {
-  const mapping = {
-    '5. Sınıf': 'sosyal', '6. Sınıf': 'sosyal', '7. Sınıf': 'sosyal',
-    '8. Sınıf': 'inkılap',
-    '9. Sınıf': 'tarih', '10. Sınıf': 'tarih', '11. Sınıf': 'tarih', '12. Sınıf': 'tarih',
-    'Mezun': 'ayt', 'Osmanlı Türkçesi': 'osmanlıca',
-  };
-  return mapping[grade] || 'tarih';
+function _getSubjectForGrade(grade, branches = []) {
+  const activeSubjectIds = getSubjectsForBranches(branches);
+  return activeSubjectIds[0] || 'tarih';
 }
 
 function _addMinutes(timeStr, minutes) {
@@ -244,39 +258,80 @@ function subscribe(fn) {
 
 export function addStudent(data) {
   const id = generateId();
-  // Auto-assign curriculum from grade
-  const stateCurriculum = getState().curriculum || {};
-  const subjects = GRADE_TO_SUBJECTS[data.grade] || [];
-  const curriculum = subjects.map(({ subject, grade }) => ({
-    subject,
-    grade,
-    units: stateCurriculum[subject]?.[grade] || [],
-  }));
-  const student = { id, ...data, curriculum, completedTopics: [], homework: [] };
+  const state = getState();
+  const activeSubjects = getSubjectsForBranches(state.profile.branches || []);
+  
+  // Auto-assign curriculum from teacher's active branches matching student's grade
+  const curriculum = activeSubjects.map(subj => ({
+    subject: subj,
+    grade: data.grade,
+    units: state.curriculum[subj]?.[data.grade] || []
+  })).filter(c => c.units.length > 0);
+
+  const student = { id, ...data, status: 'active', curriculum, completedTopics: [], homework: [] };
   setState(s => ({ students: [...s.students, student] }));
   return student;
 }
 
 export function updateStudent(id, data) {
-  setState(s => ({
-    students: s.students.map(st => st.id === id ? { ...st, ...data } : st)
-  }));
+  setState(s => {
+    const students = s.students.map(st => {
+      if (st.id === id) {
+        let updated = { ...st, ...data };
+        // If grade changed, recalculate curriculum
+        if (data.grade && data.grade !== st.grade) {
+          const activeSubjects = getSubjectsForBranches(s.profile.branches || []);
+          updated.curriculum = activeSubjects.map(subj => ({
+            subject: subj,
+            grade: data.grade,
+            units: s.curriculum[subj]?.[data.grade] || []
+          })).filter(c => c.units.length > 0);
+        }
+        return updated;
+      }
+      return st;
+    });
+
+    let lessons = s.lessons;
+    if (data.status) {
+      lessons = s.lessons.map(l => {
+        if (l.type === 'student' && l.refId === id) {
+          if (data.status === 'passive' && l.status === 'upcoming') return { ...l, status: 'passive' };
+          if (data.status === 'active' && l.status === 'passive') return { ...l, status: 'upcoming' };
+        }
+        return l;
+      });
+    }
+
+    return { students, lessons };
+  });
 }
 
 export function deleteStudent(id) {
-  setState(s => ({ students: s.students.filter(st => st.id !== id) }));
+  const state = getState();
+  const student = state.students.find(s => s.id === id);
+  if (!student) return;
+
+  if ((student.status || 'active') === 'active') {
+    updateStudent(id, { status: 'passive' });
+  } else {
+    // Permanent delete
+    setState(s => ({ students: s.students.filter(st => st.id !== id) }));
+  }
 }
 
 export function addGroup(data) {
   const id = generateId();
-  const stateCurriculum = getState().curriculum || {};
-  const subjects = GRADE_TO_SUBJECTS[data.grade] || [];
-  const curriculum = subjects.map(({ subject, grade }) => ({
-    subject,
-    grade,
-    units: stateCurriculum[subject]?.[grade] || [],
-  }));
-  const group = { id, ...data, curriculum, completedTopics: [], zoomLink: data.zoomLink || '' };
+  const state = getState();
+  const activeSubjects = getSubjectsForBranches(state.profile.branches || []);
+
+  const curriculum = activeSubjects.map(subj => ({
+    subject: subj,
+    grade: data.grade,
+    units: state.curriculum[subj]?.[data.grade] || []
+  })).filter(c => c.units.length > 0);
+
+  const group = { id, ...data, status: 'active', curriculum, completedTopics: [], zoomLink: data.zoomLink || '' };
   setState(s => ({ groups: [...s.groups, group] }));
   // Auto-generate lessons for 52 weeks
   _generateGroupLessonsForGroup(group);
@@ -300,7 +355,7 @@ function _generateGroupLessonsForGroup(group) {
       startTime: group.time,
       endTime: _addMinutes(group.time, group.duration || 60),
       status: 'upcoming',
-      subject: _getSubjectForGrade(group.grade),
+      subject: _getSubjectForGrade(group.grade, getState().profile.branches || []),
       grade: group.grade,
       unitId: null,
       topicId: null,
@@ -313,16 +368,68 @@ function _generateGroupLessonsForGroup(group) {
 }
 
 export function updateGroup(id, data) {
-  setState(s => ({
-    groups: s.groups.map(g => g.id === id ? { ...g, ...data } : g)
-  }));
+  setState(s => {
+    let gradeChanged = false;
+    const groups = s.groups.map(g => {
+      if (g.id === id) {
+        let updated = { ...g, ...data };
+        if (data.grade && data.grade !== g.grade) {
+          gradeChanged = true;
+          const activeSubjects = getSubjectsForBranches(s.profile.branches || []);
+          updated.curriculum = activeSubjects.map(subj => ({
+            subject: subj,
+            grade: data.grade,
+            units: s.curriculum[subj]?.[data.grade] || []
+          })).filter(c => c.units.length > 0);
+        }
+        return updated;
+      }
+      return g;
+    });
+
+    let lessons = s.lessons;
+    if (gradeChanged) {
+      // Update grade/subject for upcoming group lessons
+      lessons = s.lessons.map(l => {
+        if (l.type === 'group' && l.refId === id && l.status === 'upcoming') {
+          return { 
+            ...l, 
+            grade: data.grade,
+            subject: _getSubjectForGrade(data.grade, s.profile.branches || []) 
+          };
+        }
+        return l;
+      });
+    }
+
+    if (data.status) {
+      lessons = lessons.map(l => {
+        if (l.type === 'group' && l.refId === id) {
+          if (data.status === 'passive' && l.status === 'upcoming') return { ...l, status: 'passive' };
+          if (data.status === 'active' && l.status === 'passive') return { ...l, status: 'upcoming' };
+        }
+        return l;
+      });
+    }
+
+    return { groups, lessons };
+  });
 }
 
 export function deleteGroup(id) {
-  setState(s => ({
-    groups: s.groups.filter(g => g.id !== id),
-    lessons: s.lessons.filter(l => !(l.type === 'group' && l.refId === id)),
-  }));
+  const state = getState();
+  const group = state.groups.find(g => g.id === id);
+  if (!group) return;
+
+  if ((group.status || 'active') === 'active') {
+    updateGroup(id, { status: 'passive' });
+  } else {
+    // Permanent delete
+    setState(s => ({
+      groups: s.groups.filter(g => g.id !== id),
+      lessons: s.lessons.filter(l => !(l.type === 'group' && l.refId === id))
+    }));
+  }
 }
 
 async function addEventToGoogleCalendar(lesson) {
@@ -561,30 +668,50 @@ export function syncCurriculumWithBranches(branches, grades, force = false) {
          changed = true;
       }
 
+      const allowedGrades = SUBJECT_GRADES[subj];
+
       if (DEFAULT_CURRICULUM[subj]) {
-        // Iterate only through the grades available in the MEB template for this subject
+        // MEB verisi olan dersler (Tarih, Sosyal vb.)
         Object.keys(DEFAULT_CURRICULUM[subj]).forEach(grade => {
-          // If the teacher has selected this grade in their profile
+          // Check if this grade is allowed for this subject
+          if (allowedGrades && !allowedGrades.includes(grade)) return;
+
           if (activeGrades.includes(grade)) {
-            // Populate if it doesn't exist or if force is true
             if (force || !curr[subj][grade] || curr[subj][grade].length === 0) {
                 curr[subj][grade] = JSON.parse(JSON.stringify(DEFAULT_CURRICULUM[subj][grade]));
                 changed = true;
             }
-          } else {
-             // If forcefully resetting and the user doesn't have this grade, clean it up
-             if (force && curr[subj][grade]) {
-                 delete curr[subj][grade];
-                 changed = true;
-             }
+          } else if (force && curr[subj][grade]) {
+                delete curr[subj][grade];
+                changed = true;
+          }
+        });
+      } else {
+        // MEB verisi OLMAYAN yeni branşlar (Matematik, Fizik vb.)
+        activeGrades.forEach(grade => {
+          // Check if this grade is allowed for this subject
+          if (allowedGrades && !allowedGrades.includes(grade)) return;
+
+          if (!curr[subj][grade] || curr[subj][grade].length === 0) {
+            curr[subj][grade] = [
+              { id: 'u1', name: '1. Ünite: Müfredat Başlığı', topics: [{ id: 't1_1', name: 'İlk Konu Başlığı' }] }
+            ];
+            changed = true;
           }
         });
       }
     });
 
-    if (changed) return { curriculum: curr };
-    return {};
+    return changed ? { curriculum: curr } : {};
   });
+
+  if (force) {
+    addNotification({
+      type: 'success',
+      text: 'Müfredat başarıyla MEB verileriyle senkronize edildi.',
+      link: 'courses'
+    });
+  }
 }
 
 export function updateSettings(data) {
@@ -608,6 +735,7 @@ export function getLessonStatus(lesson) {
 export function getPendingLessons() {
   const state = getState();
   return state.lessons.filter(l => {
+    if (l.status === 'passive') return false;
     if (l.status !== 'upcoming') return false;
     return getLessonStatus(l) === 'waiting';
   });
@@ -617,7 +745,7 @@ export function getTodayLessons() {
   const state = getState();
   const today = new Date().toISOString().split('T')[0];
   return state.lessons
-    .filter(l => l.date === today)
+    .filter(l => l.date === today && l.status !== 'passive')
     .sort((a, b) => a.startTime.localeCompare(b.startTime));
 }
 
@@ -628,7 +756,7 @@ export function getWeekLessons(weekStart) {
     d.setDate(d.getDate() + i);
     return d.toISOString().split('T')[0];
   });
-  return state.lessons.filter(l => days.includes(l.date));
+  return state.lessons.filter(l => days.includes(l.date) && l.status !== 'passive');
 }
 
 export function getMonthlyStats() {
@@ -789,6 +917,29 @@ async function deleteAccount() {
       throw new Error("Güvenlik nedeniyle hesabınızı silebilmek için lütfen önce çıkış yapıp tekrar giriş yapın.");
     }
     throw error;
+  }
+}
+
+export function checkSeasonRenewal() {
+  const now = new Date();
+  const month = now.getMonth(); // 0-11 (June is 5)
+  const year = now.getFullYear();
+  const state = getState();
+
+  // If it's July or later, and we haven't prompted for this year yet
+  if (month >= 6 && (state.settings.lastSeasonPromptYear || 0) < year) {
+    // Check if there are active students or groups
+    const hasActive = state.students.some(s => s.status === 'active') || state.groups.some(g => g.status === 'active');
+    
+    if (hasActive) {
+      setState(s => ({ 
+        showSeasonReview: true,
+        settings: { ...s.settings, lastSeasonPromptYear: year }
+      }));
+    } else {
+      // Just update the year if nothing to review
+      updateSettings({ lastSeasonPromptYear: year });
+    }
   }
 }
 

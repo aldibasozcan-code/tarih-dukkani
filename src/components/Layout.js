@@ -51,7 +51,7 @@ function renderSidebar(state, currentPage, navigate) {
     <div class="sidebar-brand">
       <div class="brand-logo" data-nav="settings">${logo}</div>
       <div>
-        <div class="brand-name">${state.settings.appName || 'Tarih Dükkanı'}</div>
+        <div class="brand-name">${state.settings.appName || 'Öğretmen Paneli'}</div>
         <div class="brand-sub">${state.profile.title || 'Öğretmen Paneli'}</div>
       </div>
     </div>
@@ -70,7 +70,7 @@ function renderSidebar(state, currentPage, navigate) {
         </svg>
         Çıkış Yap
       </button>
-      <div style="font-size:11px; color:var(--text-muted);">v1.0 • Tarih Dükkanı</div>
+      <div style="font-size:11px; color:var(--text-on-green-muted); opacity:0.8;">${state.settings.footerText || 'v1.0 • Öğretmen Paneli'}</div>
     </div>
   `;
 }
@@ -93,7 +93,7 @@ function renderTopbar(state, unreadCount) {
         ${icon('menu', 20)}
       </button>
       <div class="topbar-title">
-        <h1>${pageTitles[currentPage] || 'Tarih Dükkanı'}</h1>
+        <h1>${pageTitles[currentPage] || 'Öğretmen Paneli'}</h1>
       </div>
     </div>
     <div class="topbar-actions">
@@ -185,6 +185,7 @@ export function closeSidebar() {
 export function refreshTopbar(state) {
   const topbar = document.getElementById('topbar');
   if (!topbar) return;
+  applyTheme(state);
   const unreadCount = (state.notifications || []).filter(n => !n.read).length;
   topbar.innerHTML = renderTopbar(state, unreadCount);
 }
@@ -192,5 +193,21 @@ export function refreshTopbar(state) {
 export function refreshSidebar(state, currentPage) {
   const sidebar = document.getElementById('sidebar');
   if (!sidebar) return;
+  applyTheme(state);
   sidebar.innerHTML = renderSidebar(state, currentPage, null);
+}
+
+export function applyTheme(state) {
+  const color = state.settings.brandColor || '#004526';
+  const root = document.documentElement;
+  root.style.setProperty('--brand-green', color);
+  root.style.setProperty('--bg-sidebar', color);
+  root.style.setProperty('--accent', color);
+  
+  // Opaklık destekli açık ton (RGBA)
+  const r = parseInt(color.slice(1, 3), 16);
+  const g = parseInt(color.slice(3, 5), 16);
+  const b = parseInt(color.slice(5, 7), 16);
+  root.style.setProperty('--brand-green-soft', `rgba(${r}, ${g}, ${b}, 0.08)`);
+  root.style.setProperty('--accent-glow', `rgba(${r}, ${g}, ${b}, 0.1)`);
 }

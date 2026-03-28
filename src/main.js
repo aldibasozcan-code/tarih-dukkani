@@ -193,82 +193,97 @@ async function init() {
 }
 
 function attachNavEvents() {
-  // Sidebar nav items
-  document.querySelectorAll('[data-nav]').forEach(el => {
-    el.addEventListener('click', (e) => {
-      e.stopPropagation();
-      navigate(el.dataset.nav);
-    });
-  });
+  const app = document.getElementById('app');
+  if (!app || app._globalEventsBound) return;
+  app._globalEventsBound = true;
 
-  // Notification button
-  const notifBtn = document.getElementById('notif-btn');
-  if (notifBtn && !notifBtn._bound) {
-    notifBtn._bound = true;
-    notifBtn.addEventListener('click', (e) => {
+  app.addEventListener('click', (e) => {
+    // 1) Navigation items (Sidebar/Topbar)
+    const navEl = e.target.closest('[data-nav]');
+    if (navEl) {
+      e.preventDefault();
+      e.stopPropagation();
+      navigate(navEl.dataset.nav);
+      return;
+    }
+
+    // 2) Notification button
+    const notifBtn = e.target.closest('#notif-btn');
+    if (notifBtn) {
+      e.preventDefault();
       e.stopPropagation();
       toggleNotifPanel(navigate);
-    });
-  }
+      return;
+    }
 
-  // Profile chip
-  const profileBtn = document.getElementById('profile-btn');
-  if (profileBtn && !profileBtn._bound) {
-    profileBtn._bound = true;
-    profileBtn.addEventListener('click', () => {
+    // 3) Profile button
+    const profileBtn = e.target.closest('#profile-btn');
+    if (profileBtn) {
+      e.preventDefault();
+      e.stopPropagation();
       closeNotifPanel();
       navigate('profile');
-    });
-  }
-
-  // Close notif panel on outside click
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('#notif-btn') && !e.target.closest('.notif-panel')) {
-      closeNotifPanel();
+      return;
     }
-  }, { once: false });
 
-  // View all notifications link
-  document.getElementById('view-all-notifs')?.addEventListener('click', () => {
-    closeNotifPanel();
-    navigate('notifications');
-  });
+    // 4) Mobile Menu Toggle
+    const menuToggle = e.target.closest('#menu-toggle');
+    if (menuToggle) {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleSidebar();
+      return;
+    }
 
-  // Notif items
-  document.querySelectorAll('[data-notif-link]').forEach(el => {
-    el.addEventListener('click', () => {
-      const link = el.dataset.notifLink;
+    // 5) Sidebar Overlay
+    const overlay = e.target.closest('#sidebar-overlay');
+    if (overlay) {
+      closeSidebar();
+      return;
+    }
+
+    // 6) Logout button
+    const logoutBtn = e.target.closest('#logout-btn');
+    if (logoutBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      handleLogout(logoutBtn);
+      return;
+    }
+
+    // 7) Notification items
+    const notifItem = e.target.closest('[data-notif-link]');
+    if (notifItem) {
+      const link = notifItem.dataset.notifLink;
       closeNotifPanel();
       if (link) navigate(link);
-    });
-  });
+      return;
+    }
 
-  // Mobile Menu Toggle
-  document.getElementById('menu-toggle')?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    toggleSidebar();
-  });
+    // 8) View all notifications
+    const viewAllBtn = e.target.closest('#view-all-notifs');
+    if (viewAllBtn) {
+      closeNotifPanel();
+      navigate('notifications');
+      return;
+    }
 
-  // Sidebar Overlay
-  document.getElementById('sidebar-overlay')?.addEventListener('click', () => {
-    closeSidebar();
+    // Generic: Close notif panel on outside click
+    if (!e.target.closest('.notif-panel')) {
+      closeNotifPanel();
+    }
   });
+}
 
-  // Logout button
-  const logoutBtn = document.getElementById('logout-btn');
-  if (logoutBtn && !logoutBtn._bound) {
-    logoutBtn._bound = true;
-    logoutBtn.addEventListener('click', async () => {
-      logoutBtn.innerHTML = '<div class="spinner" style="width:16px;height:16px;border-width:2px;border-color:var(--danger);border-top-color:transparent;display:inline-block;"></div> Çıkış Yapılıyor...';
-      try {
-        const { logoutUser } = await import('./lib/auth.js');
-        await logoutUser();
-        window.location.reload(); // clear JS memory fully
-      } catch(err) {
-        console.error(err);
-        logoutBtn.innerHTML = 'Hata Oluştu';
-      }
-    });
+async function handleLogout(btn) {
+  btn.innerHTML = '<div class="spinner" style="width:16px;height:16px;border-width:2px;border-color:var(--danger);border-top-color:transparent;display:inline-block;"></div> Çıkış Yapılıyor...';
+  try {
+    const { logoutUser } = await import('./lib/auth.js');
+    await logoutUser();
+    window.location.reload(); 
+  } catch(err) {
+    console.error(err);
+    btn.innerHTML = 'Hata Oluştu';
   }
 }
 

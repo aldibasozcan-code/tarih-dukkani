@@ -21,18 +21,23 @@ export function renderGroups(navigate) {
         </div>
       </div>
 
+      <div class="tabs" style="margin-bottom:20px;">
+        <button class="tab-btn active" data-tab="active">Aktif Gruplar</button>
+        <button class="tab-btn" data-tab="passive">Pasif Gruplar</button>
+      </div>
+
       <div id="tab-groups">
         <div class="search-box" style="margin-bottom:16px;">
           <span class="search-icon">${icon('search', 15)}</span>
           <input type="text" id="group-search" placeholder="Grup ara..." style="width:280px;">
         </div>
         <div class="grid grid-auto" id="groups-grid">
-          ${renderGroupCards(state.groups)}
+          ${renderGroupCards(state.groups.filter(g => (g.status || 'active') === 'active'))}
         </div>
-        ${state.groups.length === 0 ? `
-          <div class="empty-state">
+        ${state.groups.filter(g => (g.status || 'active') === 'active').length === 0 ? `
+          <div class="empty-state" id="groups-empty">
             ${icon('groups', 40)}
-            <h3>Henüz grup eklenmedi</h3>
+            <h3>Henüz aktif grup eklenmedi</h3>
             <p>Yeni grup eklemek için butona tıklayın</p>
           </div>
         ` : ''}
@@ -65,24 +70,49 @@ function renderGroupCards(groups) {
     </div>
   `).join('');
 }
-
 function initGroups(container, navigate) {
-  // Group search
-  container.querySelector('#group-search')?.addEventListener('input', (e) => {
-    const q = e.target.value.toLowerCase();
-    const state = getState();
-    const filtered = state.groups.filter(g => g.name.toLowerCase().includes(q) || g.grade.toLowerCase().includes(q));
-    const grid = container.querySelector('#groups-grid');
-    if (grid) grid.innerHTML = renderGroupCards(filtered);
-    initGroupCardEvents(container, navigate);
+  initGroupCardEvents(container, navigate);
+
+  // Status Tabs
+  let currentTab = 'active';
+  container.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      container.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentTab = btn.dataset.tab;
+      refreshList();
+    });
   });
+
+  // Group search
+  const searchInp = container.querySelector('#group-search');
+  searchInp?.addEventListener('input', () => refreshList());
+
+  function refreshList() {
+    const q = searchInp.value.toLowerCase();
+    const state = getState();
+    const grid = container.querySelector('#groups-grid');
+    const empty = container.querySelector('#groups-empty');
+    if (!grid) return;
+
+    const filtered = state.groups.filter(g => {
+      const matchStatus = (g.status || 'active') === currentTab;
+      const matchSearch = g.name.toLowerCase().includes(q) || g.grade.toLowerCase().includes(q);
+      return matchStatus && matchSearch;
+    });
+
+    grid.innerHTML = renderGroupCards(filtered);
+    if (empty) {
+      empty.style.display = filtered.length === 0 ? 'flex' : 'none';
+      empty.querySelector('h3').textContent = currentTab === 'active' ? 'Henüz aktif grup eklenmedi' : 'Pasif grup bulunamadı';
+    }
+    initGroupCardEvents(container, navigate);
+  }
 
   // Add group
   container.querySelector('#btn-add-group')?.addEventListener('click', () => {
     import('./modals/AddGroupModal.js').then(m => m.openAddGroupModal(() => navigate('groups')));
   });
-
-  initGroupCardEvents(container, navigate);
 }
 
 function initGroupCardEvents(container, navigate) {
@@ -109,14 +139,19 @@ function initGroupCardEvents(container, navigate) {
       e.stopPropagation();
       const id = btn.dataset.deleteGroup;
       const g = getState().groups.find(x => x.id === id);
-      import('../store/store.js').then(m => {
-        showConfirm({
-          title: 'Grubu Sil',
-          message: `"${g?.name}" grubu ve tüm dersleri silinecek.`,
-          confirmText: 'Sil',
-          type: 'danger',
-          onConfirm: () => { m.deleteGroup(id); navigate('groups'); },
-        });
+      const isActive = (g?.status || 'active') === 'active';
+      
+      showConfirm({
+        title: isActive ? 'Grubu Pasife Al' : 'Grubu Kalıcı Olarak Sil',
+        message: isActive 
+          ? `"${g?.name}" grubu pasif listesine taşınacak. İleri tarihli planlanmış dersleri de pasif hale getirilecek.` 
+          : `"${g?.name}" grubu ve tüm verileri kalıcı olarak silinecek. Bu işlem geri alınamaz.`,
+        confirmText: isActive ? 'Pasife Al' : 'Kalıcı Olarak Sil',
+        type: 'danger',
+        onConfirm: () => { 
+          deleteGroup(id); 
+          navigate('groups'); 
+        },
       });
     });
   });

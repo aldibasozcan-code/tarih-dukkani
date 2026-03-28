@@ -35,6 +35,16 @@ export function renderDashboard(navigate) {
         </div>
       ` : ''}
 
+      ${state.showSeasonReview ? `
+        <div class="pending-alert" style="background:rgba(124,106,255,0.1); border-color:rgba(124,106,255,0.3); color:var(--accent2);">
+          <div style="display:flex;align-items:center;gap:8px;">
+            ${icon('calendar', 16)}
+            <span class="pending-alert-text">Yeni dönem hazırlığı! Öğrenci listeni güncellemek ister misin?</span>
+          </div>
+          <button class="btn btn-primary btn-sm" id="show-season-review-btn">Şimdi İncele</button>
+        </div>
+      ` : ''}
+
       <!-- Welcome Banner -->
       <div class="welcome-banner" style="margin-bottom:24px;">
         <div class="welcome-text">
@@ -65,9 +75,9 @@ export function renderDashboard(navigate) {
             ${icon('students', 20)}
           </div>
           <div>
-            <div class="kpi-value">${state.students.length}</div>
-            <div class="kpi-label">Öğrenci</div>
-            <div class="kpi-trend" style="color:var(--accent2);">${state.groups.length} grup</div>
+            <div class="kpi-value">${state.students.filter(s => (s.status || 'active') === 'active').length}</div>
+            <div class="kpi-label">Aktif Öğrenci</div>
+            <div class="kpi-trend" style="color:var(--accent2);">${state.groups.filter(g => (g.status || 'active') === 'active').length} aktif grup</div>
           </div>
         </div>
         <div class="kpi-card">
@@ -248,6 +258,11 @@ function initDashboard(el, navigate) {
   // Nav links
   el.querySelectorAll('[data-nav]').forEach(el2 => {
     el2.addEventListener('click', () => navigate(el2.dataset.nav));
+  });
+
+  // Season Review
+  el.querySelector('#show-season-review-btn')?.addEventListener('click', () => {
+    import('./modals/SeasonReviewModal.js').then(m => m.openSeasonReviewModal());
   });
 }
 

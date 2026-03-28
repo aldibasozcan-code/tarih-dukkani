@@ -21,18 +21,23 @@ export function renderStudents(navigate) {
         </div>
       </div>
 
+      <div class="tabs" style="margin-bottom:20px;">
+        <button class="tab-btn active" data-tab="active">Aktif Öğrenciler</button>
+        <button class="tab-btn" data-tab="passive">Pasif Öğrenciler</button>
+      </div>
+
       <div id="tab-students">
         <div class="search-box" style="margin-bottom:16px;">
           <span class="search-icon">${icon('search', 15)}</span>
           <input type="text" id="student-search" placeholder="Öğrenci ara..." style="width:280px;">
         </div>
         <div class="grid grid-auto" id="students-grid">
-          ${renderStudentCards(state.students)}
+          ${renderStudentCards(state.students.filter(s => (s.status || 'active') === 'active'))}
         </div>
-        ${state.students.length === 0 ? `
-          <div class="empty-state">
+        ${state.students.filter(s => (s.status || 'active') === 'active').length === 0 ? `
+          <div class="empty-state" id="students-empty">
             ${icon('students', 40)}
-            <h3>Henüz öğrenci eklenmedi</h3>
+            <h3>Henüz aktif öğrenci eklenmedi</h3>
             <p>Yeni öğrenci eklemek için butona tıklayın</p>
           </div>
         ` : ''}
@@ -64,24 +69,49 @@ function renderStudentCards(students) {
     </div>
   `).join('');
 }
-
 function initStudents(container, navigate) {
-  // Student search
-  container.querySelector('#student-search')?.addEventListener('input', (e) => {
-    const q = e.target.value.toLowerCase();
-    const state = getState();
-    const filtered = state.students.filter(s => s.name.toLowerCase().includes(q) || s.grade.toLowerCase().includes(q));
-    const grid = container.querySelector('#students-grid');
-    if (grid) grid.innerHTML = renderStudentCards(filtered);
-    initStudentCardEvents(container, navigate);
+  initStudentCardEvents(container, navigate);
+
+  // Status Tabs
+  let currentTab = 'active';
+  container.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      container.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentTab = btn.dataset.tab;
+      refreshList();
+    });
   });
+
+  // Student search
+  const searchInp = container.querySelector('#student-search');
+  searchInp?.addEventListener('input', () => refreshList());
+
+  function refreshList() {
+    const q = searchInp.value.toLowerCase();
+    const state = getState();
+    const grid = container.querySelector('#students-grid');
+    const empty = container.querySelector('#students-empty');
+    if (!grid) return;
+
+    const filtered = state.students.filter(s => {
+      const matchStatus = (s.status || 'active') === currentTab;
+      const matchSearch = s.name.toLowerCase().includes(q) || s.grade.toLowerCase().includes(q);
+      return matchStatus && matchSearch;
+    });
+
+    grid.innerHTML = renderStudentCards(filtered);
+    if (empty) {
+      empty.style.display = filtered.length === 0 ? 'flex' : 'none';
+      empty.querySelector('h3').textContent = currentTab === 'active' ? 'Henüz aktif öğrenci eklenmedi' : 'Pasif öğrenci bulunamadı';
+    }
+    initStudentCardEvents(container, navigate);
+  }
 
   // Add student
   container.querySelector('#btn-add-student')?.addEventListener('click', () => {
     import('./modals/AddStudentModal.js').then(m => m.openAddStudentModal(() => navigate('students')));
   });
-
-  initStudentCardEvents(container, navigate);
 }
 
 function initStudentCardEvents(container, navigate) {
@@ -108,12 +138,19 @@ function initStudentCardEvents(container, navigate) {
       e.stopPropagation();
       const id = btn.dataset.deleteStudent;
       const s = getState().students.find(x => x.id === id);
+      const isActive = (s?.status || 'active') === 'active';
+      
       showConfirm({
-        title: 'Öğrenciyi Sil',
-        message: `"${s?.name}" öğrencisi silinecek. Bu işlem geri alınamaz.`,
-        confirmText: 'Sil',
+        title: isActive ? 'Öğrenciyi Pasife Al' : 'Öğrenciyi Kalıcı Olarak Sil',
+        message: isActive 
+          ? `"${s?.name}" öğrencisi pasif listesine taşınacak. İleri tarihli planlanmış dersleri de pasif hale getirilecek.` 
+          : `"${s?.name}" öğrencisi ve tüm verileri kalıcı olarak silinecek. Bu işlem geri alınamaz.`,
+        confirmText: isActive ? 'Pasife Al' : 'Kalıcı Olarak Sil',
         type: 'danger',
-        onConfirm: () => { deleteStudent(id); navigate('students'); },
+        onConfirm: () => { 
+          deleteStudent(id); 
+          navigate('students'); 
+        },
       });
     });
   });

@@ -19,19 +19,63 @@ export function renderSettings(navigate) {
 
       <div class="grid grid-2" style="align-items:start;">
         <!-- App Branding -->
-        <div class="card">
-          <h3 style="font-size:15px;font-weight:700;margin-bottom:16px;">Uygulama Kimliği</h3>
-          <div class="form-group">
-            <label>Uygulama Adı</label>
-            <input type="text" id="app-name" value="${state.settings.appName || 'Tarih Dükkanı'}">
+        <div class="card" style="grid-column: 1 / -1; display: grid; grid-template-columns: 1.5fr 1fr; gap: 32px;">
+          <div>
+            <h3 style="font-size:15px;font-weight:700;margin-bottom:16px;">Uygulama Kimliği & Markalaşma</h3>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label>Uygulama Adı</label>
+                <input type="text" id="app-name" value="${state.settings.appName || 'Öğretmen Paneli'}">
+              </div>
+              <div class="form-group">
+                <label>Logo (URL)</label>
+                <input type="url" id="app-logo" value="${state.settings.logo || ''}" placeholder="https://...">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Alt Bilgi (Sidebar Footer)</label>
+              <input type="text" id="app-footer" value="${state.settings.footerText || 'v1.0 • Öğretmen Paneli'}" placeholder="v1.0 • Marka Adınız">
+            </div>
+
+            <div class="form-group">
+              <label>Marka Rengi</label>
+              <div style="display:flex; gap:12px; align-items:center;">
+                <input type="color" id="app-color" value="${state.settings.brandColor || '#004526'}" style="width:50px; height:44px; padding:2px;">
+                <div id="color-presets" style="display:flex; gap:8px;">
+                  ${['#004526', '#1e40af', '#7c3aed', '#db2777', '#059669', '#111827'].map(c => `
+                    <button class="color-preset" data-color="${c}" style="width:24px; height:24px; border-radius:50%; background:${c}; border:2px solid ${state.settings.brandColor === c ? 'var(--text-primary)' : 'transparent'}; cursor:pointer;"></button>
+                  `).join('')}
+                </div>
+              </div>
+            </div>
+
+            <button class="btn btn-primary" id="btn-save-branding" style="margin-top:8px;">${icon('check', 14)} Değişiklikleri Kaydet</button>
           </div>
-          <div class="form-group">
-            <label>Logo (URL veya dosya)</label>
-            <div style="display:flex;gap:8px;align-items:center;">
-              <input type="url" id="app-logo" value="${state.settings.logo || ''}" placeholder="https://... (boş bırakılırsa baş harfler kullanılır)">
+
+          <!-- Live Preview -->
+          <div style="background:var(--bg-secondary); border-radius:var(--radius-lg); border:1px dashed var(--border); padding:24px; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+            <div style="font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:16px; letter-spacing:1px;">Canlı Marka Önizlemesi</div>
+            
+            <!-- Miniature Sidebar -->
+            <div id="brand-preview-sidebar" style="width:180px; background:${state.settings.brandColor || '#004526'}; border-radius:12px; padding:16px; box-shadow:var(--shadow-lg); transition: all 0.3s ease;">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:24px;">
+                <div id="preview-logo-box" style="width:32px; height:32px; background:#fff; border-radius:8px; display:flex; align-items:center; justify-content:center; overflow:hidden;">
+                  ${state.settings.logo ? `<img src="${state.settings.logo}" style="width:100%; height:100%; object-fit:cover;">` : `<span style="color:${state.settings.brandColor || '#004526'}; font-weight:800; font-size:14px;">${(state.settings.appName || 'TP').slice(0, 2).toUpperCase()}</span>`}
+                </div>
+                <div style="font-size:13px; font-weight:800; color:#fff;" id="preview-name">${state.settings.appName || 'Öğretmen Paneli'}</div>
+              </div>
+              
+              <div style="height:8px; width:100%; background:rgba(255,255,255,0.1); border-radius:4px; margin-bottom:8px;"></div>
+              <div style="height:8px; width:70%; background:rgba(255,255,255,0.1); border-radius:4px; margin-bottom:8px;"></div>
+              <div style="height:24px; width:100%; background:#fff; border-radius:6px; margin:16px 0 8px;"></div>
+              
+              <div style="margin-top:32px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.1); font-size:9px; color:rgba(255,255,255,0.6);" id="preview-footer">
+                ${state.settings.footerText || 'v1.0 • Öğretmen Paneli'}
+              </div>
             </div>
           </div>
-          <button class="btn btn-primary" id="btn-save-branding">${icon('check', 14)} Kaydet</button>
         </div>
 
         <!-- Google Calendar Integration -->
@@ -92,7 +136,7 @@ export function renderSettings(navigate) {
           <div style="display:flex;flex-direction:column;gap:10px;font-size:13px;color:var(--text-secondary);">
             <div style="display:flex;justify-content:space-between;">
               <span>Uygulama</span>
-              <span style="font-weight:600;">Tarih Dükkanı</span>
+              <span style="font-weight:600;">Öğretmen Paneli</span>
             </div>
             <div style="display:flex;justify-content:space-between;">
               <span>Versiyon</span>
@@ -113,18 +157,68 @@ export function renderSettings(navigate) {
   return {
     html,
     init: (el, nav) => {
+      // Live Preview Real-time Updates
+      const nameInp = el.querySelector('#app-name');
+      const logoInp = el.querySelector('#app-logo');
+      const footerInp = el.querySelector('#app-footer');
+      const colorInp = el.querySelector('#app-color');
+
+      const updatePreview = () => {
+        const name = nameInp.value.trim() || 'Öğretmen Paneli';
+        const logo = logoInp.value.trim();
+        const footer = footerInp.value.trim() || 'v1.0 • Öğretmen Paneli';
+        const color = colorInp.value;
+
+        const previewSidebar = el.querySelector('#brand-preview-sidebar');
+        const previewName = el.querySelector('#preview-name');
+        const previewLogoBox = el.querySelector('#preview-logo-box');
+        const previewFooter = el.querySelector('#preview-footer');
+
+        if (previewSidebar) previewSidebar.style.background = color;
+        if (previewName) previewName.textContent = name;
+        if (previewFooter) previewFooter.textContent = footer;
+        if (previewLogoBox) {
+          previewLogoBox.innerHTML = logo 
+            ? `<img src="${logo}" style="width:100%; height:100%; object-fit:cover;">` 
+            : `<span style="color:${color}; font-weight:800; font-size:14px;">${name.slice(0, 2).toUpperCase()}</span>`;
+        }
+      };
+
+      [nameInp, logoInp, footerInp, colorInp].forEach(inp => {
+        inp?.addEventListener('input', updatePreview);
+      });
+
+      // Preset Colors
+      el.querySelectorAll('.color-preset').forEach(btn => {
+        btn.addEventListener('click', () => {
+          colorInp.value = btn.dataset.color;
+          el.querySelectorAll('.color-preset').forEach(b => b.style.borderColor = 'transparent');
+          btn.style.borderColor = 'var(--text-primary)';
+          updatePreview();
+        });
+      });
+
       el.querySelector('#btn-save-branding')?.addEventListener('click', () => {
         updateSettings({
-          appName: el.querySelector('#app-name').value.trim() || 'Tarih Dükkanı',
-          logo: el.querySelector('#app-logo').value.trim() || null,
+          appName: nameInp.value.trim() || 'Öğretmen Paneli',
+          logo: logoInp.value.trim() || null,
+          brandColor: colorInp.value,
+          footerText: footerInp.value.trim() || 'v1.0 • Öğretmen Paneli'
         });
-        // Refresh sidebar
-        import('../components/Layout.js').then(m => m.refreshSidebar(getState(), 'settings'));
+        
+        // Refresh UI
+        import('../components/Layout.js').then(m => {
+          const state = getState();
+          m.refreshSidebar(state, 'settings');
+          m.refreshTopbar(state);
+          m.applyTheme(state);
+        });
+
         const btn = el.querySelector('#btn-save-branding');
         btn.innerHTML = `${icon('check', 14)} Kaydedildi!`;
         btn.style.background = 'var(--success)';
         setTimeout(() => {
-          btn.innerHTML = `${icon('check', 14)} Kaydet`;
+          btn.innerHTML = `${icon('check', 14)} Değişiklikleri Kaydet`;
           btn.style.background = '';
         }, 2000);
       });

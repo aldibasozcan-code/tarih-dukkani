@@ -16,7 +16,10 @@ export const SUBJECTS = [
   { id: 'tarih', name: 'Tarih', icon: '📜' },
   { id: 'tyt', name: 'TYT', icon: '📝' },
   { id: 'ayt', name: 'AYT', icon: '🎯' },
-  { id: 'osmanlıca', name: 'Osmanlıca', icon: '📖' },
+  { id: 'osmanlıca', name: 'Osmanlı Türkçesi', icon: '📖' },
+  { id: 'matematik', name: 'Matematik', icon: '🔢' },
+  { id: 'turkce', name: 'Türkçe', icon: '✍️' },
+  { id: 'fen_bilimleri', name: 'Fen Bilimleri', icon: '🧪' },
 ];
 
 export const SUBJECT_GRADES = {
@@ -25,7 +28,7 @@ export const SUBJECT_GRADES = {
   'tarih':     ['9. Sınıf', '10. Sınıf', '11. Sınıf', '12. Sınıf'],
   'tyt':       ['12. Sınıf', 'Mezun'],
   'ayt':       ['12. Sınıf', 'Mezun'],
-  'osmanlıca': ['Osmanlı Türkçesi'],
+  'osmanlıca': ['Diğer'],
 };
 
 // Content types for each topic
@@ -586,7 +589,7 @@ export const DEFAULT_CURRICULUM = {
     ],
   },
   'osmanlıca': {
-    'Osmanlı Türkçesi': [
+    'Diğer': [
       {
         id: 'u1', name: '1. Seviye: Osmanlı Türkçesine Giriş',
         topics: [
@@ -605,12 +608,33 @@ export const DEFAULT_CURRICULUM = {
       },
     ],
   },
+  'matematik': {
+    '5. Sınıf': [
+      { id: 'u1', name: '1. Ünite: Doğal Sayılar', topics: [{ id: 't1_1', name: 'Milyonlar' }, { id: 't1_2', name: 'Örüntüler' }] },
+      { id: 'u2', name: '2. Ünite: İşlemler', topics: [{ id: 't1_1', name: 'Toplama ve Çıkarma' }, { id: 't1_2', name: 'Zihinden İşlemler' }] }
+    ],
+    '9. Sınıf': [
+      { id: 'u1', name: '1. Ünite: Mantık', topics: [{ id: 't1_1', name: 'Önermeler' }, { id: 't1_2', name: 'Bileşik Önermeler' }] },
+      { id: 'u2', name: '2. Ünite: Kümeler', topics: [{ id: 't2_1', name: 'Kümelerde Temel Kavramlar' }, { id: 't2_2', name: 'Alt Küme' }] }
+    ]
+  },
+  'turkce': {
+    '5. Sınıf': [
+      { id: 'u1', name: '1. Tema: Harf Bilgisi', topics: [{ id: 't1_1', name: 'Ünlü ve Ünsüz Harfler' }] },
+      { id: 'u2', name: '2. Tema: Sözcükte Anlam', topics: [{ id: 't2_1', name: 'Gerçek ve Mecaz Anlam' }] }
+    ]
+  },
+  'fen_bilimleri': {
+    '5. Sınıf': [
+      { id: 'u1', name: '1. Ünite: Güneş, Dünya ve Ay', topics: [{ id: 't1_1', name: 'Güneş\'in Yapısı ve Özellikleri' }] }
+    ]
+  },
 };
 
 // All possible grade values (for student form dropdown)
 export const ALL_GRADES = [
   '5. Sınıf', '6. Sınıf', '7. Sınıf', '8. Sınıf',
-  '9. Sınıf', '10. Sınıf', '11. Sınıf', '12. Sınıf', 'Mezun', 'Osmanlı Türkçesi'
+  '9. Sınıf', '10. Sınıf', '11. Sınıf', '12. Sınıf', 'Mezun', 'Diğer'
 ];
 
 // Belirli bir branşa göre aktif edilecek dersleri döndüren yardımcı fonksiyon
@@ -624,50 +648,37 @@ export function getSubjectsForBranches(branches = []) {
 
   branches.forEach(branch => {
     const branchUpper = branch.toUpperCase();
+    
+    // 1) Bilinen özel haritalamalar (Tarihçi hem tarih hem ayt/tyt/inkılap görür)
     if (branchUpper.includes('TARİH') || branchUpper.includes('TARIH')) {
       if (branchUpper.includes('İNKILAP') || branchUpper.includes('INKILAP')) {
         activeSubjects.add('inkılap');
       } else {
-        // Genel Tarih
         activeSubjects.add('tarih');
         activeSubjects.add('tyt');
         activeSubjects.add('ayt');
-        activeSubjects.add('osmanlıca');
-        activeSubjects.add('inkılap'); // Tarihçiler genelde İnkılap da anlatır
+        activeSubjects.add('inkılap'); 
       }
-    }
-    if (branchUpper.includes('SOSYAL BİLGİLER') || branchUpper.includes('SOSYAL BILGILER')) {
+    } else if (branchUpper.includes('OSMANLI')) {
+      activeSubjects.add('osmanlıca');
+    } else if (branchUpper.includes('SOSYAL BİLGİLER') || branchUpper.includes('SOSYAL BILGILER')) {
       activeSubjects.add('sosyal');
       activeSubjects.add('inkılap');
+    } else {
+      // 2) Diğer her branş için kendi ID'sini oluştur (Matematik -> matematik)
+      // Türkçe karakterleri ve boşlukları temizleyerek ID oluşturuyoruz
+      const id = branch.toLowerCase()
+        .replace(/ı/g, 'i').replace(/ğ/g, 'g').replace(/ü/g, 'u')
+        .replace(/ş/g, 's').replace(/ö/g, 'o').replace(/ç/g, 'c')
+        .replace(/\s+/g, '_');
+      activeSubjects.add(id);
     }
-    // Buraya diğer branşlar (Matematik, Fizik vb.) eklenebilir. 
-    // Ancak veri yapısı şu an ağırlıklı olarak Tarih/Sosyal üzerine kurulu.
   });
 
   return Array.from(activeSubjects);
 }
 
-// Grade → Subject mapping for auto-curriculum assignment
-export const GRADE_TO_SUBJECTS = {
-  '5. Sınıf':  [{ subject: 'sosyal', grade: '5. Sınıf' }],
-  '6. Sınıf':  [{ subject: 'sosyal', grade: '6. Sınıf' }],
-  '7. Sınıf':  [{ subject: 'sosyal', grade: '7. Sınıf' }],
-  '8. Sınıf':  [{ subject: 'inkılap', grade: '8. Sınıf' }],
-  '9. Sınıf':  [{ subject: 'tarih', grade: '9. Sınıf' }],
-  '10. Sınıf': [{ subject: 'tarih', grade: '10. Sınıf' }],
-  '11. Sınıf': [{ subject: 'tarih', grade: '11. Sınıf' }],
-  '12. Sınıf': [
-    { subject: 'tarih', grade: '12. Sınıf' },
-    { subject: 'tyt', grade: '12. Sınıf' },
-    { subject: 'ayt', grade: '12. Sınıf' },
-  ],
-  'Mezun':     [
-    { subject: 'tyt', grade: 'Mezun' },
-    { subject: 'ayt', grade: 'Mezun' },
-  ],
-  'Osmanlı Türkçesi': [{ subject: 'osmanlıca', grade: 'Osmanlı Türkçesi' }],
-};
-
+// Grade → Subject mapping for auto-curriculum assignment is now dynamic in store.js using getSubjectsForBranches
 export const DAYS_TR = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
 export const DAYS_SHORT = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
 export const MONTHS_TR = [

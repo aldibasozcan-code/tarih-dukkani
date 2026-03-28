@@ -3,18 +3,14 @@
 // ═════════════════════════════════════════════════
 import { getState, addMaterial, deleteMaterial, addUnit, updateUnit, deleteUnit, addTopic, updateTopic, deleteTopic } from '../store/store.js';
 import { icon } from '../components/icons.js';
-import { SUBJECTS, GRADE_TO_SUBJECTS, ALL_GRADES, CONTENT_TYPES, getSubjectsForBranches } from '../data/curriculum.js';
+import { SUBJECTS, ALL_GRADES, CONTENT_TYPES, getSubjectsForBranches } from '../data/curriculum.js';
 import { escHtml } from '../utils/helpers.js';
 import { openModal, closeModal } from '../components/modal.js';
 
 export function renderCourses(navigate) {
   const state = getState();
-  const activeSubjectIds = getSubjectsForBranches(state.profile.branches || []);
   const activeGrades = state.profile.grades || [];
-  const availableGrades = ALL_GRADES.filter(g => {
-    const subjectsInGrade = GRADE_TO_SUBJECTS[g] || [];
-    return activeGrades.includes(g) && subjectsInGrade.some(s => activeSubjectIds.includes(s.subject));
-  });
+  const availableGrades = ALL_GRADES.filter(g => activeGrades.includes(g));
   let activeGrade = availableGrades[0];
 
   const html = `
@@ -49,8 +45,10 @@ export function renderCourses(navigate) {
 
 function renderCurriculumContent(state, grade) {
   const activeSubjectIds = getSubjectsForBranches(state.profile.branches || []);
-  const allSubjects = GRADE_TO_SUBJECTS[grade] || [];
-  const subjects = allSubjects.filter(s => activeSubjectIds.includes(s.subject));
+  // We now show all active subjects for the selected grade if they have content in the curriculum
+  const subjects = activeSubjectIds
+    .filter(subj => state.curriculum[subj] && state.curriculum[subj][grade])
+    .map(subj => ({ subject: subj, grade: grade }));
   let html = '';
 
   if (subjects.length === 0) {
@@ -58,7 +56,16 @@ function renderCurriculumContent(state, grade) {
   }
 
   subjects.forEach(({ subject }) => {
-    const subjectInfo = SUBJECTS.find(s => s.id === subject);
+    let subjectInfo = SUBJECTS.find(s => s.id === subject);
+    
+    // Fallback for dynamic subjects (Math, Physics, etc.)
+    if (!subjectInfo) {
+      subjectInfo = { 
+        id: subject, 
+        name: subject.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '), 
+        icon: '📚' 
+      };
+    }
     const units = state.curriculum[subject]?.[grade] || [];
     const allMaterials = Object.values(state.materials).filter(m => m.subject === subject && m.grade === grade);
 
@@ -172,47 +179,49 @@ function renderCurriculumContent(state, grade) {
   return html;
 }
 
-function initCourses(el, navigate, state) {
-  const activeSubjectIds = getSubjectsForBranches(state.profile.branches || []);
-  const activeGrades = state.profile.grades || [];
-  const availableGrades = ALL_GRADES.filter(g => {
-    const subjectsInGrade = GRADE_TO_SUBJECTS[g] || [];
-    return activeGrades.includes(g) && subjectsInGrade.some(s => activeSubjectIds.includes(s.subject));
-  });
-  let activeGrade = availableGrades[0];
+function initCourses(el, navigate) {
+  const refresh = () => {
+    const currentState = getState();
+    const activeGrades = currentState.profile.grades || [];
+    const availableGrades = ALL_GRADES.filter(g => activeGrades.includes(g));
+    
+    // If we have an activeGrade already, keep it, otherwise take first available
+    if (!window._activeGrade || !availableGrades.includes(window._activeGrade)) {
+      window._activeGrade = availableGrades[0];
+    }
 
-  function refresh() {
+    // Re-render tabs to ensure they match current profile
+    const tabsContainer = el.querySelector('#grade-tabs');
+    if (tabsContainer) {
+      tabsContainer.innerHTML = availableGrades.map(g => `
+        <button class="tab-btn ${g === window._activeGrade ? 'active' : ''}" data-grade="${g}" style="white-space: nowrap;">${g}</button>
+      `).join('');
+      
+      // Re-bind tab clicks
+      tabsContainer.querySelectorAll('.tab-btn').forEach(tab => {
+        tab.addEventListener('click', () => {
+          window._activeGrade = tab.dataset.grade;
+          refresh();
+        });
+      });
+    }
+
     const content = el.querySelector('#curriculum-content');
     if (content) {
-      content.innerHTML = renderCurriculumContent(getState(), activeGrade);
+      content.innerHTML = renderCurriculumContent(currentState, window._activeGrade);
       initMaterialButtons(el, navigate);
       initCurriculumButtons(el, refresh, navigate);
     }
-  }
-
-  // Grade selection
-  el.querySelectorAll('[data-grade]').forEach(btn => {
-    // Top-level tab buttons only
-    if (btn.classList.contains('tab-btn')) {
-      btn.addEventListener('click', () => {
-        activeGrade = btn.dataset.grade;
-        el.querySelectorAll('.tab-btn[data-grade]').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        refresh();
-      });
-    }
-  });
+  };
 
   // Global Add Material
   el.querySelector('#btn-add-material')?.addEventListener('click', () => {
-    const activeSubjects = getSubjectsForBranches(getState().profile.branches || []);
-    const subjList = (GRADE_TO_SUBJECTS[activeGrade] || []).filter(s => activeSubjects.includes(s.subject));
-    const defaultSubject = subjList[0]?.subject;
-    openAddMaterialModal(defaultSubject, activeGrade, null, null, navigate, () => refresh());
+    const currentState = getState();
+    const activeSubjectIds = getSubjectsForBranches(currentState.profile.branches || []);
+    openAddMaterialModal(activeSubjectIds[0], window._activeGrade, null, null, navigate, () => refresh());
   });
 
-  initMaterialButtons(el, navigate);
-  initCurriculumButtons(el, refresh, navigate);
+  refresh();
 }
 
 function initMaterialButtons(el, navigate) {
@@ -306,11 +315,8 @@ function openAddMaterialModal(defSubject, defGrade, targetUnitId, targetTopicId,
   });
 
   function updateGrades() {
-    const activeSubjects = getSubjectsForBranches(getState().profile.branches || []);
-    const validGrades = ALL_GRADES.filter(g => {
-      const s = GRADE_TO_SUBJECTS[g] || [];
-      return s.some(x => activeSubjects.includes(x.subject));
-    });
+    const activeGrades = getState().profile.grades || [];
+    const validGrades = ALL_GRADES.filter(g => activeGrades.includes(g));
     gradeSel.innerHTML = validGrades.map(g => `<option value="${g}" ${g === defGrade ? 'selected' : ''}>${g}</option>`).join('');
     updateSubjects();
   }
@@ -318,10 +324,12 @@ function openAddMaterialModal(defSubject, defGrade, targetUnitId, targetTopicId,
   function updateSubjects() {
     const gr = gradeSel.value;
     const activeSubjects = getSubjectsForBranches(getState().profile.branches || []);
-    const subjects = (GRADE_TO_SUBJECTS[gr] || []).filter(s => activeSubjects.includes(s.subject));
-    subjSel.innerHTML = subjects.map(s => {
-      const sinfo = SUBJECTS.find(x => x.id === s.subject);
-      return `<option value="${s.subject}" ${s.subject === defSubject ? 'selected' : ''}>${sinfo?.icon || ''} ${sinfo?.name || s.subject}</option>`;
+    const subjects = activeSubjects.map(s => {
+      let sinfo = SUBJECTS.find(x => x.id === s);
+      if (!sinfo) {
+        sinfo = { name: s.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '), icon: '📚' };
+      }
+      return `<option value="${s}" ${s === defSubject ? 'selected' : ''}>${sinfo?.icon || ''} ${sinfo?.name || s}</option>`;
     }).join('');
     updateUnits();
   }
@@ -457,8 +465,10 @@ function initCurriculumButtons(el, refresh, navigate) {
       const subject = btn.dataset.subject;
       const grade = btn.dataset.grade;
       const unitId = btn.dataset.editUnit;
-      const unit = getState().curriculum[subject][grade].find(u => u.id === unitId);
-      openCurriculumPromptModal('Üniteyi Düzenle', 'Ünite Adı', unit?.name || '', (name) => {
+      const units = getState().curriculum[subject]?.[grade] || [];
+      const unit = units.find(u => u.id === unitId);
+      if (!unit) return;
+      openCurriculumPromptModal('Üniteyi Düzenle', 'Ünite Adı', unit.name || '', (name) => {
         if (name !== unit.name) {
           updateUnit(subject, grade, unitId, name);
           refresh();
@@ -496,9 +506,11 @@ function initCurriculumButtons(el, refresh, navigate) {
       const grade = btn.dataset.grade;
       const topicId = btn.dataset.editTopic;
       const unitId = btn.dataset.unitId;
-      const unit = getState().curriculum[subject][grade].find(u => u.id === unitId);
+      const units = getState().curriculum[subject]?.[grade] || [];
+      const unit = units.find(u => u.id === unitId);
       const topic = unit?.topics.find(t => t.id === topicId);
-      openCurriculumPromptModal('Konuyu Düzenle', 'Konu Adı', topic?.name || '', (name) => {
+      if (!topic) return;
+      openCurriculumPromptModal('Konuyu Düzenle', 'Konu Adı', topic.name || '', (name) => {
         if (name !== topic.name) {
           updateTopic(subject, grade, unitId, topicId, name);
           refresh();

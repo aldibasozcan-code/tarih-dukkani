@@ -2,7 +2,7 @@
 // ADD LESSON MODAL
 // ═════════════════════════════════════════════════
 import { getState, addLesson } from '../../store/store.js';
-import { SUBJECTS, GRADE_TO_SUBJECTS, getSubjectsForBranches } from '../../data/curriculum.js';
+import { SUBJECTS, getSubjectsForBranches } from '../../data/curriculum.js';
 import { openModal, closeModal } from '../../components/modal.js';
 import { escHtml } from '../../utils/helpers.js';
 import { icon } from '../../components/icons.js';
@@ -100,17 +100,26 @@ export function openAddLessonModal(onSave, prefill = {}) {
       return;
     }
 
-    const completedSet = new Set(entity.completedTopics || []);
     const activeSubjects = getSubjectsForBranches(state.profile.branches || []);
-    const allSubjectsForGrade = GRADE_TO_SUBJECTS[entity.grade] || [];
-    const subjectsForGrade = allSubjectsForGrade.filter(s => activeSubjects.includes(s.subject));
+    // entity.curriculum already has the correct subjects assigned during creation
+    // But we check active branches just in case profile changed
+    const subjectsForGrade = (entity.curriculum || []).filter(s => activeSubjects.includes(s.subject));
+    
+    // Fallback: if student has no curriculum yet (old record), try teacher's current branches
+    const subjectsToRender = subjectsForGrade.length > 0 
+      ? subjectsForGrade 
+      : activeSubjects.map(s => ({ subject: s, grade: entity.grade }));
     
     let unitHtml = '<option value="" disabled selected hidden>Ünite Seçiniz...</option>';
     let hasUnits = false;
     
-    subjectsForGrade.forEach(({ subject, grade }) => {
+    (subjectsToRender || []).forEach(({ subject, grade }) => {
       const units = state.curriculum[subject]?.[grade] || [];
-      const subjectDef = SUBJECTS.find(s => s.id === subject);
+      let subjectDef = SUBJECTS.find(s => s.id === subject);
+      
+      if (!subjectDef) {
+        subjectDef = { name: subject.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '), icon: '📚' };
+      }
       
       if (units.length > 0) {
         hasUnits = true;

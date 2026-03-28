@@ -3,16 +3,19 @@
 // ═════════════════════════════════════════════════
 import { getState } from '../../store/store.js';
 import { icon } from '../../components/icons.js';
-import { openModal } from '../../components/modal.js';
+import { openModal, closeModal } from '../../components/modal.js';
 import { escHtml, getAvatarColor, getInitials, formatCurrency, formatDate } from '../../utils/helpers.js';
-import { DEFAULT_CURRICULUM, GRADE_TO_SUBJECTS, CONTENT_TYPES, DAYS_TR } from '../../data/curriculum.js';
+import { SUBJECTS, getSubjectsForBranches, CONTENT_TYPES, DAYS_TR } from '../../data/curriculum.js';
 
 export function openGroupDetail(groupId, navigate) {
   const state = getState();
   const group = state.groups.find(g => g.id === groupId);
   if (!group) return;
 
-  const subjects = GRADE_TO_SUBJECTS[group.grade] || [];
+  const activeSubjects = getSubjectsForBranches(state.profile.branches || []);
+  const subjects = (group.curriculum && group.curriculum.length > 0)
+    ? group.curriculum
+    : activeSubjects.map(s => ({ subject: s, grade: group.grade }));
   const completedSet = new Set(group.completedTopics || []);
 
   // Get upcoming lessons for this group
@@ -29,7 +32,7 @@ export function openGroupDetail(groupId, navigate) {
   let totalTopics = 0;
   let totalCompletedTopics = 0;
   subjects.forEach(({ subject, grade }) => {
-    const units = DEFAULT_CURRICULUM[subject]?.[grade] || [];
+    const units = state.curriculum[subject]?.[grade] || [];
     units.forEach(u => {
       totalTopics += u.topics.length;
       totalCompletedTopics += u.topics.filter(t => completedSet.has(t.id)).length;
@@ -49,11 +52,13 @@ export function openGroupDetail(groupId, navigate) {
         </div>
         <div style="flex:1;">
           <h2 style="font-size:20px;font-weight:800;">${escHtml(group.name)}</h2>
-          <div style="display:flex;gap:10px;margin-top:4px;flex-wrap:wrap;">
+          <div style="display:flex;gap:10px;margin-top:4px;flex-wrap:wrap;align-items:center;">
             <span class="badge badge-purple">${group.grade}</span>
             <span class="badge badge-muted">${DAYS_TR[group.dayOfWeek]} ${group.time}</span>
             <span class="badge badge-info">${formatCurrency(group.rate)}/saat</span>
+            <span class="badge ${group.status === 'passive' ? 'badge-danger' : 'badge-success'}">${group.status === 'passive' ? 'PASİF' : 'AKTİF'}</span>
             ${group.zoomLink ? `<a href="${escHtml(group.zoomLink)}" target="_blank" class="badge badge-success" style="text-decoration:none;">📹 Zoom</a>` : '<span class="badge badge-warning">Zoom bekleniyor</span>'}
+            <button class="btn btn-ghost btn-sm" id="btn-edit-group-detail" style="padding:2px 8px; font-size:11px; margin-left:auto;">${icon('edit', 12)} Profili Düzenle</button>
           </div>
         </div>
       </div>
@@ -96,13 +101,17 @@ export function openGroupDetail(groupId, navigate) {
 
         <!-- Stats -->
         ${subjects.map(({ subject, grade }) => {
-          const units = DEFAULT_CURRICULUM[subject]?.[grade] || [];
+          const units = state.curriculum[subject]?.[grade] || [];
           const allTopics = units.flatMap(u => u.topics);
           const completed = allTopics.filter(t => completedSet.has(t.id)).length;
           const pct = allTopics.length > 0 ? Math.round((completed / allTopics.length) * 100) : 0;
+          
+          let sinfo = SUBJECTS.find(s => s.id === subject);
+          if (!sinfo) sinfo = { name: subject.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '), icon: '📚' };
+
           return `
             <div class="card card-sm">
-              <div style="font-size:12px;font-weight:600;color:var(--accent2);margin-bottom:8px;">${grade} İlerleme</div>
+              <div style="font-size:12px;font-weight:600;color:var(--accent2);margin-bottom:8px;">${sinfo.icon} ${sinfo.name} (${grade})</div>
               <div class="progress-bar" style="margin-bottom:6px;">
                 <div class="progress-fill" style="width:${pct}%;background:linear-gradient(90deg,var(--accent2),var(--accent));"></div>
               </div>
@@ -114,11 +123,14 @@ export function openGroupDetail(groupId, navigate) {
 
       <!-- Curriculum -->
       ${subjects.map(({ subject, grade }) => {
-        const units = DEFAULT_CURRICULUM[subject]?.[grade] || [];
+        const units = state.curriculum[subject]?.[grade] || [];
+        let sinfo = SUBJECTS.find(s => s.id === subject);
+        if (!sinfo) sinfo = { name: subject.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '), icon: '📚' };
+        
         const materials = Object.values(state.materials).filter(m => m.subject === subject && m.grade === grade);
 
         return `
-          <h3 style="font-size:14px;font-weight:700;color:var(--accent2);margin:16px 0 10px;">${grade} Müfredatı</h3>
+          <h3 style="font-size:14px;font-weight:700;color:var(--accent2);margin:16px 0 10px;">${sinfo.icon} ${sinfo.name} (${grade}) Müfredatı</h3>
           ${units.map(unit => `
             <div class="card card-sm" style="margin-bottom:8px;">
               <div style="font-weight:700;font-size:12px;margin-bottom:8px;color:var(--text-secondary);">${escHtml(unit.name)}</div>
@@ -149,6 +161,19 @@ export function openGroupDetail(groupId, navigate) {
 
   // Topic toggle
   setTimeout(() => {
+    // Edit Group
+    const editBtn = document.getElementById('btn-edit-group-detail');
+    if (editBtn) {
+      editBtn.addEventListener('click', () => {
+        import('./AddGroupModal.js').then(m => {
+          closeModal();
+          m.openAddGroupModal(() => {
+             if (navigate) navigate('groups');
+          }, group.id);
+        });
+      });
+    }
+
     document.querySelectorAll('[data-toggle-group-topic]').forEach(btn => {
       btn.addEventListener('click', () => {
         const topicId = btn.dataset.toggleGroupTopic;
