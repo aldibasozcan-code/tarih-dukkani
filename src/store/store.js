@@ -66,10 +66,10 @@ function createDefaultState() {
     },
     showSeasonReview: false,
     settings: {
-      appName: 'Bitika',
+      appName: 'Bitig.app',
       logo: null,
       brandColor: '#004526',
-      footerText: 'v1.0 • Bitika',
+      footerText: 'v1.0 • Bitig.app',
       calendarId: '',
       calendarApiKey: '',
       lastSeasonPromptYear: 0,
@@ -951,7 +951,7 @@ export function generateGoogleCalendarUrl(lesson) {
   
   const details = encodeURIComponent(`Öğrenci/Grup: ${lesson.title}
 Ders: ${lesson.subject} / ${lesson.grade}
-Bitika Uygulamasından eklendi.`);
+Bitig.app Uygulamasından eklendi.`);
 
   let url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${dates}&details=${details}`;
   if (calId) {

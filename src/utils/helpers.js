@@ -78,6 +78,32 @@ export function getInitials(name = '') {
   return name.split(' ').filter(Boolean).map(w => w[0]).slice(0, 2).join('').toUpperCase();
 }
 
+export function getGroupInitials(name = '') {
+  const words = name.split(' ').filter(Boolean);
+  let initials = '';
+  
+  for (let i = 0; i < words.length; i++) {
+    const word = words[i];
+    const nextWord = words[i+1];
+    
+    // "Sınıf" veya "Grade" kelimesinden sonra rakam geliyorsa kelimeyi atla, rakamı al
+    const isSinif = word.toLowerCase() === 'sınıf' || word.toLowerCase() === 'sinif';
+    if (isSinif && nextWord && /^\d+/.test(nextWord)) {
+      continue; 
+    }
+    
+    // Eğer kelime rakamla başlıyorsa (Sınıf 7 -> 7), rakam kısmını al
+    if (/^\d+/.test(word)) {
+      initials += word.match(/^\d+/)[0];
+    } else {
+      // Değilse ilk harfi al
+      initials += word[0].toUpperCase();
+    }
+  }
+  
+  return initials.slice(0, 4); // Maksimum 4 karakter
+}
+
 export function getAvatarColor(name = '') {
   const colors = [
     'linear-gradient(135deg,#63cab7,#4aad9a)',

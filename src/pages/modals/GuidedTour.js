@@ -6,7 +6,7 @@ const tourSteps = [
   {
     page: 'dashboard',
     title: 'Komuta Merkeziniz! 📊',
-    content: 'Bitika\'e hoş geldiniz! **Panel**, günlük akışınızı yönettiğiniz yerdir. Üstteki kartlardan aylık kazancınızı ve ders istatistiklerinizi anlık olarak takip edebilirsiniz.',
+    content: 'Bitig.app\'e hoş geldiniz! **Panel**, günlük akışınızı yönettiğiniz yerdir. Üstteki kartlardan aylık kazancınızı ve ders istatistiklerinizi anlık olarak takip edebilirsiniz.',
     tip: 'KPI kartlarına tıklayarak detaylı finansal raporlarınıza hızlıca göz atabilirsiniz.',
     buttonText: 'Kursları Keşfet',
     nextPage: 'courses'

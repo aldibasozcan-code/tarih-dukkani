@@ -12,7 +12,7 @@ export function renderLogin() {
           <div class="login-logo-circle">
             ${icon('book', 32)}
           </div>
-          <h2>Bitika</h2>
+          <h2>Bitig.app</h2>
           <p class="login-subtitle">Dijital Ders Yönetim Platformu</p>
         </div>
         
@@ -62,7 +62,7 @@ export function renderLogin() {
         </form>
         
         <div class="login-footer">
-          <p>© ${new Date().getFullYear()} Bitika. Tüm Hakları Saklıdır.</p>
+          <p>© ${new Date().getFullYear()} Bitig.app. Tüm Hakları Saklıdır.</p>
         </div>
       </div>
     </div>

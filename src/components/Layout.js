@@ -102,7 +102,9 @@ function renderTopbar(state, unreadCount) {
         ${unreadCount > 0 ? `<span class="notif-badge">${unreadCount}</span>` : ''}
       </button>
       <div class="profile-chip" id="profile-btn">
-        <div class="avatar">${getInitials(state.profile.name)}</div>
+        <div class="avatar" style="overflow:hidden; display:flex; align-items:center; justify-content:center;">
+          ${state.profile.avatar ? `<img src="${state.profile.avatar}" style="width:100%;height:100%;object-fit:cover;">` : getInitials(state.profile.name)}
+        </div>
         <div>
           <div class="name">${state.profile.name || 'Öğretmen'}</div>
           <div class="role">${state.profile.title || ''}</div>

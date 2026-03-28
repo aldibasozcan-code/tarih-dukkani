@@ -118,14 +118,14 @@ async function checkDomainMigration() {
       body: `
         <div style="text-align:center; padding: 10px 0;">
           <div style="font-size:48px; margin-bottom:16px;">✨</div>
-          <h3 style="font-size:20px; font-weight:800; margin-bottom:12px; color:var(--text-primary);">Bitika'ya Hoş Geldiniz!</h3>
+          <h3 style="font-size:20px; font-weight:800; margin-bottom:12px; color:var(--text-primary);">Bitig.app'ya Hoş Geldiniz!</h3>
           <p style="color:var(--text-secondary); line-height:1.6; font-size:15px;">
             Sizlere daha iyi hizmet verebilmek için <strong>tarih-dukkani.vercel.app</strong> adresinden 
-            <strong style="color:var(--brand-green);">bitika.app</strong> adresine taşındık.
+            <strong style="color:var(--brand-green);">bitig.app</strong> adresine taşındık.
           </p>
           <div style="background:var(--brand-green-soft); border-radius:12px; padding:16px; margin-top:20px; border:1px solid var(--brand-green); border-style: dashed;">
             <p style="font-size:12px; color:var(--brand-green); font-weight:700; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">Yeni Adresimiz</p>
-            <code style="font-size:18px; font-weight:800; color:var(--brand-green);">https://bitika.app</code>
+            <code style="font-size:18px; font-weight:800; color:var(--brand-green);">https://bitig.app</code>
           </div>
           <p style="font-size:12px; color:var(--text-muted); margin-top:16px;">
             Lütfen tarayıcınızdaki yer imlerini güncellemeyi unutmayın.
@@ -134,7 +134,7 @@ async function checkDomainMigration() {
       `,
       footer: `
         <button class="btn btn-secondary" id="migration-stay-btn" style="flex:1;">Burada Kal</button>
-        <a href="https://bitika.app${window.location.hash}" class="btn btn-primary" style="flex:1; text-decoration:none; justify-content:center; gap:8px;">
+        <a href="https://bitig.app${window.location.hash}" class="btn btn-primary" style="flex:1; text-decoration:none; justify-content:center; gap:8px;">
           Yeni Adrese Git ${icon('externalLink', 14)}
         </a>
       `

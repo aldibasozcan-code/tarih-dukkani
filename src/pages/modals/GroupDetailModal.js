@@ -4,7 +4,7 @@
 import { getState } from '../../store/store.js';
 import { icon } from '../../components/icons.js';
 import { openModal, closeModal } from '../../components/modal.js';
-import { escHtml, getAvatarColor, getInitials, formatCurrency, formatDate } from '../../utils/helpers.js';
+import { escHtml, getAvatarColor, getInitials, getGroupInitials, formatCurrency, formatDate } from '../../utils/helpers.js';
 import { SUBJECTS, getSubjectsForBranches, CONTENT_TYPES, DAYS_TR } from '../../data/curriculum.js';
 
 export function openGroupDetail(groupId, navigate) {
@@ -47,8 +47,8 @@ export function openGroupDetail(groupId, navigate) {
     size: 'xl',
     body: `
       <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;">
-        <div style="width:60px;height:60px;border-radius:14px;background:linear-gradient(135deg,var(--accent2),#5a4dcc);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#fff;flex-shrink:0;">
-          ${getInitials(group.name)}
+        <div style="width:60px;height:60px;border-radius:14px;background:${getAvatarColor(group.name)};display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#fff;flex-shrink:0;">
+          ${getGroupInitials(group.name)}
         </div>
         <div style="flex:1;">
           <h2 style="font-size:20px;font-weight:800;">${escHtml(group.name)}</h2>

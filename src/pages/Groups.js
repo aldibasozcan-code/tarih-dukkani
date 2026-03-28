@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════════════
 import { getState, deleteGroup } from '../store/store.js';
 import { icon } from '../components/icons.js';
-import { formatCurrency, getAvatarColor, getInitials, escHtml } from '../utils/helpers.js';
+import { formatCurrency, getAvatarColor, getInitials, getGroupInitials, escHtml } from '../utils/helpers.js';
 import { showConfirm } from '../components/modal.js';
 
 export function renderGroups(navigate) {
@@ -52,8 +52,8 @@ function renderGroupCards(groups) {
   const days = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
   return groups.map(g => `
     <div class="person-card" data-group-id="${g.id}">
-      <div class="person-avatar" style="background:linear-gradient(135deg,var(--accent2),#5a4dcc);">
-        ${getInitials(g.name)}
+      <div class="person-avatar" style="background:${getAvatarColor(g.name)}">
+        ${getGroupInitials(g.name)}
       </div>
       <div style="flex:1;min-width:0;">
         <div class="person-name">${escHtml(g.name)}</div>
