@@ -12,7 +12,7 @@ export function renderOnboarding() {
           <div class="login-logo-circle" style="margin-bottom: 12px; width: 64px; height: 64px;">
             ${icon('book', 28)}
           </div>
-          <h2 style="font-size: 22px; font-weight: 800; color: var(--brand-green); margin-bottom: 4px;">Tarih Dükkanı</h2>
+          <h2 style="font-size: 22px; font-weight: 800; color: var(--brand-green); margin-bottom: 4px;">Bitika</h2>
           <p class="login-subtitle" style="font-size: 15px; color: var(--brand-green); margin: 0;">Sisteme Hoş Geldiniz!</p>
           <p style="font-size: 13px; color: var(--text-muted); margin-top: 8px; line-height: 1.4;">
             Uygulamayı kendi derslerinize ve öğrencilerinize göre şekillendirebilmemiz için lütfen aşağıdaki bilgileri doldurun.

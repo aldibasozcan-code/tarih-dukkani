@@ -26,7 +26,7 @@ export function renderSettings(navigate) {
             <div class="form-row">
               <div class="form-group">
                 <label>Uygulama Adı</label>
-                <input type="text" id="app-name" value="${state.settings.appName || 'Öğretmen Paneli'}">
+                <input type="text" id="app-name" value="${state.settings.appName || 'Bitika'}">
               </div>
               <div class="form-group">
                 <label>Logo (URL)</label>
@@ -36,7 +36,7 @@ export function renderSettings(navigate) {
 
             <div class="form-group">
               <label>Alt Bilgi (Sidebar Footer)</label>
-              <input type="text" id="app-footer" value="${state.settings.footerText || 'v1.0 • Öğretmen Paneli'}" placeholder="v1.0 • Marka Adınız">
+              <input type="text" id="app-footer" value="${state.settings.footerText || 'v1.0 • Bitika'}" placeholder="v1.0 • Marka Adınız">
             </div>
 
             <div class="form-group">
@@ -64,7 +64,7 @@ export function renderSettings(navigate) {
                 <div id="preview-logo-box" style="width:32px; height:32px; background:#fff; border-radius:8px; display:flex; align-items:center; justify-content:center; overflow:hidden;">
                   ${state.settings.logo ? `<img src="${state.settings.logo}" style="width:100%; height:100%; object-fit:cover;">` : `<span style="color:${state.settings.brandColor || '#004526'}; font-weight:800; font-size:14px;">${(state.settings.appName || 'TP').slice(0, 2).toUpperCase()}</span>`}
                 </div>
-                <div style="font-size:13px; font-weight:800; color:#fff;" id="preview-name">${state.settings.appName || 'Öğretmen Paneli'}</div>
+                <div style="font-size:13px; font-weight:800; color:#fff;" id="preview-name">${state.settings.appName || 'Bitika'}</div>
               </div>
               
               <div style="height:8px; width:100%; background:rgba(255,255,255,0.1); border-radius:4px; margin-bottom:8px;"></div>
@@ -72,7 +72,7 @@ export function renderSettings(navigate) {
               <div style="height:24px; width:100%; background:#fff; border-radius:6px; margin:16px 0 8px;"></div>
               
               <div style="margin-top:32px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.1); font-size:9px; color:rgba(255,255,255,0.6);" id="preview-footer">
-                ${state.settings.footerText || 'v1.0 • Öğretmen Paneli'}
+                ${state.settings.footerText || 'v1.0 • Bitika'}
               </div>
             </div>
           </div>
@@ -120,13 +120,16 @@ export function renderSettings(navigate) {
           </div>
         </div>
 
-        <div class="card" style="border-color:var(--danger)">
-          <h3 style="font-size:15px;font-weight:700;margin-bottom:16px;color:var(--danger);">Tehlikeli Alan</h3>
+        </div>
+        
+        <!-- Guided Tour -->
+        <div class="card">
+          <h3 style="font-size:15px;font-weight:700;margin-bottom:16px;">Uygulama Rehberi</h3>
           <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">
-            Bu işlem, uygulamadaki **tamamen size ait** veritabanı kasanızı, giriş şifrenizi ve kayıt bilgilerinizi kalıcı olarak yok eder. Geri alınamaz.
+            Uygulamanın özelliklerini ve nasıl kullanıldığını tekrar hatırlamak ister misiniz?
           </p>
-          <button class="btn btn-danger" id="btn-delete-account" style="width:100%;justify-content:center;">
-            ${icon('trash', 14)} HESABIMI KALICI OLARAK SİL
+          <button class="btn btn-secondary" id="btn-start-tour" style="width:100%;justify-content:center;">
+            ${icon('star', 14)} Rehberi Tekrar Başlat
           </button>
         </div>
 
@@ -136,7 +139,7 @@ export function renderSettings(navigate) {
           <div style="display:flex;flex-direction:column;gap:10px;font-size:13px;color:var(--text-secondary);">
             <div style="display:flex;justify-content:space-between;">
               <span>Uygulama</span>
-              <span style="font-weight:600;">Öğretmen Paneli</span>
+              <span style="font-weight:600;">Bitika</span>
             </div>
             <div style="display:flex;justify-content:space-between;">
               <span>Versiyon</span>
@@ -164,9 +167,9 @@ export function renderSettings(navigate) {
       const colorInp = el.querySelector('#app-color');
 
       const updatePreview = () => {
-        const name = nameInp.value.trim() || 'Öğretmen Paneli';
+        const name = nameInp.value.trim() || 'Bitika';
         const logo = logoInp.value.trim();
-        const footer = footerInp.value.trim() || 'v1.0 • Öğretmen Paneli';
+        const footer = footerInp.value.trim() || 'v1.0 • Bitika';
         const color = colorInp.value;
 
         const previewSidebar = el.querySelector('#brand-preview-sidebar');
@@ -200,10 +203,10 @@ export function renderSettings(navigate) {
 
       el.querySelector('#btn-save-branding')?.addEventListener('click', () => {
         updateSettings({
-          appName: nameInp.value.trim() || 'Öğretmen Paneli',
+          appName: nameInp.value.trim() || 'Bitika',
           logo: logoInp.value.trim() || null,
           brandColor: colorInp.value,
-          footerText: footerInp.value.trim() || 'v1.0 • Öğretmen Paneli'
+          footerText: footerInp.value.trim() || 'v1.0 • Bitika'
         });
         
         // Refresh UI
@@ -261,7 +264,7 @@ export function renderSettings(navigate) {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `tarih-dukkani-${new Date().toISOString().split('T')[0]}.json`;
+        a.download = `bitika-${new Date().toISOString().split('T')[0]}.json`;
         a.click();
         URL.revokeObjectURL(url);
       });
@@ -362,6 +365,11 @@ export function renderSettings(navigate) {
             }
           });
         });
+      });
+
+      // Guided Tour
+      el.querySelector('#btn-start-tour')?.addEventListener('click', () => {
+        import('./modals/GuidedTour.js').then(m => m.restartTour(nav));
       });
     }
   };

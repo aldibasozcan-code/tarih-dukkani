@@ -144,11 +144,6 @@ export function openGroupDetail(groupId, navigate) {
                       ${done ? icon('check', 11) : ''}
                     </button>
                     <span style="flex:1;font-size:12px;${done ? 'text-decoration:line-through;color:var(--text-muted);' : ''}">${escHtml(topic.name)}</span>
-                    ${topicMaterials.map(m => `
-                      <a href="${escHtml(m.link)}" target="_blank" class="badge badge-purple" style="text-decoration:none;font-size:10px;">
-                        ${CONTENT_TYPES.find(ct => ct.id === m.contentType)?.icon || '📄'} ${m.title}
-                      </a>
-                    `).join('')}
                   </div>
                 `;
               }).join('')}
@@ -156,6 +151,61 @@ export function openGroupDetail(groupId, navigate) {
           `).join('')}
         `;
       }).join('')}
+
+      <!-- Financial Status -->
+      <h3 style="font-size:14px;font-weight:700;margin:24px 0 10px; color:var(--accent2);">Grup Tahsilat Durumu</h3>
+      <div class="card card-sm">
+        <div style="display:flex; gap:16px; margin-bottom:16px;">
+          <div style="flex:1; padding:10px; background:rgba(255,159,67,0.05); border-radius:8px; border:1px solid rgba(255,159,67,0.2);">
+            <div style="font-size:11px; color:var(--text-muted);">Bekleyen (Tahmini)</div>
+            <div style="font-size:18px; font-weight:800; color:var(--warning);">
+              ${formatCurrency(state.transactions.filter(t => t.refId === group.id && t.status === 'estimated').reduce((s,t)=>s+t.amount,0))}
+            </div>
+          </div>
+          <div style="flex:1; padding:10px; background:rgba(46,213,115,0.05); border-radius:8px; border:1px solid rgba(46,213,115,0.2);">
+            <div style="font-size:11px; color:var(--text-muted);">Tahsil Edilen (Kesin)</div>
+            <div style="font-size:18px; font-weight:800; color:var(--success);">
+              ${formatCurrency(state.transactions.filter(t => t.refId === group.id && t.status === 'confirmed').reduce((s,t)=>s+t.amount,0))}
+            </div>
+          </div>
+        </div>
+        
+        <div class="table-wrapper">
+          <table style="font-size:12px;">
+            <thead>
+              <tr>
+                <th>Tarih</th>
+                <th>Ders/Açıklama</th>
+                <th>Durum</th>
+                <th style="text-align:right;">Tutar</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              ${[...state.transactions].filter(t => t.refId === group.id).sort((a,b)=>b.date.localeCompare(a.date)).map(t => `
+                <tr>
+                  <td style="color:var(--text-muted);">${formatDate(t.date)}</td>
+                  <td>${escHtml(t.description)}</td>
+                  <td>
+                    <span class="badge ${t.status === 'estimated' ? 'badge-warning' : 'badge-success'}">
+                      ${t.status === 'estimated' ? '⏳ Bekliyor' : '✓ Ödendi'}
+                    </span>
+                  </td>
+                  <td style="text-align:right; font-weight:700;">${formatCurrency(t.amount)}</td>
+                  <td style="text-align:right;">
+                    ${t.status === 'estimated' ? `
+                      <button class="btn btn-success btn-sm" data-confirm-transaction="${t.id}" style="padding:4px 8px; font-size:10px;">
+                        ${icon('check', 10)} Tahsil Et
+                      </button>
+                    ` : ''}
+                  </td>
+                </tr>
+              `).join('')}
+              ${state.transactions.filter(t => t.refId === group.id).length === 0 ? '<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-muted);">Kayıt bulunamadı.</td></tr>' : ''}
+            </tbody>
+          </table>
+        </div>
+      </div>
     `,
   });
 
@@ -173,6 +223,16 @@ export function openGroupDetail(groupId, navigate) {
         });
       });
     }
+
+    document.querySelectorAll('[data-confirm-transaction]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const txId = btn.dataset.confirmTransaction;
+        import('../../store/store.js').then(m => {
+          m.confirmTransaction(txId);
+          openGroupDetail(group.id, navigate);
+        });
+      });
+    });
 
     document.querySelectorAll('[data-toggle-group-topic]').forEach(btn => {
       btn.addEventListener('click', () => {

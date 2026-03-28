@@ -2,8 +2,9 @@
 // MAIN.JS - SPA Entry Point & Router
 // ═══════════════════════════════════════════════════
 import { initStore, getState, subscribe, getPendingLessons, getLessonStatus } from './store/store.js';
-import { renderLayout, toggleNotifPanel, closeNotifPanel, refreshTopbar, refreshSidebar, toggleSidebar, closeSidebar } from './components/Layout.js';
+import { renderLayout, toggleNotifPanel, closeNotifPanel, refreshTopbar, refreshSidebar, toggleSidebar, closeSidebar, applyTheme } from './components/Layout.js';
 import { subscribeToAuth } from './lib/auth.js';
+import { icon } from './components/icons.js';
 
 // ─── Initialize ───
 // state initialization moved to init()
@@ -100,6 +101,49 @@ async function navigate(page) {
 
   // Re-attach sidebar/topbar nav events
   attachNavEvents();
+
+  // Inject Guided Tour if active
+  const { injectTour } = await import('./pages/modals/GuidedTour.js');
+  injectTour(page, navigate);
+}
+
+// ─── Domain Migration Notice ───
+async function checkDomainMigration() {
+  const currentHost = window.location.hostname;
+  if (currentHost.includes('tarih-dukkani')) {
+    const { openModal } = await import('./components/modal.js');
+
+    openModal({
+      title: 'Adresimiz Değişti! 🚀',
+      body: `
+        <div style="text-align:center; padding: 10px 0;">
+          <div style="font-size:48px; margin-bottom:16px;">✨</div>
+          <h3 style="font-size:20px; font-weight:800; margin-bottom:12px; color:var(--text-primary);">Bitika'ya Hoş Geldiniz!</h3>
+          <p style="color:var(--text-secondary); line-height:1.6; font-size:15px;">
+            Sizlere daha iyi hizmet verebilmek için <strong>tarih-dukkani.vercel.app</strong> adresinden 
+            <strong style="color:var(--brand-green);">bitika.app</strong> adresine taşındık.
+          </p>
+          <div style="background:var(--brand-green-soft); border-radius:12px; padding:16px; margin-top:20px; border:1px solid var(--brand-green); border-style: dashed;">
+            <p style="font-size:12px; color:var(--brand-green); font-weight:700; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">Yeni Adresimiz</p>
+            <code style="font-size:18px; font-weight:800; color:var(--brand-green);">https://bitika.app</code>
+          </div>
+          <p style="font-size:12px; color:var(--text-muted); margin-top:16px;">
+            Lütfen tarayıcınızdaki yer imlerini güncellemeyi unutmayın.
+          </p>
+        </div>
+      `,
+      footer: `
+        <button class="btn btn-secondary" id="migration-stay-btn" style="flex:1;">Burada Kal</button>
+        <a href="https://bitika.app${window.location.hash}" class="btn btn-primary" style="flex:1; text-decoration:none; justify-content:center; gap:8px;">
+          Yeni Adrese Git ${icon('externalLink', 14)}
+        </a>
+      `
+    });
+
+    document.getElementById('migration-stay-btn')?.addEventListener('click', () => {
+      import('./components/modal.js').then(m => m.closeModal());
+    });
+  }
 }
 
 // ─── Initial Render ───
@@ -159,6 +203,16 @@ async function init() {
 
         attachNavEvents();
         navigate(startPage);
+
+        // Check for migration if old domain
+        checkDomainMigration();
+
+        // Auto-start Guided Tour for new users
+        if (!state.profile.tourCompleted && !state.profile.tourActive) {
+          const { startTour } = await import('./store/store.js');
+          startTour();
+          // The navigate call above will trigger the first step
+        }
 
         // Subscribe to state changes to update topbar
         subscribe((newState) => {

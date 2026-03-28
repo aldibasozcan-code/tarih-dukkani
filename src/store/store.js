@@ -58,15 +58,18 @@ function createDefaultState() {
       rate: '',
       avatar: null,
       onboarded: false,
+      tourCompleted: false,
+      tourActive: false,
+      tourStep: 0,
       grades: [],
       branches: [],
     },
     showSeasonReview: false,
     settings: {
-      appName: 'Öğretmen Paneli',
+      appName: 'Bitika',
       logo: null,
       brandColor: '#004526',
-      footerText: 'v1.0 • Öğretmen Paneli',
+      footerText: 'v1.0 • Bitika',
       calendarId: '',
       calendarApiKey: '',
       lastSeasonPromptYear: 0,
@@ -307,6 +310,25 @@ export function updateStudent(id, data) {
   });
 }
 
+export function syncStudentCurriculum(id) {
+  setState(s => {
+    const students = s.students.map(st => {
+      if (st.id === id) {
+        const activeSubjects = getSubjectsForBranches(s.profile.branches || []);
+        const newCurriculum = activeSubjects.map(subj => ({
+          subject: subj,
+          grade: st.grade,
+          units: s.curriculum[subj]?.[st.grade] || []
+        })).filter(c => c.units.length > 0);
+        
+        return { ...st, curriculum: newCurriculum };
+      }
+      return st;
+    });
+    return { students };
+  });
+}
+
 export function deleteStudent(id) {
   const state = getState();
   const student = state.students.find(s => s.id === id);
@@ -523,6 +545,10 @@ export function completeLesson(lessonId, extraOpts = {}) {
       description: `${lesson.title} - ${lesson.date} Dersi`,
       date: lesson.date,
       lessonId: lessonId,
+      status: 'estimated',
+      refId: lesson.refId,
+      refType: lesson.type,
+      refName: ref?.name || 'Bilinmeyen'
     };
     updates.transactions = [...state.transactions, transaction];
   }
@@ -548,6 +574,25 @@ export function completeLesson(lessonId, extraOpts = {}) {
   if (extraOpts.homework) {
     addHomeworkNotification(lesson, extraOpts.homework);
   }
+}
+
+export function updateLesson(id, data) {
+  setState(s => ({
+    lessons: s.lessons.map(l => l.id === id ? { ...l, ...data } : l)
+  }));
+}
+
+export function updateLessonTime(id, date, startTime, duration = 60) {
+  setState(s => {
+    const lessons = s.lessons.map(l => {
+      if (l.id === id) {
+        const endTime = _addMinutes(startTime, duration || 60);
+        return { ...l, date, startTime, endTime };
+      }
+      return l;
+    });
+    return { lessons };
+  });
 }
 
 export function postponeLesson(lessonId, newDate, newTime) {
@@ -598,7 +643,13 @@ export function deleteMaterial(id) {
 export function addTransaction(data) {
   const id = generateId();
   setState(s => ({
-    transactions: [...s.transactions, { id, ...data }]
+    transactions: [...s.transactions, { id, status: 'confirmed', ...data }]
+  }));
+}
+
+export function confirmTransaction(id) {
+  setState(s => ({
+    transactions: s.transactions.map(t => t.id === id ? { ...t, status: 'confirmed' } : t)
   }));
 }
 
@@ -718,6 +769,36 @@ export function updateSettings(data) {
   setState(s => ({ settings: { ...s.settings, ...data } }));
 }
 
+export function completeTour() {
+  setState(s => ({
+    profile: { ...s.profile, tourCompleted: true, tourActive: false, tourStep: 0 }
+  }));
+}
+
+export function startTour() {
+  setState(s => ({
+    profile: { ...s.profile, tourActive: true, tourStep: 0, tourCompleted: false }
+  }));
+}
+
+export function nextTourStep() {
+  setState(s => ({
+    profile: { ...s.profile, tourStep: (s.profile.tourStep || 0) + 1 }
+  }));
+}
+
+export function skipTour() {
+  setState(s => ({
+    profile: { ...s.profile, tourActive: false }
+  }));
+}
+
+export function setTourStep(step) {
+  setState(s => ({
+    profile: { ...s.profile, tourStep: step }
+  }));
+}
+
 // ─── Computed ───
 export function getLessonStatus(lesson) {
   const now = new Date();
@@ -770,9 +851,8 @@ export function getMonthlyStats() {
   );
 
   const income = monthTransactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-  const expense = monthTransactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
 
-  return { income, expense, net: income - expense };
+  return { income };
 }
 
 // ─── Curriculum CRUD ───
@@ -871,7 +951,7 @@ export function generateGoogleCalendarUrl(lesson) {
   
   const details = encodeURIComponent(`Öğrenci/Grup: ${lesson.title}
 Ders: ${lesson.subject} / ${lesson.grade}
-Tarih Dükkanı Uygulamasından eklendi.`);
+Bitika Uygulamasından eklendi.`);
 
   let url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${dates}&details=${details}`;
   if (calId) {

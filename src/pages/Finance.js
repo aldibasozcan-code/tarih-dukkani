@@ -16,7 +16,7 @@ export function renderFinance(navigate) {
       <div class="page-header">
         <div>
           <h2>Muhasebe</h2>
-          <p>Gelir ve gider takibi</p>
+          <p>Gelir takibi</p>
         </div>
         <button class="btn btn-primary" id="btn-add-transaction">${icon('plus', 14)} Manuel İşlem</button>
       </div>
@@ -32,53 +32,72 @@ export function renderFinance(navigate) {
       <!-- Banner -->
       <div class="finance-banner" style="margin-bottom:24px;">
         <div>
-          <div style="font-size:13px;color:var(--text-muted);margin-bottom:4px;">Net Kazanç (Bu Ay)</div>
-          <div class="finance-amount" id="net-display">${formatCurrency(stats.net)}</div>
+          <div style="font-size:13px;color:var(--text-muted);margin-bottom:4px;">Aylık Toplam Gelir</div>
+          <div class="finance-amount" id="net-display">${formatCurrency(stats.income)}</div>
           <div style="display:flex;gap:16px;margin-top:12px;">
             <div>
-              <div style="font-size:11px;color:var(--text-muted);">Gelir</div>
-              <div style="font-size:18px;font-weight:700;color:var(--success);" id="income-display">${formatCurrency(stats.income)}</div>
+              <div style="font-size:11px;color:var(--text-muted);">Tahsil Edilen</div>
+              <div style="font-size:18px;font-weight:700;color:var(--success);" id="income-display">${formatCurrency(stats.confirmed)}</div>
             </div>
             <div>
-              <div style="font-size:11px;color:var(--text-muted);">Gider</div>
-              <div style="font-size:18px;font-weight:700;color:var(--danger);" id="expense-display">${formatCurrency(stats.expense)}</div>
+              <div style="font-size:11px;color:var(--text-muted);">Bekleyen</div>
+              <div style="font-size:18px;font-weight:700;color:var(--warning);" id="expense-display">${formatCurrency(stats.estimated)}</div>
             </div>
           </div>
         </div>
-        <div id="finance-chart" style="flex:1;max-width:200px;">
-          ${renderDonutChart(stats)}
+        <div id="finance-chart" style="flex:1;max-width:200px; display:flex; align-items:center; justify-content:center;">
+          <div style="text-align:center;">
+            ${icon('trendUp', 40)}
+          </div>
         </div>
       </div>
 
       <!-- KPI Cards -->
-      <div class="grid grid-3" style="margin-bottom:24px;">
+      <div class="grid grid-2" style="margin-bottom:24px;">
         <div class="kpi-card">
           <div class="kpi-icon" style="background:rgba(99,202,183,0.15);">${icon('trendUp', 20)}</div>
           <div>
-            <div class="kpi-value" id="pending-income">${formatCurrency(calcPendingIncome(state))}</div>
-            <div class="kpi-label">Beklenen Gelir</div>
+            <div class="kpi-value" style="color:var(--warning);" id="display-estimated">${formatCurrency(stats.estimated)}</div>
+            <div class="kpi-label">Tahmini Kazanç (Bekleyen)</div>
           </div>
         </div>
         <div class="kpi-card">
           <div class="kpi-icon" style="background:rgba(46,213,115,0.15);">${icon('checkCircle', 20)}</div>
           <div>
-            <div class="kpi-value" id="confirmed-income">${formatCurrency(stats.income)}</div>
-            <div class="kpi-label">Kesinleşen Gelir (Bu Ay)</div>
+            <div class="kpi-value" style="color:var(--success);" id="display-confirmed">${formatCurrency(stats.confirmed)}</div>
+            <div class="kpi-label">Kesinleşen Kazanç (Tahsil Edilen)</div>
           </div>
         </div>
-        <div class="kpi-card">
-          <div class="kpi-icon" style="background:rgba(255,90,101,0.15);">${icon('finance', 20)}</div>
-          <div>
-            <div class="kpi-value">${formatCurrency(stats.expense)}</div>
-            <div class="kpi-label">Toplam Gider (Bu Ay)</div>
+      </div>
+
+      <!-- Filters -->
+      <div class="card" style="margin-bottom:24px; padding:16px;">
+        <div style="display:flex; gap:16px; align-items:flex-end; flex-wrap:wrap;">
+          <div class="form-group" style="margin:0; flex:1; min-width:200px;">
+            <label style="font-size:11px; margin-bottom:4px;">İsim ile Ara</label>
+            <input type="text" id="filter-search" placeholder="Öğrenci veya grup ismi..." style="padding:8px;">
           </div>
+          <div class="form-group" style="margin:0; width:150px;">
+            <label style="font-size:11px; margin-bottom:4px;">Durum</label>
+            <select id="filter-status" style="padding:8px;">
+              <option value="all">Tümü</option>
+              <option value="estimated">Bekleyen (Tahmini)</option>
+              <option value="confirmed">Tahsil Edilen (Kesin)</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0; width:150px;">
+            <label style="font-size:11px; margin-bottom:4px;">Ay</label>
+            <input type="month" id="filter-month" value="${new Date().toISOString().slice(0, 7)}" style="padding:7px;">
+          </div>
+          <button class="btn btn-secondary" id="btn-clear-filters" style="height:38px;">Sıfırla</button>
         </div>
       </div>
 
       <!-- Transaction list -->
       <div class="card">
-        <div class="section-title" style="margin-bottom:16px;">
+        <div class="section-title" style="margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
           <h3>İşlem Geçmişi</h3>
+          <div style="font-size:12px; color:var(--text-muted);" id="table-stats-info"></div>
         </div>
         <div class="table-wrapper" id="transactions-table">
           ${renderTransactionTable(state.transactions)}
@@ -91,69 +110,71 @@ export function renderFinance(navigate) {
 }
 
 function renderTransactionTable(transactions) {
-  const sorted = [...transactions].sort((a, b) => b.date.localeCompare(a.date));
+  const sorted = [...transactions].filter(t => t.type === 'income').sort((a, b) => b.date.localeCompare(a.date));
+  
   if (sorted.length === 0) {
-    return '<div class="empty-state"><p>İşlem yok</p></div>';
+    return '<div class="empty-state"><p>İşlem bulunamadı</p></div>';
   }
   return `
     <table>
       <thead>
         <tr>
           <th>Tarih</th>
-          <th>Açıklama</th>
-          <th>Tür</th>
+          <th>Detay</th>
+          <th>İsim</th>
+          <th>Durum</th>
           <th style="text-align:right;">Tutar</th>
-          <th></th>
+          <th style="text-align:right;">İşlem</th>
         </tr>
       </thead>
       <tbody>
-        ${sorted.map(t => `
-          <tr>
-            <td style="font-size:12px;color:var(--text-muted);">${formatDate(t.date)}</td>
-            <td>${escHtml(t.description)}</td>
-            <td><span class="badge ${t.type === 'income' ? 'badge-success' : 'badge-danger'}">${t.type === 'income' ? '↑ Gelir' : '↓ Gider'}</span></td>
-            <td style="text-align:right;font-weight:700;color:${t.type === 'income' ? 'var(--success)' : 'var(--danger)'};">
-              ${t.type === 'income' ? '+' : '-'}${formatCurrency(t.amount)}
-            </td>
-            <td>
-              <button class="btn btn-ghost btn-sm btn-icon" data-delete-transaction="${t.id}" style="color:var(--danger);">${icon('trash', 13)}</button>
-            </td>
-          </tr>
-        `).join('')}
+        ${sorted.map(t => {
+          const isPending = t.status === 'estimated';
+          return `
+            <tr>
+              <td style="font-size:12px;color:var(--text-muted);">${formatDate(t.date)}</td>
+              <td>
+                <div style="font-weight:600; font-size:13px;">${escHtml(t.description)}</div>
+                <div style="font-size:10px; color:var(--text-muted);">Gelir</div>
+              </td>
+              <td style="font-size:12px;">${escHtml(t.refName || '-')}</td>
+              <td>
+                <span class="badge ${isPending ? 'badge-warning' : 'badge-success'}">
+                  ${isPending ? '⏳ Bekliyor' : '✓ Tahsil Edildi'}
+                </span>
+              </td>
+              <td style="text-align:right;font-weight:700;color:var(--success);">
+                ${formatCurrency(t.amount)}
+              </td>
+              <td style="text-align:right;">
+                <div style="display:flex; gap:8px; justify-content:flex-end;">
+                  ${isPending ? `
+                    <button class="btn btn-success btn-sm" data-confirm-transaction="${t.id}" title="Tahsilatı Onayla">
+                      ${icon('check', 12)} Tahsil Et
+                    </button>
+                  ` : ''}
+                  <button class="btn btn-ghost btn-sm btn-icon" data-delete-transaction="${t.id}" style="color:var(--danger);" title="Sil">
+                    ${icon('trash', 13)}
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('')}
       </tbody>
     </table>
   `;
 }
 
-function renderDonutChart(stats) {
-  const total = stats.income + stats.expense || 1;
-  const incomeAngle = (stats.income / total) * 360;
-  const r = 45;
-  const cx = 55; const cy = 55;
-  const incomeArc = describeArc(cx, cy, r, 0, incomeAngle);
-  return `
-    <svg viewBox="0 0 110 110" style="width:100%;height:100px;">
-      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="14"/>
-      ${stats.expense > 0 ? `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--danger)" stroke-width="14" stroke-dasharray="${2 * Math.PI * r}" stroke-dashoffset="${2 * Math.PI * r * (stats.income / total)}" transform="rotate(-90 ${cx} ${cy})"/>` : ''}
-      ${stats.income > 0 ? `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--success)" stroke-width="14" stroke-dasharray="${2 * Math.PI * r}" stroke-dashoffset="${2 * Math.PI * r * (stats.expense / total)}" transform="rotate(-90 ${cx} ${cy}) rotate(${360 * (stats.expense / total)} ${cx} ${cy})"/>` : ''}
-      <text x="${cx}" y="${cy - 4}" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text-primary)">${Math.round((stats.income / total) * 100)}%</text>
-      <text x="${cx}" y="${cy + 14}" text-anchor="middle" font-size="9" fill="var(--text-muted)">Gelir</text>
-    </svg>
-  `;
-}
-
-function describeArc(x, y, r, start, end) {
-  const s = polarToCart(x, y, r, start);
-  const e = polarToCart(x, y, r, end);
-  const large = end - start <= 180 ? 0 : 1;
-  return `M ${s.x} ${s.y} A ${r} ${r} 0 ${large} 1 ${e.x} ${e.y}`;
-}
 function polarToCart(cx, cy, r, angle) {
   const rad = (angle - 90) * Math.PI / 180;
   return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
 }
 
-function calcStats(state, period) {
+function calcStats(state, period, filters = {}) {
+  let txs = [...state.transactions];
+
+  // Apply basic period filters
   const now = new Date();
   let from, to = now.toISOString().split('T')[0];
   if (period === 'day') { from = to; }
@@ -165,10 +186,29 @@ function calcStats(state, period) {
     from = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
   }
 
-  const txs = period === 'all' ? state.transactions : state.transactions.filter(t => t.date >= from && t.date <= to);
-  const income = txs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-  const expense = txs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
-  return { income, expense, net: income - expense };
+  if (period !== 'all') {
+    txs = txs.filter(t => t.date >= from && t.date <= to);
+  }
+
+  // Apply advanced filters
+  if (filters.search) {
+    const q = filters.search.toLowerCase();
+    txs = txs.filter(t => 
+      t.description.toLowerCase().includes(q) || 
+      (t.refName && t.refName.toLowerCase().includes(q))
+    );
+  }
+  if (filters.status && filters.status !== 'all') {
+    txs = txs.filter(t => t.status === filters.status);
+  }
+  if (filters.month) {
+    txs = txs.filter(t => t.date?.startsWith(filters.month));
+  }
+
+  const confirmed = txs.filter(t => t.type === 'income' && t.status === 'confirmed').reduce((s, t) => s + t.amount, 0);
+  const estimated = txs.filter(t => t.type === 'income' && t.status === 'estimated').reduce((s, t) => s + t.amount, 0);
+  
+  return { confirmed, estimated, income: confirmed + estimated, filteredTxs: txs };
 }
 
 function calcPendingIncome(state) {
@@ -187,44 +227,84 @@ function calcPendingIncome(state) {
 
 function initFinance(el, navigate) {
   let period = 'month';
+  const filters = {
+    search: '',
+    status: 'all',
+    month: new Date().toISOString().slice(0, 7)
+  };
 
+  const updateView = () => {
+    const state = getState();
+    const stats = calcStats(state, period, filters);
+    
+    el.querySelector('#display-estimated').textContent = formatCurrency(stats.estimated);
+    el.querySelector('#display-confirmed').textContent = formatCurrency(stats.confirmed);
+    el.querySelector('#income-display').textContent = formatCurrency(stats.confirmed);
+    el.querySelector('#expense-display').textContent = formatCurrency(stats.estimated);
+    el.querySelector('#net-display').textContent = formatCurrency(stats.income);
+    
+    el.querySelector('#transactions-table').innerHTML = renderTransactionTable(stats.filteredTxs);
+    el.querySelector('#table-stats-info').textContent = `${stats.filteredTxs.length} işlem listelendi`;
+    
+    initTransactionButtons(el, navigate);
+  };
+
+  // Period Tabs
   el.querySelectorAll('[data-period]').forEach(btn => {
     btn.addEventListener('click', () => {
       period = btn.dataset.period;
       el.querySelectorAll('[data-period]').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      const state = getState();
-      const stats = calcStats(state, period);
-      el.querySelector('#net-display').textContent = formatCurrency(stats.net);
-      el.querySelector('#income-display').textContent = formatCurrency(stats.income);
-      el.querySelector('#expense-display').textContent = formatCurrency(stats.expense);
-      // Update table
-      let txs = state.transactions;
-      const now = new Date();
-      if (period === 'day') {
-        const t = now.toISOString().split('T')[0];
-        txs = txs.filter(x => x.date === t);
-      } else if (period === 'week') {
-        const d = new Date(now); d.setDate(d.getDate() - d.getDay() + 1);
-        const from = d.toISOString().split('T')[0];
-        txs = txs.filter(x => x.date >= from);
-      } else if (period === 'month') {
-        const m = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-        txs = txs.filter(x => x.date?.startsWith(m));
-      }
-      el.querySelector('#transactions-table').innerHTML = renderTransactionTable(txs);
-      initTransactionButtons(el, navigate);
+      updateView();
     });
+  });
+
+  // Filter Event Listeners
+  el.querySelector('#filter-search').addEventListener('input', (e) => {
+    filters.search = e.target.value;
+    updateView();
+  });
+
+  el.querySelector('#filter-status').addEventListener('change', (e) => {
+    filters.status = e.target.value;
+    updateView();
+  });
+
+  el.querySelector('#filter-month').addEventListener('change', (e) => {
+    filters.month = e.target.value;
+    updateView();
+  });
+
+  el.querySelector('#btn-clear-filters').addEventListener('click', () => {
+    el.querySelector('#filter-search').value = '';
+    el.querySelector('#filter-status').value = 'all';
+    el.querySelector('#filter-month').value = '';
+    filters.search = '';
+    filters.status = 'all';
+    filters.month = '';
+    updateView();
   });
 
   el.querySelector('#btn-add-transaction')?.addEventListener('click', () => {
     openAddTransactionModal(navigate);
   });
 
-  initTransactionButtons(el, navigate);
+  // Initial update
+  updateView();
 }
 
 function initTransactionButtons(el, navigate) {
+  // Confirm Transaction
+  el.querySelectorAll('[data-confirm-transaction]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      import('../store/store.js').then(m => {
+        m.confirmTransaction(btn.dataset.confirmTransaction);
+        navigate('finance');
+      });
+    });
+  });
+
+  // Delete Transaction
   el.querySelectorAll('[data-delete-transaction]').forEach(btn => {
     btn.addEventListener('click', () => {
       showConfirm({
@@ -232,7 +312,12 @@ function initTransactionButtons(el, navigate) {
         message: 'Bu işlem kaydı silinecek.',
         confirmText: 'Sil',
         type: 'danger',
-        onConfirm: () => { deleteTransaction(btn.dataset.deleteTransaction); navigate('finance'); },
+        onConfirm: () => { 
+          import('../store/store.js').then(m => {
+            m.deleteTransaction(btn.dataset.deleteTransaction); 
+            navigate('finance'); 
+          });
+        },
       });
     });
   });
@@ -242,11 +327,10 @@ function openAddTransactionModal(navigate) {
   openModal({
     title: 'Manuel İşlem Ekle',
     body: `
-      <div class="form-group">
+      <div class="form-group" style="display:none;">
         <label>İşlem Türü</label>
         <select id="tx-type">
-          <option value="income">Gelir</option>
-          <option value="expense">Gider</option>
+          <option value="income" selected>Gelir</option>
         </select>
       </div>
       <div class="form-group">

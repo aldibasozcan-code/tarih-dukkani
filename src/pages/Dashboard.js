@@ -66,8 +66,8 @@ export function renderDashboard(navigate) {
           </div>
           <div>
             <div class="kpi-value">${formatCurrency(stats.income)}</div>
-            <div class="kpi-label">Aylık Gelir</div>
-            <div class="kpi-trend up">+${formatCurrency(stats.net)} net</div>
+            <div class="kpi-label">Aylık Toplam Kazanç</div>
+            <div class="kpi-trend up">Bu ay</div>
           </div>
         </div>
         <div class="kpi-card">
@@ -147,16 +147,10 @@ export function renderDashboard(navigate) {
           </div>
           ${renderMiniChart(state)}
           <hr class="divider">
-          <div class="grid grid-2">
-            <div>
-              <div style="font-size:11px;color:var(--text-muted);">Tamamlanan Gelir</div>
-              <div style="font-size:18px;font-weight:700;color:var(--success);">${formatCurrency(stats.income)}</div>
+            <div style="flex:1;">
+              <div style="font-size:11px;color:var(--text-muted);">Toplam Tahmini</div>
+              <div style="font-size:18px;font-weight:700;color:var(--warning);">${formatCurrency(stats.income)}</div>
             </div>
-            <div>
-              <div style="font-size:11px;color:var(--text-muted);">Gider</div>
-              <div style="font-size:18px;font-weight:700;color:var(--danger);">${formatCurrency(stats.expense)}</div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -236,6 +230,8 @@ function renderMiniChart(state) {
 }
 
 function initDashboard(el, navigate) {
+  const state = getState();
+  
   // Pending lessons
   el.querySelector('#show-pending-btn')?.addEventListener('click', () => {
     openPendingModal(navigate);

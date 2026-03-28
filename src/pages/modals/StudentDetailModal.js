@@ -4,7 +4,7 @@
 import { getState } from '../../store/store.js';
 import { icon } from '../../components/icons.js';
 import { openModal, closeModal } from '../../components/modal.js';
-import { escHtml, getAvatarColor, getInitials, formatCurrency } from '../../utils/helpers.js';
+import { escHtml, getAvatarColor, getInitials, formatCurrency, formatDate } from '../../utils/helpers.js';
 import { ALL_GRADES, SUBJECTS, getSubjectsForBranches, CONTENT_TYPES } from '../../data/curriculum.js';
 
 export function openStudentDetail(studentId, navigate) {
@@ -20,7 +20,7 @@ export function openStudentDetail(studentId, navigate) {
   openModal({
     title: '',
     size: 'xl',
-    body: buildDetailBody(student, subjects, state),
+    body: buildDetailBody(student, subjects, state, activeSubjects),
   });
   // After modal opens, init toggles
   setTimeout(() => {
@@ -36,6 +36,27 @@ export function openStudentDetail(studentId, navigate) {
         });
       });
     }
+
+    document.querySelectorAll('[data-sync-curriculum]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const sId = btn.dataset.syncCurriculum;
+        import('../../store/store.js').then(m => {
+          m.syncStudentCurriculum(sId);
+          openStudentDetail(sId, navigate);
+        });
+      });
+    });
+
+    document.querySelectorAll('[data-confirm-transaction]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const txId = btn.dataset.confirmTransaction;
+        import('../../store/store.js').then(m => {
+          m.confirmTransaction(txId);
+          // Re-open/refresh modal
+          openStudentDetail(student.id, navigate);
+        });
+      });
+    });
 
     document.querySelectorAll('[data-toggle-topic]').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -59,7 +80,7 @@ export function openStudentDetail(studentId, navigate) {
   }, 100);
 }
 
-function buildDetailBody(student, subjects, state) {
+function buildDetailBody(student, subjects, state, activeSubjects) {
   const completedSet = new Set(student.completedTopics || []);
 
   // Calculate total lessons done (status === 'completed')
@@ -93,6 +114,7 @@ function buildDetailBody(student, subjects, state) {
           <span class="badge ${student.status === 'passive' ? 'badge-danger' : 'badge-success'}">${student.status === 'passive' ? 'PASİF' : 'AKTİF'}</span>
           ${student.meetLink ? `<a href="${escHtml(student.meetLink)}" target="_blank" class="badge badge-success" style="text-decoration:none;">🎥 Google Meet</a>` : ''}
           <button class="btn btn-ghost btn-sm" id="btn-edit-student-detail" style="padding:2px 8px; font-size:11px; margin-left:auto;">${icon('edit', 12)} Profili Düzenle</button>
+          <button class="btn btn-ghost btn-sm" data-sync-curriculum="${student.id}" style="padding:2px 8px; font-size:11px; color:var(--warning);" title="Branşlarınıza göre müfredatı yeniden eşitleyin">${icon('refresh', 12)} Müfredatı Eşitle</button>
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;text-align:right;">
@@ -127,14 +149,21 @@ function buildDetailBody(student, subjects, state) {
         const units = state.curriculum[subject]?.[grade] || [];
         const allTopics = units.flatMap(u => u.topics);
         const completed = allTopics.filter(t => completedSet.has(t.id)).length;
+        const isStale = !activeSubjects.includes(subject);
         const pct = allTopics.length > 0 ? Math.round((completed / allTopics.length) * 100) : 0;
         
         let sinfo = SUBJECTS.find(s => s.id === subject);
-        if (!sinfo) sinfo = { name: subject.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '), icon: '📚' };
+        if (!sinfo) {
+          const name = (subject || 'Bilinmeyen_Ders').split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+          sinfo = { name, icon: '📚' };
+        }
 
         return `
-          <div class="card card-sm">
-            <div style="font-size:12px;font-weight:600;margin-bottom:8px;color:var(--accent);">${sinfo.icon} ${sinfo.name} (${grade})</div>
+          <div class="card card-sm" style="${isStale ? 'border-color:var(--warning); background:rgba(255,159,67,0.03);' : ''}">
+            <div style="font-size:12px;font-weight:600;margin-bottom:8px;color:${isStale ? 'var(--warning)' : 'var(--accent)'}; display:flex; justify-content:space-between; align-items:center;">
+               <span>${sinfo.icon} ${sinfo.name} (${grade})</span>
+               ${isStale ? `<span title="Bu ders branşlarınızda bulunmuyor" style="cursor:help;">⚠️</span>` : ''}
+            </div>
             <div class="progress-bar" style="margin-bottom:6px;">
               <div class="progress-fill" style="width:${pct}%;background:linear-gradient(90deg,var(--accent),var(--accent2));"></div>
             </div>
@@ -148,7 +177,10 @@ function buildDetailBody(student, subjects, state) {
     ${subjects.map(({ subject, grade }) => {
       const units = state.curriculum[subject]?.[grade] || [];
       let sinfo = SUBJECTS.find(s => s.id === subject);
-      if (!sinfo) sinfo = { name: subject.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '), icon: '📚' };
+      if (!sinfo) {
+        const name = (subject || 'Bilinmeyen_Ders').split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        sinfo = { name, icon: '📚' };
+      }
       const materials = Object.values(state.materials).filter(m => m.subject === subject && m.grade === grade);
 
       return `
@@ -173,11 +205,6 @@ function buildDetailBody(student, subjects, state) {
                       </a>
                     `).join('')}
                   </div>
-                  ${topicMaterials.length > 0 ? `
-                    <button class="whatsapp-btn" style="font-size:10px;padding:4px 8px;" data-homework-topic="${topic.id}" data-homework-material="${topicMaterials[0].link}">
-                      ${icon('whatsapp', 11)} Ödev Gönder
-                    </button>
-                  ` : ''}
                 </div>
               `;
             }).join('')}
@@ -185,6 +212,61 @@ function buildDetailBody(student, subjects, state) {
         `).join('')}
       `;
     }).join('')}
+
+    <!-- Financial Status -->
+    <h3 style="font-size:14px;font-weight:700;margin:24px 0 10px; color:var(--success);">Ödeme ve Tahsilat Geçmişi</h3>
+    <div class="card card-sm">
+      <div style="display:flex; gap:16px; margin-bottom:16px;">
+        <div style="flex:1; padding:10px; background:rgba(255,159,67,0.05); border-radius:8px; border:1px solid rgba(255,159,67,0.2);">
+          <div style="font-size:11px; color:var(--text-muted);">Bekleyen (Tahmini)</div>
+          <div style="font-size:18px; font-weight:800; color:var(--warning);">
+            ${formatCurrency(state.transactions.filter(t => t.refId === student.id && t.status === 'estimated').reduce((s,t)=>s+t.amount,0))}
+          </div>
+        </div>
+        <div style="flex:1; padding:10px; background:rgba(46,213,115,0.05); border-radius:8px; border:1px solid rgba(46,213,115,0.2);">
+          <div style="font-size:11px; color:var(--text-muted);">Tahsil Edilen (Kesin)</div>
+          <div style="font-size:18px; font-weight:800; color:var(--success);">
+            ${formatCurrency(state.transactions.filter(t => t.refId === student.id && t.status === 'confirmed').reduce((s,t)=>s+t.amount,0))}
+          </div>
+        </div>
+      </div>
+      
+      <div class="table-wrapper">
+        <table style="font-size:12px;">
+          <thead>
+            <tr>
+              <th>Tarih</th>
+              <th>Ders/Açıklama</th>
+              <th>Durum</th>
+              <th style="text-align:right;">Tutar</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${[...state.transactions].filter(t => t.refId === student.id).sort((a,b)=>b.date.localeCompare(a.date)).map(t => `
+              <tr>
+                <td style="color:var(--text-muted);">${formatDate(t.date)}</td>
+                <td>${escHtml(t.description)}</td>
+                <td>
+                  <span class="badge ${t.status === 'estimated' ? 'badge-warning' : 'badge-success'}">
+                    ${t.status === 'estimated' ? '⏳ Bekliyor' : '✓ Ödendi'}
+                  </span>
+                </td>
+                <td style="text-align:right; font-weight:700;">${formatCurrency(t.amount)}</td>
+                <td style="text-align:right;">
+                  ${t.status === 'estimated' ? `
+                    <button class="btn btn-success btn-sm" data-confirm-transaction="${t.id}" style="padding:4px 8px; font-size:10px;">
+                      ${icon('check', 10)} Tahsil Et
+                    </button>
+                  ` : ''}
+                </td>
+              </tr>
+            `).join('')}
+            ${state.transactions.filter(t => t.refId === student.id).length === 0 ? '<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-muted);">Kayıt bulunamadı.</td></tr>' : ''}
+          </tbody>
+        </table>
+      </div>
+    </div>
 
     <!-- Homework list -->
     ${student.homework?.length > 0 ? `

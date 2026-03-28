@@ -12,8 +12,8 @@ export function renderLogin() {
           <div class="login-logo-circle">
             ${icon('book', 32)}
           </div>
-          <h2>Tarih Dükkanı</h2>
-          <p class="login-subtitle">Öğretmen Paneli'ne Hoş Geldiniz</p>
+          <h2>Bitika</h2>
+          <p class="login-subtitle">Dijital Ders Yönetim Platformu</p>
         </div>
         
         <div class="login-tabs">
@@ -57,12 +57,12 @@ export function renderLogin() {
           </div>
 
           <button type="submit" class="btn btn-primary login-submit-btn">
-            Mekana Giriş Yap
+            Giriş Yap
           </button>
         </form>
         
         <div class="login-footer">
-          <p>© ${new Date().getFullYear()} Tarih Dükkanı. Tüm Hakları Saklıdır.</p>
+          <p>© ${new Date().getFullYear()} Bitika. Tüm Hakları Saklıdır.</p>
         </div>
       </div>
     </div>
@@ -230,7 +230,7 @@ export function initLogin(container) {
       tab.classList.add('active');
       mode = tab.dataset.tab;
       
-      submitBtn.innerHTML = mode === 'login' ? 'Mekana Giriş Yap' : 'Kayıt Ol';
+      submitBtn.innerHTML = mode === 'login' ? 'Giriş Yap' : 'Kayıt Ol';
       alertBox.style.display = 'none';
     });
   });

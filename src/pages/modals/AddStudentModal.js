@@ -1,7 +1,7 @@
 // ═════════════════════════════════════════════════
 // ADD STUDENT MODAL
 // ═════════════════════════════════════════════════
-import { getState, addStudent, updateStudent } from '../../store/store.js';
+import { getState, addStudent, updateStudent, syncStudentCurriculum } from '../../store/store.js';
 import { ALL_GRADES } from '../../data/curriculum.js';
 import { openModal, closeModal } from '../../components/modal.js';
 import { escHtml } from '../../utils/helpers.js';
@@ -64,7 +64,15 @@ export function openAddStudentModal(onSave, editId = null) {
         <label>Notlar</label>
         <textarea id="s-notes" rows="2" placeholder="Öğrenci hakkında notlar...">${escHtml(student?.notes || '')}</textarea>
       </div>
-      ${!student ? '<div style="padding:10px;background:rgba(99,202,183,0.08);border-radius:8px;font-size:12px;color:var(--accent);">Öğrenci eklenince seçilen sınıfa ait tüm müfredat otomatik atanacak.</div>' : ''}
+      ${student ? `
+        <div style="margin-top:10px; padding:12px; background:rgba(255,159,67,0.05); border-radius:8px; border:1px dashed rgba(255,159,67,0.3);">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; margin:0;">
+            <input type="checkbox" id="s-sync-curr" style="width:16px; height:16px;">
+            <span style="font-size:12px; font-weight:600; color:var(--warning);">Müfredatı Mevcut Branşlarıma Göre Güncelle</span>
+          </label>
+          <p style="font-size:11px; color:var(--text-muted); margin-top:4px; margin-left:24px;">Branşlarınız değiştiyse veya müfredatta hata varsa bunu işaretleyerek öğrencinin ders listesini güncelleyebilirsiniz. (Tamamlanan konular korunur).</p>
+        </div>
+      ` : '<div style="padding:10px;background:rgba(99,202,183,0.08);border-radius:8px;font-size:12px;color:var(--accent);">Öğrenci eklenince seçilen sınıfa ait tüm müfredat otomatik atanacak.</div>'}
     `,
     footer: `
       <button class="btn btn-secondary" id="s-cancel">İptal</button>
@@ -93,6 +101,9 @@ export function openAddStudentModal(onSave, editId = null) {
 
     if (student) {
       updateStudent(editId, data);
+      if (document.getElementById('s-sync-curr')?.checked) {
+        syncStudentCurriculum(editId);
+      }
     } else {
       addStudent(data);
     }
