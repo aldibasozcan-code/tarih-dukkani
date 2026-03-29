@@ -5,6 +5,37 @@ import { getState, updateSettings, updateProfile } from '../store/store.js';
 import { ALL_GRADES, ALL_BRANCHES } from '../data/curriculum.js';
 import { icon } from '../components/icons.js';
 
+const HISTORY_GROUP = ["Sosyal Bilgiler", "T.C. İnkılap Tarihi ve Atatürkçülük", "Tarih"];
+const MATH_GROUP = ["Matematik (İlköğretim)", "Matematik (Lise)"];
+
+function showBranchPolicyModal(m) {
+  m.openModal({
+    title: 'Branş Değişikliği Politikası',
+    body: `
+      <div style="text-align:center; padding: 10px 0;">
+        <div style="color:var(--accent); margin-bottom:16px;">
+          ${icon('alertCircle', 48)}
+        </div>
+        <h3 style="font-size:18px; margin-bottom:8px; color:var(--text-primary);">Profesyonel Branş Yönetimi</h3>
+        <p style="color:var(--text-secondary); line-height:1.6; font-size:14px;">
+          Bitig.app, öğretmenlerimizin uzmanlık alanlarında en yüksek verimi almasını hedefler. Bu nedenle profesyonel standartlar gereği <strong>branş değişikliği kısıtlanmıştır</strong>.
+        </p>
+        <div style="background:var(--bg-secondary); border-radius:12px; padding:16px; margin:20px 0; text-align:left; border:1px solid var(--border);">
+          <ul style="margin:0; padding-left:20px; font-size:13px; color:var(--text-secondary); line-height:1.8;">
+            <li>Sadece uzman olduğunuz ana branşı seçebilirsiniz.</li>
+            <li><strong>Tarih (Tarih, Sosyal, İnkılap)</strong> ve <strong>Matematik (İlköğretim, Lise)</strong> dersleri akademik grup olarak istisnadır.</li>
+            <li>Branşınızı tamamen değiştirmek isterseniz mevcut verilerinizi silip (Veri Yönetimi kısmından) yeni branşınızla hesap açmanız önerilir.</li>
+          </ul>
+        </div>
+      </div>
+    `,
+    footer: `
+      <button class="btn btn-primary" id="modal-close-policy" style="width:100%; justify-content:center;">Anladım, Devam Et</button>
+    `
+  });
+  document.getElementById('modal-close-policy')?.addEventListener('click', m.closeModal);
+}
+
 export function renderSettings(navigate) {
   const state = getState();
 
@@ -449,7 +480,7 @@ function renderProfileFormContent(p, editMode) {
         <!-- Branches -->
         <div class="form-group">
           <label style="margin-bottom: 12px; display: block; font-size: 14px; font-weight: 700; color: var(--brand-green);">Branşlar / Dersler</label>
-          <div class="selection-list">
+          <div class="selection-list" id="p-branch-list">
             ${ALL_BRANCHES.map(branch => {
               const isChecked = p.branches && p.branches.includes(branch) ? 'checked' : '';
               return `
@@ -482,7 +513,9 @@ function renderProfileFormContent(p, editMode) {
           </div>
         </div>
       </div>
-      <p style="font-size:11px; color:var(--text-muted); margin-top:8px;">Birden fazla branş ve sınıf işaretleyebilirsiniz.</p>
+      <p style="font-size:11px; color:var(--text-muted); margin-top:8px;">
+        * Branş değişikliği sadece Tarih ve Matematik grupları için toplu olarak yapılabilir. Diğer branşlar tektir.
+      </p>
     </div>
     <div class="form-row">
       <div class="form-group">
@@ -562,7 +595,10 @@ export function renderProfile(navigate) {
       const formContainer = el.querySelector('#profile-form');
 
       function updateView() {
-        import('../store/store.js').then(m => {
+        Promise.all([
+          import('../store/store.js'),
+          import('../components/modal.js')
+        ]).then(([m, modal]) => {
           const currentProfile = m.getState().profile;
           formContainer.innerHTML = renderProfileFormContent(currentProfile, isEditing);
           
@@ -570,6 +606,28 @@ export function renderProfile(navigate) {
             editBtn.innerHTML = `Vazgeç`;
             editBtn.classList.replace('btn-primary', 'btn-secondary');
             
+            // Branş Politikası Bilgilendirmesi
+            showBranchPolicyModal(modal);
+
+            const branchCheckboxes = formContainer.querySelectorAll('input[name="p-branches"]');
+            branchCheckboxes.forEach(cb => {
+              cb.addEventListener('change', () => {
+                if (cb.checked) {
+                  const val = cb.value;
+                  const isHistory = HISTORY_GROUP.includes(val);
+                  const isMath = MATH_GROUP.includes(val);
+
+                  if (isHistory) {
+                    branchCheckboxes.forEach(other => { if (!HISTORY_GROUP.includes(other.value)) other.checked = false; });
+                  } else if (isMath) {
+                    branchCheckboxes.forEach(other => { if (!MATH_GROUP.includes(other.value)) other.checked = false; });
+                  } else {
+                    branchCheckboxes.forEach(other => { if (other !== cb) other.checked = false; });
+                  }
+                }
+              });
+            });
+
             formContainer.querySelector('#btn-save-profile')?.addEventListener('click', () => {
               const titleSelect = el.querySelector('#p-title');
               const titleValue = titleSelect ? titleSelect.options[titleSelect.selectedIndex].text : p.title;
@@ -578,7 +636,6 @@ export function renderProfile(navigate) {
               const selectedGrades = Array.from(el.querySelectorAll('input[name="p-grades"]:checked')).map(b => b.value);
               const selectedBranches = Array.from(el.querySelectorAll('input[name="p-branches"]:checked')).map(b => b.value);
               
-              // Unvan değiştiğinde ilgili branşı otomatik ekle (eğer listede yoksa)
               if (branchKey !== "Öğretmen" && !selectedBranches.includes(branchKey)) {
                 selectedBranches.push(branchKey);
               }
@@ -606,12 +663,14 @@ export function renderProfile(navigate) {
               }, 600);
             });
 
-            // Ünvan değiştiğinde ilgili branşı otomatik işaretle
             el.querySelector('#p-title')?.addEventListener('change', (e) => {
               const branchVal = e.target.value;
               if (branchVal !== "Öğretmen") {
                 const checkbox = el.querySelector(`input[name="p-branches"][value="${branchVal}"]`);
-                if (checkbox) checkbox.checked = true;
+                if (checkbox) {
+                  checkbox.checked = true;
+                  checkbox.dispatchEvent(new Event('change'));
+                }
               }
             });
           } else {

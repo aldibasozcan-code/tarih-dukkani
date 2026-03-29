@@ -3,11 +3,12 @@
 // ═══════════════════════════════════════════════════
 
 export const ALL_BRANCHES = [
-  "Türkçe", "Türk Dili ve Edebiyatı", "Matematik", "Fen Bilimleri", "Fizik", "Kimya", "Biyoloji", 
-  "Sosyal Bilgiler", "T.C. İnkılap Tarihi ve Atatürkçülük", "Tarih", "Coğrafya", "Felsefe", 
-  "Psikoloji", "Sosyoloji", "Mantık", "İngilizce", "Almanca", "Fransızca", "Arapça", 
-  "Din Kültürü ve Ahlak Bilgisi", "Bilişim Teknolojileri", "Görsel Sanatlar", "Müzik", 
-  "Beden Eğitimi ve Spor", "Teknoloji ve Tasarım", "Rehberlik", "Osmanlı Türkçesi"
+  "Almanca", "Arapça", "Beden Eğitimi ve Spor", "Bilişim Teknolojileri", "Biyoloji", "Coğrafya", 
+  "Din Kültürü ve Ahlak Bilgisi", "Felsefe", "Fen Bilimleri", "Fizik", "Fransızca", 
+  "Görsel Sanatlar", "İngilizce", "Kimya", "Mantık", "Matematik (İlköğretim)", 
+  "Matematik (Lise)", "Müzik", "Osmanlı Türkçesi", "Psikoloji", "Rehberlik", 
+  "Sosyal Bilgiler", "Sosyoloji", "T.C. İnkılap Tarihi ve Atatürkçülük", "Tarih", 
+  "Teknoloji ve Tasarım", "Türk Dili ve Edebiyatı", "Türkçe"
 ];
 
 export const SUBJECTS = [
@@ -17,18 +18,21 @@ export const SUBJECTS = [
   { id: 'tyt', name: 'TYT', icon: '📝' },
   { id: 'ayt', name: 'AYT', icon: '🎯' },
   { id: 'osmanlıca', name: 'Osmanlı Türkçesi', icon: '📖' },
-  { id: 'matematik', name: 'Matematik', icon: '🔢' },
+  { id: 'matematik_ilk', name: 'Matematik (İlköğretim)', icon: '🔢' },
+  { id: 'matematik_lise', name: 'Matematik (Lise)', icon: '📐' },
   { id: 'turkce', name: 'Türkçe', icon: '✍️' },
   { id: 'fen_bilimleri', name: 'Fen Bilimleri', icon: '🧪' },
 ];
 
 export const SUBJECT_GRADES = {
   'sosyal':    ['5. Sınıf', '6. Sınıf', '7. Sınıf'],
-  'inkılap':   ['8. Sınıf'],
+  'inkılap':   ['8. Sınıf', '12. Sınıf'],
   'tarih':     ['9. Sınıf', '10. Sınıf', '11. Sınıf', '12. Sınıf'],
   'tyt':       ['12. Sınıf', 'Mezun'],
   'ayt':       ['12. Sınıf', 'Mezun'],
   'osmanlıca': ['Diğer'],
+  'matematik_ilk': ['5. Sınıf', '6. Sınıf', '7. Sınıf', '8. Sınıf'],
+  'matematik_lise': ['9. Sınıf', '10. Sınıf', '11. Sınıf', '12. Sınıf'],
 };
 
 // Content types for each topic
@@ -45,84 +49,170 @@ export const DEFAULT_CURRICULUM = {
   'sosyal': {
     '5. Sınıf': [
       {
-        id: 'u1', name: '1. Ünite: Birey ve Toplum',
+        id: 'u1', name: '1. Ünite: Birlikte Yaşamak (Maarif Modeli)',
         topics: [
-          { id: 't1_1', name: 'Sosyal Rollerin Zaman İçindeki Değişimi' },
-          { id: 't1_2', name: 'Kültürel Gelişim' },
-          { id: 't1_3', name: 'Toplumsal Birliktelik' },
-          { id: 't1_4', name: 'Hak ve Sorumluluklarımız' },
+          { id: 't1_1', name: 'Toplumsal Gruplar ve Sosyal Rollerimiz' },
+          { id: 't1_2', name: 'Kültürel Özelliklere Saygı ve Birlikte Yaşama' },
+          { id: 't1_3', name: 'Toplumsal Birlik: Yardımlaşma ve Dayanışma' },
         ]
       },
       {
-        id: 'u2', name: '2. Ünite: Kültür ve Miras',
+        id: 'u2', name: '2. Ünite: Evimiz Dünya (Maarif Modeli)',
         topics: [
-          { id: 't2_1', name: 'Anadolu ve Mezopotamya Uygarlıkları' },
-          { id: 't2_2', name: 'Tarihe Yolculuk' },
-          { id: 't2_3', name: 'Kültürel Ögelerimiz' },
+          { id: 't2_1', name: 'Yaşadığımız İlin Göreceli Konumu' },
+          { id: 't2_2', name: 'Doğal ve Beşerî Çevredeki Değişimler' },
+          { id: 't2_3', name: 'Afetlerin İnsan ve Çevre Üzerindeki Etkileri' },
+          { id: 't2_4', name: 'Ülkemize Komşu Devletler ve Kültürel Bağlar' },
         ]
       },
       {
-        id: 'u3', name: '3. Ünite: İnsanlar, Yerler ve Çevreler',
+        id: 'u3', name: '3. Ünite: Ortak Mirasımız (Maarif Modeli)',
         topics: [
-          { id: 't3_1', name: 'Yeryüzü Şekilleri ve İklim' },
-          { id: 't3_2', name: 'Nüfus ve Yerleşme' },
-          { id: 't3_3', name: 'Doğal Afetler ve Çevre' },
+          { id: 't3_1', name: 'Ortak Miras Ögelerimiz' },
+          { id: 't3_2', name: 'Somut ve Somut Olmayan Kültürel Miras' },
+          { id: 't3_3', name: 'Anadolu ve Mezopotamya Medeniyetlerinin Katkıları' },
         ]
       },
       {
-        id: 'u4', name: '4. Ünite: Bilim, Teknoloji ve Toplum',
+        id: 'u4', name: '4. Ünite: Yaşayan Demokrasimiz (Maarif Modeli)',
         topics: [
-          { id: 't4_1', name: 'Teknolojinin Topluma Etkisi' },
-          { id: 't4_2', name: 'Doğru Bilgiye Ulaşmak' },
-          { id: 't4_3', name: 'Bilim İnsanları ve Buluşlar' },
+          { id: 't4_1', name: 'Demokrasi ve Cumhuriyetin Temel Nitelikleri' },
+          { id: 't4_2', name: 'Etkin Vatandaşlık: Hak, Sorumluluk ve Özgürlük' },
+          { id: 't4_3', name: 'Toplumsal Sorunların Çözümünde Kurumlar' },
+        ]
+      },
+      {
+        id: 'u5', name: '5. Ünite: Hayatımızdaki Ekonomi (Maarif Modeli)',
+        topics: [
+          { id: 't5_1', name: 'Kaynakların Verimli Kullanımı ve İsraf' },
+          { id: 't5_2', name: 'Bireysel ve Aile Bütçesi Yönetimi' },
+          { id: 't5_3', name: 'Yaşadığımız İldeki Ekonomik Faaliyetler' },
+        ]
+      },
+      {
+        id: 'u6', name: '6. Ünite: Teknoloji ve Sosyal Bilimler (Maarif Modeli)',
+        topics: [
+          { id: 't6_1', name: 'Teknolojik Gelişmelerin Topluma Etkisi' },
+          { id: 't6_2', name: 'Teknolojik Ürünlerin Bilinçli ve Güvenli Kullanımı' },
         ]
       },
     ],
     '6. Sınıf': [
       {
-        id: 'u1', name: '1. Ünite: Birey ve Toplum',
+        id: 'u1', name: '1. Ünite: Biz ve Değerlerimiz',
         topics: [
-          { id: 't1_1', name: 'Rollerimiz ve Sorumluluklarımız' },
-          { id: 't1_2', name: 'Kültür ve Birlik' },
-          { id: 't1_3', name: 'Ön Yargıları Kırmak' },
+          { id: 't1_1', name: 'Sosyal Rollerimiz ve Sorumluluklarımız' },
+          { id: 't1_2', name: 'Kültürümüzle Bir Aradayız' },
+          { id: 't1_3', name: 'Ön Yargıları Kırıyoruz' },
+          { id: 't1_4', name: 'Toplumsal Birliktelik ve Dayanışma' },
         ]
       },
       {
-        id: 'u2', name: '2. Ünite: Kültür ve Miras',
+        id: 'u2', name: '2. Ünite: Tarihe Yolculuk',
         topics: [
           { id: 't2_1', name: 'Orta Asya İlk Türk Devletleri' },
-          { id: 't2_2', name: 'İslamiyet\'in Doğuşu' },
-          { id: 't2_3', name: 'İlk Türk İslam Devletleri' },
+          { id: 't2_2', name: 'İslamiyet\'in Doğuşu ve İlk İslam Devletleri' },
+          { id: 't2_3', name: 'İlk Türk İslam Devletleri (Karahanlı, Gazneli, Selçuklu)' },
+          { id: 't2_4', name: 'Yeni Yurt Anadolu' },
         ]
       },
       {
-        id: 'u3', name: '3. Ünite: İnsanlar, Yerler ve Çevreler',
+        id: 'u3', name: '3. Ünite: Yeryüzünde Yaşam',
         topics: [
-          { id: 't3_1', name: 'Dünyanın Konumu ve Coğrafi Koordinatlar' },
-          { id: 't3_2', name: 'Türkiye\'nin Fiziki Coğrafyası' },
+          { id: 't3_1', name: 'Dünyanın Neresindeyim? (Paralel ve Meridyenler)' },
+          { id: 't3_2', name: 'Ülkemizin Fiziki ve Beşerî Coğrafyası' },
+          { id: 't3_3', name: 'Farklı İklimler Farklı Yaşamlar' },
+        ]
+      },
+      {
+        id: 'u4', name: '4. Ünite: Bilim, Teknoloji ve Toplum',
+        topics: [
+          { id: 't4_1', name: 'Sosyal Bilimlerin Toplumsal Hayata Etkisi' },
+          { id: 't4_2', name: 'Bilimsel Araştırma Basamakları' },
+          { id: 't4_3', name: 'Telif, Patent ve Etik Kurallar' },
+        ]
+      },
+      {
+        id: 'u5', name: '5. Ünite: Üretim, Dağıtım ve Tüketim',
+        topics: [
+          { id: 't5_1', name: 'Kaynaklarımız Kazanca Dönüşüyor' },
+          { id: 't5_2', name: 'Ekonomik Faaliyetler ve Meslekler' },
+          { id: 't5_3', name: 'Girişimci Kimdir? Yeni Fikirler' },
+          { id: 't5_4', name: 'Vatandaşlık Görevimiz: Vergi' },
+        ]
+      },
+      {
+        id: 'u6', name: '6. Ünite: Etkin Vatandaşlık',
+        topics: [
+          { id: 't6_1', name: 'Yönetim Biçimleri ve Demokrasi' },
+          { id: 't6_2', name: 'Anayasal Düzen: Yasama, Yürütme, Yargı' },
+          { id: 't6_3', name: 'Kadın ve Toplum: Haklarımızın Kazanımı' },
+        ]
+      },
+      {
+        id: 'u7', name: '7. Ünite: Küresel Bağlantılar',
+        topics: [
+          { id: 't7_1', name: 'Komşularımız ve Kardeş Cumhuriyetler' },
+          { id: 't7_2', name: 'Ticari ve Kültürel İlişkilerimiz' },
         ]
       },
     ],
     '7. Sınıf': [
       {
-        id: 'u1', name: '1. Ünite: Birey ve Toplum',
+        id: 'u1', name: '1. Ünite: İletişim ve İnsan İlişkileri',
         topics: [
-          { id: 't1_1', name: 'İletişim ve İnsan İlişkileri' },
-          { id: 't1_2', name: 'Kitle İletişim Araçları' },
+          { id: 't1_1', name: 'Olumlu İletişim ve Tutumlar' },
+          { id: 't1_2', name: 'Medya Okuryazarlığı ve Sosyal Medya Etkisi' },
+          { id: 't1_3', name: 'Haberleşme Özgürlüğü ve Haklarımız' },
         ]
       },
       {
-        id: 'u2', name: '2. Ünite: Kültür ve Miras',
+        id: 'u2', name: '2. Ünite: Türk Tarihinde Yolculuk',
         topics: [
-          { id: 't2_1', name: 'Osmanlı Devleti\'nin Kuruluşu ve Yükselişi' },
-          { id: 't2_2', name: 'Avrupa\'daki Gelişmeler ve Osmanlı' },
-          { id: 't2_3', name: 'Osmanlı Toplumunda Kültür ve Sanat' },
+          { id: 't2_1', name: 'Osmanlı Devleti\'nin Kuruluşu ve Fetih Siyaseti' },
+          { id: 't2_2', name: 'Dünya Gücü Osmanlı: İstanbul\'un Fethi ve Sonrası' },
+          { id: 't2_3', name: 'Avrupa\'daki Gelişmeler ve Osmanlı\'ya Etkileri' },
+          { id: 't2_4', name: 'Yenileşme Hareketleri: Islahatlar' },
         ]
       },
       {
-        id: 'u3', name: '3. Ünite: İnsanlar, Yerler ve Çevreler',
+        id: 'u3', name: '3. Ünite: Ülkemizde Nüfus',
         topics: [
-          { id: 't3_1', name: 'Türkiye\'de Nüfus ve Göç' },
+          { id: 't3_1', name: 'Türkiye\'de Nüfusun Dağılışı ve Özellikleri' },
+          { id: 't3_2', name: 'Göç: Nedenleri, Sonuçları ve Etkileri' },
+          { id: 't3_3', name: 'Yerleşme ve Seyahat Özgürlüğü' },
+        ]
+      },
+      {
+        id: 'u4', name: '4. Ünite: Zaman İçinde Bilim',
+        topics: [
+          { id: 't4_1', name: 'Bilginin Serüveni: Yazıdan Dijitale' },
+          { id: 't4_2', name: 'Türk-İslam Medeniyetinde Bilginler' },
+          { id: 't4_3', name: 'Orta Çağ ve Rönesans: Aydınlanma Yolu' },
+        ]
+      },
+      {
+        id: 'u5', name: '5. Ünite: Üretim, Dağıtım ve Tüketim',
+        topics: [
+          { id: 't5_1', name: 'Toprak ve Üretim İlişkisi (Tımar ve İkta)' },
+          { id: 't5_2', name: 'Üretim Teknolojisi ve Sosyal Değişim' },
+          { id: 't5_3', name: 'Vakıf Medeniyeti ve Sivil Toplum' },
+          { id: 't5_4', name: 'Geleceğin Meslekleri ve Ekonomi' },
+        ]
+      },
+      {
+        id: 'u6', name: '6. Ünite: Etkin Vatandaşlık',
+        topics: [
+          { id: 't6_1', name: 'Demokrasinin Tarihsel Serüveni' },
+          { id: 't6_2', name: 'Atatürk ve Demokrasi Kültürü' },
+          { id: 't6_3', name: 'Cumhuriyetimizin Temel Nitelikleri' },
+        ]
+      },
+      {
+        id: 'u7', name: '7. Ünite: Küresel Bağlantılar',
+        topics: [
+          { id: 't7_1', name: 'Türkiye ve Uluslararası Kuruluşlar' },
+          { id: 't7_2', name: 'Küresel Sorunlar ve Ortak Çözümler' },
         ]
       },
     ],
@@ -133,57 +223,55 @@ export const DEFAULT_CURRICULUM = {
         id: 'u1', name: '1. Ünite: Bir Kahraman Doğuyor',
         topics: [
           { id: 't1_1', name: 'Uyanan Avrupa ve Sarsılan Osmanlı' },
-          { id: 't1_2', name: 'Mustafa Kemal\'in Çocukluğu ve Eğitimi' },
-          { id: 't1_3', name: 'Mustafa Kemal\'in Askerlik Hayatı' },
+          { id: 't1_2', name: 'Mustafa Kemal\'in Çocukluğu ve Eğitim Hayatı' },
+          { id: 't1_3', name: 'Mustafa Kemal\'in Askerlik Hayatı ve Fikir Dünyası' },
         ]
       },
       {
-        id: 'u2', name: '2. Ünite: Millî Uyanış - Bağımsızlık Yolunda Atılan Adımlar',
+        id: 'u2', name: '2. Ünite: Millî Uyanış: Bağımsızlık Yolunda Atılan Adımlar',
         topics: [
-          { id: 't2_1', name: 'Birinci Dünya Savaşı ve Osmanlı' },
+          { id: 't2_1', name: 'I. Dünya Savaşı ve Osmanlı Devleti' },
           { id: 't2_2', name: 'Mondros Ateşkes Antlaşması ve İşgaller' },
-          { id: 't2_3', name: 'Kuvâ-yı Millîye ve Cemiyetler' },
-          { id: 't2_4', name: 'Mustafa Kemal\'in Samsun\'a Çıkışı ve Kongreler' },
+          { id: 't2_3', name: 'Cemiyetler ve Kuvâ-yı Millîye' },
+          { id: 't2_4', name: 'Milli Mücadele\'nin Hazırlık Dönemi: Kongreler' },
           { id: 't2_5', name: 'Misak-ı Millî ve TBMM\'nin Açılışı' },
         ]
       },
       {
-        id: 'u3', name: '3. Ünite: Ya İstiklal Ya Ölüm!',
+        id: 'u3', name: '3. Ünite: Millî Bir Destan: Ya İstiklal Ya Ölüm!',
         topics: [
-          { id: 't3_1', name: 'Doğu ve Güney Cepheleri' },
+          { id: 't3_1', name: 'Kurtuluş Savaşı: Doğu ve Güney Cepheleri' },
           { id: 't3_2', name: 'Batı Cephesi Savaşları' },
-          { id: 't3_3', name: 'Maarif Kongresi ve Tekâlif-i Millîye' },
-          { id: 't3_4', name: 'Mudanya ve Lozan Barış Antlaşmaları' },
+          { id: 't3_3', name: 'Mudanya ve Lozan Barış Antlaşmaları' },
         ]
       },
       {
         id: 'u4', name: '4. Ünite: Atatürkçülük ve Çağdaşlaşan Türkiye',
         topics: [
-          { id: 't4_1', name: 'Siyasi Alandaki İnkılaplar' },
-          { id: 't4_2', name: 'Hukuk, Eğitim ve Kültür Alanındaki İnkılaplar' },
-          { id: 't4_3', name: 'Toplumsal ve Ekonomik Alandaki İnkılaplar' },
-          { id: 't4_4', name: 'Atatürk İlkeleri' },
+          { id: 't4_1', name: 'Siyasi Alandaki İnkılaplar (Saltanat ve Cumhuriyet)' },
+          { id: 't4_2', name: 'Atatürk İlkeleri' },
+          { id: 't4_3', name: 'Hukuk, Eğitim, Ekonomi ve Toplum Alandaki İnkılaplar' },
         ]
       },
       {
         id: 'u5', name: '5. Ünite: Demokratikleşme Çabaları',
         topics: [
           { id: 't5_1', name: 'Çok Partili Hayata Geçiş Denemeleri' },
-          { id: 't5_2', name: 'Cumhuriyete Yönelik Tehditler' },
+          { id: 't5_2', name: 'Cumhuriyet Rejimine Yönelik Tehditler' },
         ]
       },
       {
         id: 'u6', name: '6. Ünite: Atatürk Dönemi Türk Dış Politikası',
         topics: [
-          { id: 't6_1', name: 'Türk Dış Politikasının Temel İlkeleri' },
-          { id: 't6_2', name: 'Atatürk Dönemi Dış Politika Gelişmeleri' },
+          { id: 't6_1', name: 'Dış Politikanın Temel İlkeleri ve Gelişmeler' },
+          { id: 't6_2', name: 'Boğazlar Meselesi ve Hatay\'ın Anavatana Katılımı' },
         ]
       },
       {
         id: 'u7', name: '7. Ünite: Atatürk\'ün Ölümü ve Sonrası',
         topics: [
-          { id: 't7_1', name: 'Atatürk\'ün Vefatı' },
-          { id: 't7_2', name: 'İkinci Dünya Savaşı ve Türkiye' },
+          { id: 't7_1', name: 'Atatürk\'ün Vefatı and Eserleri' },
+          { id: 't7_2', name: 'II. Dünya Savaşı and Türkiye\'ye Etkileri' },
         ]
       },
     ],
@@ -191,52 +279,30 @@ export const DEFAULT_CURRICULUM = {
       {
         id: 'u1', name: '1. Ünite: XX. Yüzyıl Başlarında Osmanlı Devleti ve Dünya',
         topics: [
-          { id: 't1_1', name: 'XX. Yüzyıl Başlarında Dünya' },
-          { id: 't1_2', name: 'Osmanlı Devleti\'nin Son Dönemi Düşünce Akımları' },
-          { id: 't1_3', name: 'Trablusgarp ve Balkan Savaşları' },
-          { id: 't1_4', name: 'I. Dünya Savaşı' },
+          { id: 't1_1', name: 'I. Dünya Savaşı ve Osmanlı Devleti' },
+          { id: 't1_2', name: 'Mustafa Kemal ve Milli Mücadele Ruhu' },
         ]
       },
       {
-        id: 'u2', name: '2. Ünite: Millî Mücadele',
+        id: 'u2', name: '2. Ünite: Milli Mücadele',
         topics: [
-          { id: 't2_1', name: 'Mondros Mütarekesi ve Cemiyetler' },
-          { id: 't2_2', name: 'Mustafa Kemal\'in Samsun\'a Çıkışı ve Genelgeler' },
-          { id: 't2_3', name: 'Büyük Millet Meclisinin Açılması ve İsyanlar' },
-          { id: 't2_4', name: 'Sevr Antlaşması' },
-          { id: 't2_5', name: 'Doğu, Güney ve Batı Cepheleri' },
-          { id: 't2_6', name: 'Mudanya ve Lozan Barış Antlaşmaları' },
+          { id: 't2_1', name: 'Kurtuluş Savaşı\'nın Hazırlık Aşaması' },
+          { id: 't2_2', name: 'Cepheler ve Bağımsızlık Mücadelesi' },
+          { id: 't2_3', name: 'Lozan Barış Antlaşması' },
         ]
       },
       {
         id: 'u3', name: '3. Ünite: Atatürkçülük ve Türk İnkılabı',
         topics: [
-          { id: 't3_1', name: 'Atatürk İlkeleri' },
-          { id: 't3_2', name: 'Siyasi Alandaki İnkılaplar' },
-          { id: 't3_3', name: 'Hukuk ve Eğitim Alanındaki İnkılaplar' },
-          { id: 't3_4', name: 'Toplumsal ve Ekonomik Alandaki Gelişmeler' },
+          { id: 't3_1', name: 'Cumhuriyetin İlanı ve Köklü Dönüşümler' },
+          { id: 't3_2', name: 'Atatürk İlkeleri ve Modern Türkiye' },
         ]
       },
       {
-        id: 'u4', name: '4. Ünite: İki Savaş Arasındaki Dönemde Türkiye ve Dünya',
+        id: 'u4', name: '4. Ünite: Atatürk Dönemi Sonrası Türkiye ve Dünya',
         topics: [
-          { id: 't4_1', name: 'Atatürk Dönemi İç ve Dış Politika' },
-          { id: 't4_2', name: 'İki Savaş Arasındaki Dönemde Dünyadaki Siyasi Gelişmeler' },
-        ]
-      },
-      {
-        id: 'u5', name: '5. Ünite: II. Dünya Savaşı Sürecinde Türkiye ve Dünya',
-        topics: [
-          { id: 't5_1', name: 'II. Dünya Savaşı\'nın Başlaması ve Gelişimi' },
-          { id: 't5_2', name: 'Savaş Yıllarında Türkiye' },
-        ]
-      },
-      {
-        id: 'u6', name: '6. Ünite: II. Dünya Savaşı Sonrasında Türkiye ve Dünya',
-        topics: [
-          { id: 't6_1', name: 'Soğuk Savaş Dönemi Başlangıcı' },
-          { id: 't6_2', name: 'Türkiye\'nin Çok Partili Hayata Geçişi' },
-          { id: 't6_3', name: 'Demokrat Parti Dönemi' },
+          { id: 't4_1', name: 'II. Dünya Savaşı ve Türkiye' },
+          { id: 't4_2', name: 'Soğuk Savaş Dönemi ve Çok Partili Hayat' },
         ]
       },
     ],
@@ -244,53 +310,27 @@ export const DEFAULT_CURRICULUM = {
   'tarih': {
     '9. Sınıf': [
       {
-        id: 'u1', name: '1. Ünite: Tarih ve Zaman',
+        id: 'u1', name: '1. Ünite: Geçmişin İnşa Sürecinde Tarih (Maarif Modeli)',
         topics: [
-          { id: 't1_1', name: 'Tarih Nedir?' },
-          { id: 't1_2', name: 'Zamanın Taksimi' },
-          { id: 't1_3', name: 'İnsanlığın Hafızası: Tarih' },
+          { id: 't1_1', name: 'Tarih Öğrenmenin Faydaları ve Tarihin Doğası' },
+          { id: 't1_2', name: 'Tarihsel Bilginin Üretim Süreci' },
+          { id: 't1_3', name: 'Tarih Araştırmalarında Dijital Dönüşüm' },
         ]
       },
       {
-        id: 'u2', name: '2. Ünite: Kadim Dünyada İnsan',
+        id: 'u2', name: '2. Ünite: Eski Çağ Medeniyetleri (Maarif Modeli)',
         topics: [
-          { id: 't2_1', name: 'İnsanın İlk İzleri ve Yerleşik Hayata Geçiş' },
-          { id: 't2_2', name: 'Uygarlık Havzaları' },
+          { id: 't2_1', name: 'Eski Çağ\'da Yerleşim ve Ekonomik Hayat' },
+          { id: 't2_2', name: 'Eski Çağ\'da Devlet Anlayışı ve Yönetim' },
+          { id: 't2_3', name: 'Eski Çağ Medeniyetlerinde İnanç ve Bilim' },
         ]
       },
       {
-        id: 'u3', name: '3. Ünite: İlk Çağ ve Göçler',
+        id: 'u3', name: '3. Ünite: Orta Çağ Medeniyetleri (Maarif Modeli)',
         topics: [
-          { id: 't3_1', name: 'Göçlerin Nedenleri ve Sonuçları' },
-          { id: 't3_2', name: 'İlk Çağ\'ın Tüccar Toplulukları' },
-          { id: 't3_3', name: 'Kabileden Devlete' },
-          { id: 't3_4', name: 'Kanunlar Doğuyor' },
-        ]
-      },
-      {
-        id: 'u4', name: '4. Ünite: Türklerin Ana Yurdu ve İlk Türk Devletleri',
-        topics: [
-          { id: 't4_1', name: 'Avrasya\'da İlk Türk İzleri' },
-          { id: 't4_2', name: 'Asya Hun Devleti' },
-          { id: 't4_3', name: 'Kök Türk ve Uygur Devletleri' },
-          { id: 't4_4', name: 'İlk Türk Devletlerinde Teşkilat ve Kültür' },
-        ]
-      },
-      {
-        id: 'u5', name: '5. Ünite: İslamiyet\'in Doğuşu ve İlk İslam Devletleri',
-        topics: [
-          { id: 't5_1', name: 'İslamiyet Öncesi Arap Yarımadası' },
-          { id: 't5_2', name: 'Hz. Muhammed Dönemi ve Dört Halife Dönemi' },
-          { id: 't5_3', name: 'Emeviler ve Abbasiler' },
-        ]
-      },
-      {
-        id: 'u6', name: '6. Ünite: Türklerin İslamiyet\'i Kabulü ve İlk Türk İslam Devletleri',
-        topics: [
-          { id: 't6_1', name: 'Türk-Arap İlişkileri ve İslamiyet\'in Kabulü' },
-          { id: 't6_2', name: 'Karahanlılar ve Gazneliler' },
-          { id: 't6_3', name: 'Büyük Selçuklu Devleti' },
-          { id: 't6_4', name: 'İlk Türk İslam Devletlerinde Kültür ve Medeniyet' },
+          { id: 't3_1', name: 'Orta Çağ\'da Siyasi ve Askerî Yapılar' },
+          { id: 't3_2', name: 'Orta Çağ\'da Toplumsal Yapı ve Ekonomi' },
+          { id: 't3_3', name: 'Orta Çağ Medeniyetlerinde Bilim, İnanç ve Hukuk' },
         ]
       },
     ],
@@ -298,59 +338,53 @@ export const DEFAULT_CURRICULUM = {
       {
         id: 'u1', name: '1. Ünite: Yerleşme ve Devletleşme Sürecinde Selçuklu Türkiyesi',
         topics: [
-          { id: 't1_1', name: '1071 Malazgirt Sonrası Anadolu' },
-          { id: 't1_2', name: 'Anadolu Selçuklu Devleti\'nin Kuruluşu' },
-          { id: 't1_3', name: 'Anadolu Selçuklularında Teşkilat ve Kültür' },
-          { id: 't1_4', name: 'Haçlı Seferleri ve Etkileri' },
-          { id: 't1_5', name: 'Moğol İstilası ve Kösedağ Savaşı' },
+          { id: 't1_1', name: 'Anadolu\'ya Yapılan Türk Göçleri ve Malazgirt' },
+          { id: 't1_2', name: 'Anadolu Selçuklu Devleti\'nin Kuruluş Süreci' },
+          { id: 't1_3', name: 'Haçlı Seferleri ve Moğol İstilası' },
         ]
       },
       {
         id: 'u2', name: '2. Ünite: Beylikten Devlete Osmanlı Siyaseti (1302-1453)',
         topics: [
           { id: 't2_1', name: 'Osmanlı Devleti\'nin Kuruluş Macerası' },
-          { id: 't2_2', name: 'Balkanlarda Fetih ve İskan Siyaseti' },
-          { id: 't2_3', name: 'Anadolu\'da Siyasi Birlik Çabaları' },
-          { id: 't2_4', name: 'Ankara Savaşı ve Fetret Devri' },
+          { id: 't2_2', name: 'Rumeli\'de Genişleme ve Balkan Fetihleri' },
+          { id: 't2_3', name: 'Ankara Savaşı ve Fetret Devri' },
         ]
       },
       {
         id: 'u3', name: '3. Ünite: Devletleşme Sürecinde Savaşçılar ve Askerler',
         topics: [
-          { id: 't3_1', name: 'Tımar Sistemi' },
-          { id: 't3_2', name: 'Yeniçeri Ocağı ve Kapıkulu Askerleri' },
+          { id: 't3_1', name: 'Osmanlı Askerî Teşkilatının Temelleri' },
+          { id: 't3_2', name: 'Tımar Sistemi ve Yeniçeri Ocağı' },
         ]
       },
       {
         id: 'u4', name: '4. Ünite: Beylikten Devlete Osmanlı Medeniyeti',
         topics: [
-          { id: 't4_1', name: 'Osmanlı Toplum Yapısı' },
-          { id: 't4_2', name: 'İlim ve İrfan Erbapları' },
-          { id: 't4_3', name: 'Sözlü ve Yazılı Kültür' },
+          { id: 't4_1', name: 'Osmanlı Devlet İdaresi ve Saray Teşkilatı' },
+          { id: 't4_2', name: 'İlim, İrfan ve Sanat Erbapları' },
         ]
       },
       {
         id: 'u5', name: '5. Ünite: Dünya Gücü Osmanlı (1453-1595)',
         topics: [
-          { id: 't5_1', name: 'İstanbul\'un Fethi' },
-          { id: 't5_2', name: 'Yavuz Sultan Selim ve Mısır Seferi' },
-          { id: 't5_3', name: 'Kanuni Sultan Süleyman Dönemi' },
-          { id: 't5_4', name: 'Akdeniz\'de Hakimiyet' },
+          { id: 't5_1', name: 'İstanbul\'un Fethi ve Cihan Şümul Devlet' },
+          { id: 't5_2', name: 'Denizlerde Hakimiyet: Akdeniz ve Hint Seferleri' },
+          { id: 't5_3', name: 'Kanuni Sultan Süleyman Dönemi Gelişmeleri' },
         ]
       },
       {
         id: 'u6', name: '6. Ünite: Sultan ve Osmanlı Merkez Teşkilatı',
         topics: [
-          { id: 't6_1', name: 'Topkapı Sarayı ve İşlevleri' },
-          { id: 't6_2', name: 'Divan-ı Hümayun' },
-          { id: 't6_3', name: 'Merkezî Otoritenin Güçlendirilmesi' },
+          { id: 't6_1', name: 'Topkapı Sarayı ve Bürokrasinin İşleyişi' },
+          { id: 't6_2', name: 'Divan-ı Hümayun ve Karar Alma Süreçleri' },
         ]
       },
       {
         id: 'u7', name: '7. Ünite: Klasik Çağda Osmanlı Toplum Düzeni',
         topics: [
-          { id: 't7_1', name: 'Millet Sistemi' },
-          { id: 't7_2', name: 'Osmanlı Ekonomisinde Lonca Teşkilatı ve Tarım' },
+          { id: 't7_1', name: 'Millet Sistemi ve Osmanlı Ekonomisi' },
+          { id: 't7_2', name: 'Lonca Teşkilatı ve Vakıf Müessesesi' },
         ]
       },
     ],
@@ -358,49 +392,25 @@ export const DEFAULT_CURRICULUM = {
       {
         id: 'u1', name: '1. Ünite: Değişen Dünya Dengeleri Karşısında Osmanlı Siyaseti (1595-1774)',
         topics: [
-          { id: 't1_1', name: 'XVII. Yüzyıl Siyasi Ortamında Osmanlı Devleti' },
-          { id: 't1_2', name: 'Uzun Savaşlardan Diplomasiye' },
-          { id: 't1_3', name: 'Karlofça Antlaşması Sonrası Dış Politika' },
+          { id: 't1_1', name: 'XVII. Yüzyıl Siyasi Şartları ve Rekabet' },
+          { id: 't1_2', name: 'Uzun Savaşlardan Karlofça Antlaşmasına' },
+          { id: 't1_3', name: 'Osmanlı-Rusya ve Osmanlı-Safevi İlişkileri' },
         ]
       },
       {
         id: 'u2', name: '2. Ünite: Değişim Çağında Avrupa ve Osmanlı',
         topics: [
-          { id: 't2_1', name: 'Avrupa\'da Değişim Süreci' },
-          { id: 't2_2', name: 'Osmanlı Sosyo-Ekonomik Yapısında Değişiklikler' },
-          { id: 't2_3', name: 'İsyanlar ve Değişim Çabaları' },
+          { id: 't2_1', name: 'Avrupa\'daki Bilim ve Teknoloji Devrimleri' },
+          { id: 't2_2', name: 'Osmanlı\'da Islahat Hareketleri ve Modernleşme' },
+          { id: 't2_3', name: 'Sanayi İnkılabı ve Osmanlı Ekonomisine Etkileri' },
         ]
       },
       {
         id: 'u3', name: '3. Ünite: Uluslararası İlişkilerde Denge Stratejisi (1774-1914)',
         topics: [
           { id: 't3_1', name: 'XIX. Yüzyıl Siyasi Gelişmeleri ve Şark Meselesi' },
-          { id: 't3_2', name: 'Osmanlı Devleti ve Denge Politikası' },
-          { id: 't3_3', name: 'Kırım Savaşı ve Paris Antlaşması' },
-          { id: 't3_4', name: '93 Harbi ve Berlin Antlaşması' },
-        ]
-      },
-      {
-        id: 'u4', name: '4. Ünite: Devrimler Çağında Değişen Devlet-Toplum İlişkileri',
-        topics: [
-          { id: 't4_1', name: 'Sanayi İnkılabı ve Fransız İhtilali\'nin Etkileri' },
-          { id: 't4_2', name: 'Osmanlı Devleti\'nde İdari ve Askeri Islahatlar' },
-          { id: 't4_3', name: 'Tanzimat, Islahat ve Meşrutiyet Dönemleri' },
-        ]
-      },
-      {
-        id: 'u5', name: '5. Ünite: Sermaye ve Emek',
-        topics: [
-          { id: 't5_1', name: 'Kapitalizm ve Klasik Üretimden Endüstriyel Üretime' },
-          { id: 't5_2', name: 'Osmanlı Ekonomisinde Değişimler ve Duyun-ı Umumiye' },
-        ]
-      },
-      {
-        id: 'u6', name: '6. Ünite: XIX. ve XX. Yüzyılda Değişen Gündelik Hayat',
-        topics: [
-          { id: 't6_1', name: 'Ulus Devletleşme ve Modern Ordular' },
-          { id: 't6_2', name: 'Osmanlı Modernleşmesi ve Nüfus Hareketleri' },
-          { id: 't6_3', name: 'Matbuat ve İletişim' },
+          { id: 't3_2', name: 'Denge Politikası ve Büyük Güçlerin Rekabeti' },
+          { id: 't3_3', name: 'Tanzimat, Islahat ve Meşrutiyet Dönemleri' },
         ]
       },
     ],
@@ -408,52 +418,29 @@ export const DEFAULT_CURRICULUM = {
       {
         id: 'u1', name: '1. Ünite: XX. Yüzyıl Başlarında Osmanlı Devleti ve Dünya',
         topics: [
-          { id: 't1_1', name: 'XX. Yüzyıl Başlarında Dünya' },
-          { id: 't1_2', name: 'Osmanlı Devleti\'nin Son Dönemi Düşünce Akımları' },
-          { id: 't1_3', name: 'Trablusgarp ve Balkan Savaşları' },
-          { id: 't1_4', name: 'I. Dünya Savaşı' },
+          { id: 't1_1', name: 'Mustafa Kemal ve I. Dünya Savaşı' },
+          { id: 't1_2', name: 'Osmanlı Devleti\'nin Son Savaşları' },
         ]
       },
       {
-        id: 'u2', name: '2. Ünite: Millî Mücadele',
+        id: 'u2', name: '2. Ünite: Milli Mücadele',
         topics: [
-          { id: 't2_1', name: 'Mondros Mütarekesi ve Cemiyetler' },
-          { id: 't2_2', name: 'Mustafa Kemal\'in Samsun\'a Çıkışı ve Genelgeler' },
-          { id: 't2_3', name: 'Büyük Millet Meclisinin Açılması ve İsyanlar' },
-          { id: 't2_4', name: 'Sevr Antlaşması' },
-          { id: 't2_5', name: 'Doğu, Güney ve Batı Cepheleri' },
-          { id: 't2_6', name: 'Mudanya ve Lozan Barış Antlaşmaları' },
+          { id: 't2_1', name: 'Bağımsızlığa Giden Yol: Kongreler ve Hazırlık' },
+          { id: 't2_2', name: 'Kurtuluş Savaşı Cepheleri' },
         ]
       },
       {
-        id: 'u3', name: '3. Ünite: Atatürkçülük ve Türk İnkılabı',
+        id: 'u3', name: '3. Ünite: Atatürkçülük ve İnkılaplar',
         topics: [
-          { id: 't3_1', name: 'Atatürk İlkeleri' },
-          { id: 't3_2', name: 'Siyasi Alandaki İnkılaplar' },
-          { id: 't3_3', name: 'Hukuk ve Eğitim Alanındaki İnkılaplar' },
-          { id: 't3_4', name: 'Toplumsal ve Ekonomik Alandaki Gelişmeler' },
+          { id: 't3_1', name: 'Cumhuriyetin Temelleri ve İnkılaplar' },
+          { id: 't3_2', name: 'Atatürk İlkeleri' },
         ]
       },
       {
-        id: 'u4', name: '4. Ünite: İki Savaş Arasındaki Dönemde Türkiye ve Dünya',
+        id: 'u4', name: '4. Ünite: Çağdaş Dünya ve Türkiye',
         topics: [
-          { id: 't4_1', name: 'Atatürk Dönemi İç ve Dış Politika' },
-          { id: 't4_2', name: 'İki Savaş Arasındaki Dönemde Dünyadaki Siyasi Gelişmeler' },
-        ]
-      },
-      {
-        id: 'u5', name: '5. Ünite: II. Dünya Savaşı Sürecinde Türkiye ve Dünya',
-        topics: [
-          { id: 't5_1', name: 'II. Dünya Savaşı\'nın Başlaması ve Gelişimi' },
-          { id: 't5_2', name: 'Savaş Yıllarında Türkiye' },
-        ]
-      },
-      {
-        id: 'u6', name: '6. Ünite: II. Dünya Savaşı Sonrasında Türkiye ve Dünya',
-        topics: [
-          { id: 't6_1', name: 'Soğuk Savaş Dönemi Başlangıcı' },
-          { id: 't6_2', name: 'Türkiye\'nin Çok Partili Hayata Geçişi' },
-          { id: 't6_3', name: 'Demokrat Parti Dönemi' },
+          { id: 't4_1', name: 'II. Dünya Savaşı ve Sonrası' },
+          { id: 't4_2', name: 'Soğuk Savaş ve Modern Türkiye' },
         ]
       },
     ],
@@ -608,15 +595,57 @@ export const DEFAULT_CURRICULUM = {
       },
     ],
   },
-  'matematik': {
+  'matematik_ilk': {
     '5. Sınıf': [
-      { id: 'u1', name: '1. Ünite: Doğal Sayılar', topics: [{ id: 't1_1', name: 'Milyonlar' }, { id: 't1_2', name: 'Örüntüler' }] },
-      { id: 'u2', name: '2. Ünite: İşlemler', topics: [{ id: 't1_1', name: 'Toplama ve Çıkarma' }, { id: 't1_2', name: 'Zihinden İşlemler' }] }
+      { id: 'u1', name: '1. Ünite: Sayılar ve Nicelikler (Maarif Modeli)', topics: [{ id: 't1_1', name: 'Doğal Sayılar ve Milyonlar' }, { id: 't1_2', name: 'İşlemler ve Zihinden Toplama' }] },
+      { id: 'u2', name: '2. Ünite: Algoritma ve Bilişim (Maarif Modeli)', topics: [{ id: 't2_1', name: 'Matematiksel Algoritma Oluşturma' }] },
+      { id: 'u3', name: '3. Ünite: Geometrik Şekiller', topics: [{ id: 't3_1', name: 'Temel Geometrik Şekiller ve Açı' }] },
+      { id: 'u4', name: '4. Ünite: Veri Analizi ve Olasılık', topics: [{ id: 't4_1', name: 'Veri Toplama ve Yorumlama' }] }
     ],
+    '6. Sınıf': [
+      { id: 'u1', name: '1. Ünite: Oran ve Orantı', topics: [{ id: 't1_1', name: 'Oran Kavramı ve Gösterimi' }] },
+      { id: 'u2', name: '2. Ünite: Cebirsel İfadeler', topics: [{ id: 't2_1', name: 'Cebirsel İfadelerle İşlemler' }] },
+      { id: 'u3', name: '3. Ünite: Geometrik Cisimler', topics: [{ id: 't3_1', name: 'Hacim Ölçme ve Tahmin' }] }
+    ],
+    '7. Sınıf': [
+      { id: 'u1', name: '1. Ünite: Tam Sayılar ve Rasyonel Sayılar', topics: [{ id: 't1_1', name: 'Tam Sayılarla İşlemler' }, { id: 't1_2', name: 'Rasyonel Sayılar' }] },
+      { id: 'u2', name: '2. Ünite: Eşitlik ve Denklem', topics: [{ id: 't2_1', name: 'Denklem Kurme ve Çözme' }] },
+      { id: 'u3', name: '3. Ünite: Yüzdeler ve Veri İşleme', topics: [{ id: 't3_1', name: 'Yüzde Hesaplamaları' }, { id: 't3_2', name: 'Veri Analizi' }] }
+    ],
+    '8. Sınıf': [
+      { id: 'u1', name: '1. Ünite: Çarpanlar ve Katlar / Üslü İfadeler', topics: [{ id: 't1_1', name: 'EBOB-EKOK' }, { id: 't1_2', name: 'Üslü Sayılar' }] },
+      { id: 'u2', name: '2. Ünite: Kareköklü İfadeler ve Veri Analizi', topics: [{ id: 't2_1', name: 'Kareköklü Sayılar' }, { id: 't2_2', name: 'Grafik Yorumlama' }] },
+      { id: 'u3', name: '3. Ünite: Olasılık ve Cebirsel İfadeler', topics: [{ id: 't3_1', name: 'Olasılık Hesapları' }, { id: 't3_2', name: 'Cebirsel Özdeşlikler' }] }
+    ],
+  },
+  'matematik_lise': {
     '9. Sınıf': [
-      { id: 'u1', name: '1. Ünite: Mantık', topics: [{ id: 't1_1', name: 'Önermeler' }, { id: 't1_2', name: 'Bileşik Önermeler' }] },
-      { id: 'u2', name: '2. Ünite: Kümeler', topics: [{ id: 't2_1', name: 'Kümelerde Temel Kavramlar' }, { id: 't2_2', name: 'Alt Küme' }] }
-    ]
+      { id: 'u1', name: '1. Ünite: Sayılar (Maarif Modeli)', topics: [{ id: 't1_1', name: 'Sayı Kümeleri' }, { id: 't1_2', name: 'Üslü ve Köklü İfadeler' }] },
+      { id: 'u2', name: '2. Ünite: Nicelikler ve Değişimler (Maarif Modeli)', topics: [{ id: 't2_1', name: 'Denklemler ve Eşitsizlikler' }] },
+      { id: 'u3', name: '3. Ünite: Algoritma ve Bilişim (Maarif Modeli)', topics: [{ id: 't3_1', name: 'Algoritmik Problem Çözme' }] },
+      { id: 'u4', name: '4. Ünite: Geometrik Şekiller / Eşlik ve Benzerlik', topics: [{ id: 't4_1', name: 'Üçgenler' }, { id: 't4_2', name: 'Eşlik Kavramı' }] },
+      { id: 'u5', name: '5. Ünite: Veriden Olasılığa', topics: [{ id: 't5_1', name: 'Veri Analizi' }, { id: 't5_2', name: 'Olasılık' }] }
+    ],
+    '10. Sınıf': [
+      { id: 'u1', name: '1. Ünite: Sayma ve Olasılık', topics: [{ id: 't1_1', name: 'Permütasyon ve Kombinasyon' }, { id: 't1_2', name: 'Binom Açılımı' }] },
+      { id: 'u2', name: '2. Ünite: Fonksiyonlar', topics: [{ id: 't2_1', name: 'Fonksiyon Kavramı ve Grafikler' }] },
+      { id: 'u3', name: '3. Ünite: Polinomlar ve Denklem Çözme', topics: [{ id: 't3_1', name: 'Polinomlarla İşlemler' }, { id: 't3_2', name: 'İkinci Dereceden Denklemler' }] },
+      { id: 'u4', name: '4. Ünite: Dörtgenler ve Çokgenler', topics: [{ id: 't4_1', name: 'Dörtgen ve Çokgen Özellikleri' }] }
+    ],
+    '11. Sınıf': [
+      { id: 'u1', name: '1. Ünite: Trigonometri', topics: [{ id: 't1_1', name: 'Yönlü Açılar' }, { id: 't1_2', name: 'Trigonometrik Fonksiyonlar' }] },
+      { id: 'u2', name: '2. Ünite: Analitik Geometri', topics: [{ id: 't2_1', name: 'Doğrunun Analitik İncelenmesi' }] },
+      { id: 'u3', name: '3. Ünite: Fonksiyonlarda Uygulamalar', topics: [{ id: 't3_1', name: 'İkinci Dereceden Fonksiyonlar (Parabol)' }] },
+      { id: 'u4', name: '4. Ünite: Denklem ve Eşitsizlik Sistemleri', topics: [{ id: 't4_1', name: 'İki Bilinmeyenli Denklem Sistemleri' }] },
+      { id: 'u5', name: '5. Ünite: Çember ve Daire', topics: [{ id: 't5_1', name: 'Çemberin Temel Elemanları' }] }
+    ],
+    '12. Sınıf': [
+      { id: 'u1', name: '1. Ünite: Üstel ve Logaritmik Fonksiyonlar', topics: [{ id: 't1_1', name: 'Üstel Fonksiyon' }, { id: 't1_2', name: 'Logaritma Fonksiyonu' }] },
+      { id: 'u2', name: '2. Ünite: Diziler', topics: [{ id: 't2_1', name: 'Aritmetik ve Geometrik Diziler' }] },
+      { id: 'u3', name: '3. Ünite: Trigonometri (Toplam-Fark)', topics: [{ id: 't3_1', name: 'Trigonometrik Denklemler' }] },
+      { id: 'u4', name: '4. Ünite: Türev', topics: [{ id: 't4_1', name: 'Türev Alma Kuralları' }, { id: 't4_2', name: 'Türevin Uygulamaları' }] },
+      { id: 'u5', name: '5. Ünite: İntegral', topics: [{ id: 't5_1', name: 'Belirsiz İntegral' }, { id: 't5_2', name: 'Belirli İntegral Uygulamaları' }] }
+    ],
   },
   'turkce': {
     '5. Sınıf': [
@@ -659,6 +688,12 @@ export function getSubjectsForBranches(branches = []) {
         activeSubjects.add('ayt');
         activeSubjects.add('inkılap'); 
       }
+    } else if (branchUpper.includes('MATEMATİK (LİSE)') || branchUpper.includes('MATEMATIK (LISE)')) {
+      activeSubjects.add('matematik_lise');
+      activeSubjects.add('tyt');
+      activeSubjects.add('ayt');
+    } else if (branchUpper.includes('MATEMATİK (İLKÖĞRETİM)') || branchUpper.includes('MATEMATIK (ILKOGRETIM)')) {
+      activeSubjects.add('matematik_ilk');
     } else if (branchUpper.includes('OSMANLI')) {
       activeSubjects.add('osmanlıca');
     } else if (branchUpper.includes('SOSYAL BİLGİLER') || branchUpper.includes('SOSYAL BILGILER')) {

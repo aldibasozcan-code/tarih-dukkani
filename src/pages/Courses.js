@@ -322,9 +322,8 @@ function openAddMaterialModal(defSubject, defGrade, targetUnitId, targetTopicId,
   }
 
   function updateSubjects() {
-    const gr = gradeSel.value;
     const activeSubjects = getSubjectsForBranches(getState().profile.branches || []);
-    const subjects = activeSubjects.map(s => {
+    subjSel.innerHTML = activeSubjects.map(s => {
       let sinfo = SUBJECTS.find(x => x.id === s);
       if (!sinfo) {
         sinfo = { name: s.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '), icon: '📚' };

@@ -4,6 +4,9 @@
 import { ALL_GRADES, SUBJECTS, ALL_BRANCHES } from '../data/curriculum.js';
 import { icon } from '../components/icons.js';
 
+const HISTORY_GROUP = ["Sosyal Bilgiler", "T.C. İnkılap Tarihi ve Atatürkçülük", "Tarih"];
+const MATH_GROUP = ["Matematik (İlköğretim)", "Matematik (Lise)"];
+
 export function renderOnboarding() {
   return `
     <div class="onboarding-wrapper">
@@ -15,7 +18,7 @@ export function renderOnboarding() {
           <h2 style="font-size: 22px; font-weight: 800; color: var(--brand-green); margin-bottom: 4px;">Bitig.app</h2>
           <p class="login-subtitle" style="font-size: 15px; color: var(--brand-green); margin: 0;">Sisteme Hoş Geldiniz!</p>
           <p style="font-size: 13px; color: var(--text-muted); margin-top: 8px; line-height: 1.4;">
-            Uygulamayı kendi derslerinize ve öğrencilerinize göre şekillendirebilmemiz için lütfen aşağıdaki bilgileri doldurun.
+            Uygulamayı branşınıza ve profesyonel kariyerinize göre şekillendirebilmemiz için lütfen aşağıdaki bilgileri doldurun.
           </p>
         </div>
 
@@ -47,10 +50,12 @@ export function renderOnboarding() {
               
               <!-- Branches (Selection List) -->
               <div class="form-group" style="margin: 0;">
-                <label style="margin-bottom: 12px; display: block; font-size: 14px; font-weight: 700; color: var(--brand-green);">Branşlar / Dersler (Seçim Listesi)</label>
-                <div class="selection-list" style="display: flex; flex-direction: column; gap: 8px;">
+                <label style="margin-bottom: 12px; display: block; font-size: 14px; font-weight: 700; color: var(--brand-green);">
+                  Uzmanlık Branşınız
+                </label>
+                <div class="selection-list" id="branch-selection-list" style="display: flex; flex-direction: column; gap: 8px;">
                   ${ALL_BRANCHES.map(branch => `
-                    <label class="selection-item">
+                    <label class="selection-item ${HISTORY_GROUP.includes(branch) || MATH_GROUP.includes(branch) ? 'history-group-item' : ''}">
                       <input type="checkbox" name="branches" value="${branch}">
                       <div class="selection-box">
                         <span class="selection-label">${branch}</span>
@@ -59,12 +64,18 @@ export function renderOnboarding() {
                     </label>
                   `).join('')}
                 </div>
+                <p style="font-size:11px; color:var(--text-muted); margin-top:8px;">
+                  Profesyonellik gereği uzmanlık alanınızı seçmelisiniz. (Tarih ve Matematik gruplarında çoklu seçim yapılabilir).
+                </p>
               </div>
 
               <!-- Grades (Selection List) -->
               <div class="form-group" style="margin: 0;">
-                <label style="margin-bottom: 12px; display: block; font-size: 14px; font-weight: 700; color: var(--brand-green);">Sınıflar / Seviyeler (Seçim Listesi)</label>
-                <div class="selection-list" style="display: flex; flex-direction: column; gap: 8px;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:12px;">
+                  <label style="margin-bottom: 0; display: block; font-size: 14px; font-weight: 700; color: var(--brand-green);">Hizmet Verdiğiniz Sınıflar</label>
+                  <button type="button" id="btn-select-all-grades" style="font-size:11px; color:var(--accent); background:none; border:none; padding:0; cursor:pointer; font-weight:600; display:none;">TÜMÜNÜ SEÇ</button>
+                </div>
+                <div class="selection-list" id="grade-selection-list" style="display: flex; flex-direction: column; gap: 8px;">
                   ${ALL_GRADES.map(grade => `
                     <label class="selection-item">
                       <input type="checkbox" name="grades" value="${grade}">
@@ -75,7 +86,6 @@ export function renderOnboarding() {
                     </label>
                   `).join('')}
                 </div>
-                <p style="font-size:11px; color:var(--text-muted); margin-top:8px;">Birden fazla seçenek işaretleyebilirsiniz.</p>
               </div>
 
             </div>
@@ -124,19 +134,10 @@ export function renderOnboarding() {
         transform: translateY(0);
         animation: floatUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
       }
-
-
       @media (max-width: 768px) {
-        .onboarding-header {
-          padding: 20px 24px !important;
-        }
-        .onboarding-body {
-          padding: 20px 24px !important;
-        }
-        .onboarding-footer {
-          padding: 16px 24px !important;
-        }
-        /* Grid çökmelerini engelle */
+        .onboarding-header { padding: 20px 24px !important; }
+        .onboarding-body { padding: 20px 24px !important; }
+        .onboarding-footer { padding: 16px 24px !important; }
         .onboarding-body > div[style*="max-width: 800px"] {
           grid-template-columns: 1fr !important;
           gap: 24px !important;
@@ -149,11 +150,56 @@ export function renderOnboarding() {
 export function initOnboarding(container, onComplete) {
   const form = container.querySelector('#onboarding-form');
   const btn = container.querySelector('.login-submit-btn');
+  const selectAllGradesBtn = container.querySelector('#btn-select-all-grades');
+
+  // Branş Seçim Mantığı
+  const branchCheckboxes = form.querySelectorAll('input[name="branches"]');
+  branchCheckboxes.forEach(cb => {
+    cb.addEventListener('change', () => {
+      const val = cb.value;
+      const isHistory = HISTORY_GROUP.includes(val);
+      const isMath = MATH_GROUP.includes(val);
+
+      if (cb.checked) {
+        if (isHistory) {
+          // Tarih grubuysa grupta olmayanları temizle
+          branchCheckboxes.forEach(other => {
+            if (!HISTORY_GROUP.includes(other.value)) other.checked = false;
+          });
+        } else if (isMath) {
+          // Matematik grubuysa grupta olmayanları temizle
+          branchCheckboxes.forEach(other => {
+            if (!MATH_GROUP.includes(other.value)) other.checked = false;
+          });
+        } else {
+          // Diğer branşlar tekildir
+          branchCheckboxes.forEach(other => {
+            if (other !== cb) other.checked = false;
+          });
+        }
+      }
+
+      // "Tümünü Seç" butonunu sadece tarih veya matematik grubu seçiliyse göster
+      const isAcademicGroup = Array.from(branchCheckboxes).some(c => 
+        c.checked && (HISTORY_GROUP.includes(c.value) || MATH_GROUP.includes(c.value))
+      );
+      if (selectAllGradesBtn) {
+        selectAllGradesBtn.style.display = isAcademicGroup ? 'block' : 'none';
+      }
+    });
+  });
+
+  // Tüm Sınıfları Seç Butonu
+  selectAllGradesBtn?.addEventListener('click', () => {
+    const gradeCheckboxes = form.querySelectorAll('input[name="grades"]');
+    const allChecked = Array.from(gradeCheckboxes).every(c => c.checked);
+    gradeCheckboxes.forEach(c => c.checked = !allChecked);
+    selectAllGradesBtn.textContent = !allChecked ? 'SEÇİMİ KALDIR' : 'TÜMÜNÜ SEÇ';
+  });
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     
-    // Gerekli değerleri topla
     const name = form.querySelector('#ob-name').value.trim();
     const phone = form.querySelector('#ob-phone').value.trim();
     const titleSelect = form.querySelector('#ob-title');
@@ -171,42 +217,31 @@ export function initOnboarding(container, onComplete) {
     const branchBoxes = form.querySelectorAll('input[name="branches"]:checked');
     let selectedBranches = Array.from(branchBoxes).map(b => b.value);
     
-    // Unvan seçimi ile seçilen ana branşı listeye ekle (yoksa)
     if (branchValue !== "Öğretmen" && !selectedBranches.includes(branchValue)) {
       selectedBranches.push(branchValue);
     }
     
-    // UI Feedback
     btn.innerHTML = '<div class="spinner" style="width:20px;height:20px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:8px;"></div> Hazırlanıyor...';
     btn.disabled = true;
 
-    // Profil objesi oluşturuluyor
     const profileData = {
-      name,
-      phone,
-      title: titleValue,
+      name, phone, title: titleValue,
       grades: selectedGrades,
       branches: selectedBranches,
-      // Seçilmeyen diğer alanlar daha sonra Settings sayfasından doldurulabilir
-      city: '',
-      bio: '',
-      experience: '',
-      rate: '',
-      avatar: null
+      city: '', bio: '', experience: '', rate: '', avatar: null
     };
 
-    // Callback ile main.js veya render Layout sürecine haber ver
-    if (typeof onComplete === 'function') {
-      onComplete(profileData);
-    }
+    if (typeof onComplete === 'function') onComplete(profileData);
   });
 
-  // Ünvan değiştiğinde ilgili branşı otomatik işaretle
   form.querySelector('#ob-title')?.addEventListener('change', (e) => {
     const branchVal = e.target.value;
     if (branchVal !== "Öğretmen") {
       const checkbox = form.querySelector(`input[name="branches"][value="${branchVal}"]`);
-      if (checkbox) checkbox.checked = true;
+      if (checkbox) {
+        checkbox.checked = true;
+        checkbox.dispatchEvent(new Event('change'));
+      }
     }
   });
 }
