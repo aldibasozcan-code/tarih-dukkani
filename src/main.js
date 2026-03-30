@@ -208,7 +208,7 @@ async function init() {
         checkDomainMigration();
 
         // Auto-start Guided Tour for new users
-        if (!state.profile.tourCompleted && !state.profile.tourActive) {
+        if (!state.profile.tourCompleted && !state.profile.tourAutoStarted) {
           const { startTour } = await import('./store/store.js');
           startTour();
           // The navigate call above will trigger the first step

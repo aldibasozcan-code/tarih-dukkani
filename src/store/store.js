@@ -60,6 +60,7 @@ function createDefaultState() {
       onboarded: false,
       tourCompleted: false,
       tourActive: false,
+      tourAutoStarted: false,
       tourStep: 0,
       grades: [],
       branches: [],
@@ -765,6 +766,49 @@ export function syncCurriculumWithBranches(branches, grades, force = false) {
   }
 }
 
+export function importCurriculumFromExcel(subjectId, rows) {
+  // Rows can be from XLSX (JSON format)
+  // Standard format: { Sınıf, Ünite, Konu }
+  const data = rows.map(r => ({
+    grade: r.Sınıf || r['Sınıf'] || r.grade || r[0],
+    unit: r.Ünite || r['Ünite'] || r.unit || r[1],
+    topic: r.Konu || r['Konu'] || r.topic || r[2]
+  })).filter(r => r.grade && r.unit);
+
+  if (data.length === 0) return;
+
+  setState(s => {
+    let curr = JSON.parse(JSON.stringify(s.curriculum || {}));
+    if (!curr[subjectId]) curr[subjectId] = {};
+
+    data.forEach(row => {
+      const { grade, unit, topic } = row;
+      // Ensure the grade exists for this subject
+      if (!curr[subjectId][grade]) curr[subjectId][grade] = [];
+
+      // Find or create unit
+      let unitObj = curr[subjectId][grade].find(u => u.name === unit);
+      if (!unitObj) {
+        unitObj = { id: generateId(), name: unit, topics: [] };
+        curr[subjectId][grade].push(unitObj);
+      }
+
+      // Add topic if it doesn't exist
+      if (topic && !unitObj.topics.find(t => t.name === topic)) {
+        unitObj.topics.push({ id: generateId(), name: topic });
+      }
+    });
+
+    return { curriculum: curr };
+  });
+
+  addNotification({
+    type: 'success',
+    text: 'Excel müfredat verileri başarıyla içe aktarıldı.',
+    link: 'courses'
+  });
+}
+
 export function updateSettings(data) {
   setState(s => ({ settings: { ...s.settings, ...data } }));
 }
@@ -777,7 +821,7 @@ export function completeTour() {
 
 export function startTour() {
   setState(s => ({
-    profile: { ...s.profile, tourActive: true, tourStep: 0, tourCompleted: false }
+    profile: { ...s.profile, tourActive: true, tourStep: 0, tourCompleted: false, tourAutoStarted: true }
   }));
 }
 

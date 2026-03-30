@@ -6,17 +6,40 @@ import { icon } from '../components/icons.js';
 import { formatCurrency, formatDate, formatDateShort, formatTime, getLessonStatusInfo, getAvatarColor, getInitials } from '../utils/helpers.js';
 import { openModal } from '../components/modal.js';
 
+function getGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 6) return 'İyi Geceler';
+  if (hour < 12) return 'Günaydın';
+  if (hour < 18) return 'İyi Günler';
+  return 'İyi Akşamlar';
+}
+
+function getGreetingIcon() {
+  const hour = new Date().getHours();
+  if (hour >= 6 && hour < 18) return icon('zap', 32); // Representing sun/energy
+  return icon('moon', 32); // I need to make sure moon exists or use bell/star
+}
+
+function getRandomQuote() {
+  const quotes = [
+    "Eğitim, dünyayı değiştirmek için kullanabileceğiniz en güçlü silahtır.",
+    "Bir öğretmenin etkilediği alanı kimse tam olarak ölçemez.",
+    "Öğretmek, iki kez öğrenmektir.",
+    "Gelecek, gençlerin, gençler ise öğretmenlerin eseridir.",
+    "En iyi öğretmen, öğrencisine ne göreceğini değil, nereye bakacağını gösterendir."
+  ];
+  return quotes[Math.floor(Math.random() * quotes.length)];
+}
+
 export function renderDashboard(navigate) {
   const state = getState();
   const today = new Date();
-  const todayStr = today.toISOString().split('T')[0];
-  const dayNames = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
-  const dayName = dayNames[today.getDay()];
   const dateStr = today.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
 
   const todayLessons = getTodayLessons();
   const pendingLessons = getPendingLessons();
   const stats = getMonthlyStats();
+  
   const completedThisMonth = state.lessons.filter(l => {
     const m = new Date().getMonth();
     const y = new Date().getFullYear();
@@ -26,172 +49,189 @@ export function renderDashboard(navigate) {
   const html = `
     <div class="fade-in">
       ${pendingLessons.length > 0 ? `
-        <div class="pending-alert">
+        <div class="pending-alert fade-in-up">
           <div style="display:flex;align-items:center;gap:8px;">
-            ${icon('alertCircle', 16)}
-            <span class="pending-alert-text">${pendingLessons.length} ders onay bekliyor!</span>
+            <div class="status-pulse-ring" style="background:var(--warning);width:8px;height:8px;border-radius:50%;"></div>
+            <span class="pending-alert-text" style="font-weight:700;">${pendingLessons.length} ders onayınızı bekliyor!</span>
           </div>
-          <button class="btn btn-warning btn-sm" id="show-pending-btn">İncele</button>
+          <button class="btn btn-warning btn-sm" id="show-pending-btn">Şimdi İncele</button>
         </div>
       ` : ''}
 
-      ${state.showSeasonReview ? `
-        <div class="pending-alert" style="background:rgba(124,106,255,0.1); border-color:rgba(124,106,255,0.3); color:var(--accent2);">
-          <div style="display:flex;align-items:center;gap:8px;">
-            ${icon('calendar', 16)}
-            <span class="pending-alert-text">Yeni dönem hazırlığı! Öğrenci listeni güncellemek ister misin?</span>
-          </div>
-          <button class="btn btn-primary btn-sm" id="show-season-review-btn">Şimdi İncele</button>
-        </div>
-      ` : ''}
-
-      <!-- Welcome Banner -->
-      <div class="welcome-banner" style="margin-bottom:24px;">
+      <!-- Premium Welcome Banner -->
+      <div class="welcome-banner-modern fade-in-up stagger-1" style="margin-bottom:32px;">
         <div class="welcome-text">
-          <h2>Merhaba, ${state.profile.name.split(' ')[0]}! 👋</h2>
-          <p>${dayName}, ${dateStr} • Bugün ${todayLessons.length} dersiniz var</p>
+          <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px; opacity:0.9;">
+            <span style="background:rgba(255,255,255,0.2); padding:6px 12px; border-radius:20px; font-size:12px; font-weight:700;">${dateStr.toUpperCase()}</span>
+          </div>
+          <h2 style="font-size:42px;">${getGreeting()}, ${state.profile.name.split(' ')[0]}!</h2>
+          <p style="font-size:18px; opacity:0.9; margin-top:8px;">Bugün ajandanızda ${todayLessons.length} ders planlanmış görünüyor.</p>
+          
+          <div class="quick-actions" style="margin-top:32px;">
+            <button class="btn btn-primary glass" id="btn-add-lesson" style="background:white; color:var(--brand-green); font-weight:800; padding:12px 24px;">
+              ${icon('plus', 16)} Yeni Ders Planla
+            </button>
+          </div>
         </div>
-        <div class="quick-actions">
-          <button class="btn btn-primary" id="btn-add-lesson">${icon('plus', 14)} Ders Ekle</button>
-          <button class="btn btn-secondary" data-nav="calendar">${icon('calendar', 14)} Takvim</button>
-          <button class="btn btn-secondary" data-nav="students">${icon('students', 14)} Öğrenciler</button>
+        
+        <div style="position:relative; z-index:2; display:none; @media (min-width: 1024px) { display: block; }">
+           <div style="width:120px; height:120px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:30px; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(10px);">
+              ${icon('courses', 48)}
+           </div>
         </div>
       </div>
 
-      <!-- KPI Cards -->
-      <div class="grid grid-4" style="margin-bottom:24px;">
-        <div class="kpi-card">
-          <div class="kpi-icon" style="background:rgba(99,202,183,0.15);">
-            ${icon('trendUp', 20)}
+      <!-- Bento Grid KPIs -->
+      <div class="grid grid-4 fade-in-up stagger-2" style="margin-bottom:32px;">
+        <div class="kpi-card hover-lift">
+          <div class="kpi-icon" style="background:rgba(16,185,129,0.1); color:var(--success);">
+            ${icon('trendUp', 24)}
           </div>
           <div>
             <div class="kpi-value">${formatCurrency(stats.income)}</div>
-            <div class="kpi-label">Aylık Toplam Kazanç</div>
-            <div class="kpi-trend up">Bu ay</div>
+            <div class="kpi-label">Bu Ay Toplam</div>
           </div>
         </div>
-        <div class="kpi-card">
-          <div class="kpi-icon" style="background:rgba(124,106,255,0.15);">
-            ${icon('students', 20)}
+        
+        <div class="kpi-card hover-lift">
+          <div class="kpi-icon" style="background:rgba(124,106,255,0.1); color:var(--accent2 || '#7c3aed');">
+            ${icon('students', 24)}
           </div>
           <div>
             <div class="kpi-value">${state.students.filter(s => (s.status || 'active') === 'active').length}</div>
             <div class="kpi-label">Aktif Öğrenci</div>
-            <div class="kpi-trend" style="color:var(--accent2);">${state.groups.filter(g => (g.status || 'active') === 'active').length} aktif grup</div>
           </div>
         </div>
-        <div class="kpi-card">
-          <div class="kpi-icon" style="background:rgba(246,201,14,0.15);">
-            ${icon('checkCircle', 20)}
+
+        <div class="kpi-card hover-lift">
+          <div class="kpi-icon" style="background:rgba(245,158,11,0.1); color:var(--warning);">
+            ${icon('checkCircle', 24)}
           </div>
           <div>
             <div class="kpi-value">${completedThisMonth}</div>
-            <div class="kpi-label">Bu Ay Tamamlanan</div>
-            <div class="kpi-trend up">${todayLessons.length} bugün</div>
+            <div class="kpi-label">Tamamlanan Ders</div>
           </div>
         </div>
-        <div class="kpi-card">
-          <div class="kpi-icon" style="background:rgba(255,159,67,0.15);">
-            ${icon('clock', 20)}
+
+        <div class="kpi-card hover-lift" style="${pendingLessons.length > 0 ? 'border-left-color:var(--danger);' : ''}">
+          <div class="kpi-icon" style="background:rgba(239,68,68,0.1); color:var(--danger);">
+            ${icon('clock', 24)}
           </div>
           <div>
             <div class="kpi-value">${pendingLessons.length}</div>
-            <div class="kpi-label">Onay Bekliyor</div>
-            <div class="kpi-trend ${pendingLessons.length > 0 ? 'down' : ''}">${pendingLessons.length > 0 ? 'Dikkat!' : 'Temiz ✓'}</div>
+            <div class="kpi-label">Onay Bekleyen</div>
           </div>
         </div>
       </div>
 
-      <div class="grid grid-2" style="align-items:start;">
-        <!-- Today's Lessons -->
-        <div class="card">
+      <div class="grid grid-3 fade-in-up stagger-3" style="align-items:start; grid-template-columns: 1.2fr 1fr 0.8fr;">
+        <!-- Left: Today's Lessons (Bigger) -->
+        <div class="card glass-card hover-lift" style="min-height:400px; border-top:none; border-bottom:4px solid var(--brand-green);">
           <div class="section-title">
-            <h3>${icon('calendar', 15)} Bugünkü Dersler</h3>
-            <a data-nav="calendar">Takvimi Aç →</a>
+            <h3 class="text-gradient">${icon('calendar', 18)} Ajanda: Bugün</h3>
+            <a data-nav="calendar" style="background:var(--brand-green-soft); color:var(--brand-green); padding:5px 12px; border-radius:20px; font-size:12px;">Tümü →</a>
           </div>
-          ${todayLessons.length === 0 ? `
-            <div class="empty-state" style="padding:30px 20px;">
-              ${icon('calendar', 32)}
-              <p>Bugün ders yok</p>
-            </div>
-          ` : todayLessons.map(lesson => {
-            const status = getLessonStatus(lesson);
-            const si = getLessonStatusInfo(status);
-            return `
-              <div class="card card-sm" style="margin-bottom:8px;cursor:pointer;" data-lesson-id="${lesson.id}">
-                <div style="display:flex;align-items:center;gap:12px;">
-                  <div style="width:4px;height:48px;border-radius:2px;background:${status === 'ongoing' ? 'var(--success)' : status === 'waiting' ? 'var(--warning)' : 'var(--border)'}; flex-shrink:0;"></div>
-                  <div style="flex:1;">
-                    <div style="font-weight:600;font-size:13px;">${lesson.title}</div>
-                    <div style="font-size:12px;color:var(--text-muted);">${lesson.startTime} – ${lesson.endTime}</div>
-                  </div>
-                  <div>
-                    <span class="badge ${si.badgeClass}">${si.label}</span>
-                    <a href="${generateGoogleCalendarUrl(lesson)}" target="_blank" class="btn btn-secondary btn-sm" title="Google Takvim'e Ekle" style="margin-top:4px; margin-right:4px; padding: 4px 8px;">
-                      ${icon('calendar', 14)}
-                    </a>
-                    ${status === 'waiting' || status === 'ongoing' ? `
-                      <button class="btn btn-success btn-sm" style="margin-top:4px;" data-complete-lesson="${lesson.id}">✓ Tamamla</button>
-                    ` : ''}
+          <div style="margin-top:16px;">
+            ${todayLessons.length === 0 ? `
+              <div class="empty-state" style="padding:60px 20px; opacity:0.6;">
+                ${icon('calendar', 48)}
+                <p style="margin-top:12px; font-weight:600;">Bugün için planlanmış bir dersiniz bulunmuyor.</p>
+              </div>
+            ` : todayLessons.map(lesson => {
+              const status = getLessonStatus(lesson);
+              const si = getLessonStatusInfo(status);
+              return `
+                <div class="card card-sm hover-lift" style="margin-bottom:12px; border-left:4px solid ${si.badgeClass.includes('success') ? 'var(--success)' : si.badgeClass.includes('warning') ? 'var(--warning)' : 'var(--border)'}; background:rgba(255,255,255,0.5);" data-lesson-id="${lesson.id}">
+                  <div style="display:flex;align-items:center;gap:16px;">
+                    <div style="flex:1;">
+                      <div style="font-weight:700;font-size:15px;color:var(--text-primary);">${lesson.title}</div>
+                      <div style="display:flex; align-items:center; gap:4px; font-size:12px; color:var(--text-muted); margin-top:4px;">
+                        ${icon('clock', 12)} ${lesson.startTime} – ${lesson.endTime}
+                      </div>
+                    </div>
+                    <div style="text-align:right;">
+                      <span class="badge ${si.badgeClass}" style="border-radius:20px;">${si.label}</span>
+                      <div style="margin-top:8px; display:flex; gap:6px; justify-content:flex-end;">
+                        ${status === 'waiting' || status === 'ongoing' ? `
+                          <button class="btn btn-success btn-sm btn-icon" data-complete-lesson="${lesson.id}" title="Tamamla">${icon('check', 14)}</button>
+                        ` : ''}
+                        <a href="${generateGoogleCalendarUrl(lesson)}" target="_blank" class="btn btn-secondary btn-sm btn-icon" title="Takvime Ekle">${icon('externalLink', 14)}</a>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            `;
-          }).join('')}
+              `;
+            }).join('')}
+          </div>
         </div>
 
-        <!-- Revenue Chart -->
-        <div class="card">
-          <div class="section-title">
-            <h3>${icon('trendUp', 15)} Bu Hafta Gelir</h3>
-          </div>
-          ${renderMiniChart(state)}
-          <hr class="divider">
-            <div style="flex:1;">
-              <div style="font-size:11px;color:var(--text-muted);">Toplam Tahmini</div>
-              <div style="font-size:18px;font-weight:700;color:var(--warning);">${formatCurrency(stats.income)}</div>
+        <!-- Middle: Revenue and Stats -->
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div class="card glass-card hover-lift" style="border-top:none; border-bottom:4px solid var(--brand-green-light);">
+            <div class="section-title">
+              <h3 class="text-gradient">${icon('trendUp', 18)} Haftalık Performans</h3>
             </div>
-        </div>
-      </div>
-
-      <!-- Recent Students + Pending -->
-      <div class="grid grid-2" style="margin-top:16px;align-items:start;">
-        <div class="card">
-          <div class="section-title">
-            <h3>${icon('students', 15)} Son Öğrenciler</h3>
-            <a data-nav="students">Tümü →</a>
-          </div>
-          ${state.students.slice(0, 5).map(s => `
-            <div class="person-card" style="margin-bottom:8px;" data-nav="students">
-              <div class="person-avatar" style="background:${getAvatarColor(s.name)}">${getInitials(s.name)}</div>
-              <div style="flex:1;">
-                <div class="person-name">${s.name}</div>
-                <div class="person-sub">${s.grade}</div>
+            ${renderMiniChart(state)}
+            <div style="margin-top:20px; padding:16px; background:var(--brand-green-soft); border-radius:12px; display:flex; align-items:center; gap:12px;">
+              <div style="width:40px;height:40px;background:white;border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--brand-green);">
+                ${icon('finance', 20)}
               </div>
-              <span class="badge badge-info">${formatCurrency(s.rate)}/s</span>
+              <div>
+                <div style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;">Tahmini Kazanç</div>
+                <div style="font-size:20px;font-weight:800;color:var(--brand-green);">${formatCurrency(stats.income)}</div>
+              </div>
             </div>
-          `).join('')}
-          ${state.students.length === 0 ? '<div style="text-align:center;color:var(--text-muted);padding:20px;">Öğrenci yok</div>' : ''}
+          </div>
+
+          <!-- Motivational Quote Card -->
+          <div class="card" style="background:var(--brand-green); color:white; border:none; position:relative; overflow:hidden;">
+            <div style="position:absolute; top:-10px; right:-10px; opacity:0.1; transform:rotate(20deg);">
+              ${icon('chat', 80)}
+            </div>
+            <div style="position:relative; z-index:1;">
+               <div style="font-size:11px; text-transform:uppercase; font-weight:800; letter-spacing:1px; margin-bottom:12px; opacity:0.7;">Günün İlhamı</div>
+               <p style="font-style:italic; font-size:15px; line-height:1.6; font-weight:500;">"${getRandomQuote()}"</p>
+            </div>
+          </div>
         </div>
 
-        <div class="card">
-          <div class="section-title">
-            <h3>${icon('groups', 15)} Gruplar</h3>
-            <a data-nav="groups">Tümü →</a>
-          </div>
-          ${state.groups.slice(0, 4).map(g => `
-            <div class="person-card" style="margin-bottom:8px;" data-nav="groups">
-              <div class="person-avatar" style="background:var(--accent2-glow);border:1px solid var(--accent2);">
-                <span style="color:var(--accent2);">${getInitials(g.name)}</span>
-              </div>
-              <div style="flex:1;">
-                <div class="person-name">${g.name}</div>
-                <div class="person-sub">${['Paz','Pzt','Sal','Çar','Per','Cum','Cmt'][g.dayOfWeek]} ${g.time}</div>
-              </div>
-              <span class="badge badge-purple">${g.grade}</span>
+        <!-- Right: Small Sections -->
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div class="card glass-card" style="padding:20px; border-top:none;">
+            <div class="section-title" style="margin-bottom:12px;">
+               <h3 style="font-size:14px;">${icon('students', 14)} Son Öğrenciler</h3>
             </div>
-          `).join('')}
-          ${state.groups.length === 0 ? '<div style="text-align:center;color:var(--text-muted);padding:20px;">Grup yok</div>' : ''}
+            <div style="display:flex; flex-direction:column; gap:8px;">
+               ${state.students.slice(0, 3).map(s => `
+                 <div class="person-card" style="padding:10px; border:1px solid var(--border); border-radius:10px; background:white;">
+                   <div class="person-avatar" style="width:32px; height:32px; font-size:10px; background:${getAvatarColor(s.name)}">${getInitials(s.name)}</div>
+                   <div style="flex:1;">
+                     <div class="person-name" style="font-size:12px;">${s.name}</div>
+                     <div class="person-sub" style="font-size:10px;">${s.grade}</div>
+                   </div>
+                 </div>
+               `).join('')}
+            </div>
+          </div>
+
+          <div class="card glass-card" style="padding:20px; border-top:none;">
+            <div class="section-title" style="margin-bottom:12px;">
+               <h3 style="font-size:14px;">${icon('groups', 14)} Aktif Gruplar</h3>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+               ${state.groups.slice(0, 3).map(g => `
+                 <div class="person-card" style="padding:10px; border:1px solid var(--border); border-radius:10px; background:white;">
+                   <div class="person-avatar" style="width:32px; height:32px; font-size:10px; background:rgba(124,106,255,0.1); color:var(--accent2);">
+                     ${getInitials(g.name)}
+                   </div>
+                   <div style="flex:1;">
+                     <div class="person-name" style="font-size:12px;">${g.name}</div>
+                     <div class="person-sub" style="font-size:10px;">${g.grade}</div>
+                   </div>
+                 </div>
+               `).join('')}
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -202,7 +242,6 @@ export function renderDashboard(navigate) {
 
 function renderMiniChart(state) {
   const days = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
-  // Get week start
   const now = new Date();
   const weekIncome = days.map((_, i) => {
     const d = new Date(now);
@@ -215,13 +254,13 @@ function renderMiniChart(state) {
   const max = Math.max(...weekIncome, 1);
 
   return `
-    <div style="display:flex;align-items:flex-end;gap:6px;height:80px;margin-bottom:12px;">
+    <div style="display:flex; align-items:flex-end; gap:8px; height:120px; margin:16px 0; padding-bottom:8px; border-bottom:1px dashed var(--border);">
       ${weekIncome.map((val, i) => {
-        const h = Math.max((val / max) * 70, val > 0 ? 8 : 2);
+        const h = Math.max((val / max) * 100, val > 0 ? 10 : 4);
         return `
-          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
-            <div style="width:100%;height:${h}px;background:${val > 0 ? 'linear-gradient(to top,var(--accent-dark),var(--accent))' : 'var(--border)'};border-radius:3px 3px 0 0;transition:height 0.3s;"></div>
-            <div style="font-size:9px;color:var(--text-muted);">${days[i]}</div>
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; height:100%; justify-content:flex-end;" title="${days[i]}: ${formatCurrency(val)}">
+            <div class="hover-lift" style="width:100%; height:${h}%; background:${val > 0 ? 'linear-gradient(to top, var(--brand-green), var(--brand-green-light))' : 'var(--bg-secondary)'}; border-radius:6px; transition:all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);"></div>
+            <div style="font-size:10px; color:var(--text-muted); font-weight:700;">${days[i]}</div>
           </div>
         `;
       }).join('')}

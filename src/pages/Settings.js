@@ -151,6 +151,30 @@ export function renderSettings(navigate) {
           </div>
         </div>
 
+        <!-- Excel Curriculum Import -->
+        <div class="card">
+          <h3 style="font-size:15px;font-weight:700;margin-bottom:12px;">Müfredat İçe Aktar (Excel)</h3>
+          <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">
+            Kendi hazırladığınız müfredatları Excel (.xlsx, .xls) dosyasıyla toplu olarak yükleyin.
+          </p>
+          <div style="background:var(--bg-secondary); border-radius:8px; padding:12px; margin-bottom:16px; border:1px solid var(--border);">
+            <div style="font-size:12px; font-weight:700; margin-bottom:4px; color:var(--text-primary);">Excel Formatı:</div>
+            <p style="font-size:11px; color:var(--text-secondary); margin:0;">Birinci satırda şu başlıklar olmalıdır: <strong>Sınıf, Ünite, Konu</strong></p>
+          </div>
+          <div class="form-group">
+            <label>Hedef Ders / Branş</label>
+            <select id="import-excel-subject">
+              ${state.profile.branches.map(b => `<option value="${b}">${b}</option>`).join('')}
+            </select>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <input type="file" id="import-excel-file" accept=".xlsx, .xls" style="display:none;">
+            <button class="btn btn-secondary" id="btn-import-excel" style="width:100%; justify-content:center;">
+              ${icon('upload', 14)} Excel Seç ve Yükle
+            </button>
+          </div>
+        </div>
+
         </div>
         
         <!-- Guided Tour -->
@@ -326,6 +350,51 @@ export function renderSettings(navigate) {
           const { resetData } = await import('../store/store.js');
           await resetData();
         }
+      });
+
+      // Excel Import Logic
+      el.querySelector('#btn-import-excel')?.addEventListener('click', () => {
+        el.querySelector('#import-excel-file').click();
+      });
+
+      el.querySelector('#import-excel-file')?.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const btn = el.querySelector('#btn-import-excel');
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = 'Okunuyor...';
+        btn.disabled = true;
+
+        const reader = new FileReader();
+        reader.onload = async (ev) => {
+          try {
+            const XLSX = await import('https://cdn.sheetjs.com/xlsx-0.20.1/package/xlsx.mjs');
+            const data = new Uint8Array(ev.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const rows = XLSX.utils.sheet_to_json(firstSheet);
+            
+            const subjectId = el.querySelector('#import-excel-subject').value;
+            const { importCurriculumFromExcel } = await import('../store/store.js');
+            
+            importCurriculumFromExcel(subjectId, rows);
+            
+            btn.innerHTML = `${icon('check', 14)} Başarıyla Yüklendi!`;
+            btn.style.background = 'var(--success)';
+            setTimeout(() => {
+              btn.innerHTML = originalHtml;
+              btn.style.background = '';
+              btn.disabled = false;
+            }, 3000);
+          } catch (err) {
+            console.error(err);
+            alert('Excel dosyası okunurken bir hata oluştu. Lütfen formatı kontrol edin.');
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+          }
+        };
+        reader.readAsArrayBuffer(file);
       });
 
       el.querySelector('#btn-delete-account')?.addEventListener('click', () => {

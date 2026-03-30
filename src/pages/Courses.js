@@ -3,7 +3,7 @@
 // ═════════════════════════════════════════════════
 import { getState, addMaterial, deleteMaterial, addUnit, updateUnit, deleteUnit, addTopic, updateTopic, deleteTopic } from '../store/store.js';
 import { icon } from '../components/icons.js';
-import { SUBJECTS, ALL_GRADES, CONTENT_TYPES, getSubjectsForBranches } from '../data/curriculum.js';
+import { SUBJECTS, ALL_GRADES, CONTENT_TYPES, SUBJECT_GRADES, getSubjectsForBranches } from '../data/curriculum.js';
 import { escHtml } from '../utils/helpers.js';
 import { openModal, closeModal } from '../components/modal.js';
 
@@ -321,8 +321,23 @@ function openAddMaterialModal(defSubject, defGrade, targetUnitId, targetTopicId,
     updateSubjects();
   }
 
+  /**
+   * CRITICAL: DO NOT CHANGE THIS FILTERING LOGIC.
+   * This mapping (Grade -> Subject) is specifically requested and approved by the user 
+   * for the MEB Maarif Modeli curriculum standards. 
+   * Rule: 5-7 (Sosyal), 8 (İnkılap), 9-11 (Tarih), 12 (İnkılap/Tarih/TYT/AYT), Mezun (TYT/AYT), Diğer (Osmanlıca).
+   */
   function updateSubjects() {
-    const activeSubjects = getSubjectsForBranches(getState().profile.branches || []);
+    const gr = gradeSel.value;
+    const branches = getState().profile.branches || [];
+    const teacherSubjects = getSubjectsForBranches(branches);
+    
+    // Filter teacher's subjects based on SUBJECT_GRADES for the current grade
+    const activeSubjects = teacherSubjects.filter(s => {
+      const validGrades = SUBJECT_GRADES[s] || [];
+      return validGrades.includes(gr);
+    });
+
     subjSel.innerHTML = activeSubjects.map(s => {
       let sinfo = SUBJECTS.find(x => x.id === s);
       if (!sinfo) {
@@ -330,6 +345,11 @@ function openAddMaterialModal(defSubject, defGrade, targetUnitId, targetTopicId,
       }
       return `<option value="${s}" ${s === defSubject ? 'selected' : ''}>${sinfo?.icon || ''} ${sinfo?.name || s}</option>`;
     }).join('');
+
+    if (activeSubjects.length === 0) {
+      subjSel.innerHTML = '<option value="">(Bu Sınıf İçin Ders Bulunamadı)</option>';
+    }
+    
     updateUnits();
   }
 

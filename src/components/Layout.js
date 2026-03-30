@@ -6,7 +6,7 @@ import { icon } from './icons.js';
 import { formatDistanceToNow } from '../utils/helpers.js';
 
 const NAV_ITEMS = [
-  { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
+  { id: 'dashboard', label: 'Anasayfa', icon: 'dashboard' },
   { id: 'courses', label: 'Kurslar', icon: 'courses' },
   { id: 'students', label: 'Öğrenciler', icon: 'students' },
   { id: 'groups', label: 'Gruplar', icon: 'groups' },
@@ -77,7 +77,7 @@ function renderSidebar(state, currentPage, navigate) {
 
 function renderTopbar(state, unreadCount) {
   const pageTitles = {
-    dashboard: 'Dashboard', courses: 'Kurslar & Müfredat',
+    dashboard: 'Anasayfa', courses: 'Kurslar & Müfredat',
     students: 'Öğrenciler', groups: 'Gruplar',
     finance: 'Muhasebe', calendar: 'Takvim',
     chat: 'Mesajlar', liveClass: 'Canlı Sınıf',
