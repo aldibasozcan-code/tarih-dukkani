@@ -1,6 +1,7 @@
 import { icon } from '../components/icons.js';
 import { submitPost, getMyPosts } from '../store/publicData.js';
 import { addNotification } from '../store/store.js';
+import { auth } from '../lib/firebase.js';
 
 let myPosts = [];
 
@@ -14,6 +15,11 @@ export async function renderPublish(navigate) {
           <h2 style="font-size:24px; font-weight:800; color:var(--text-primary); margin-bottom:4px;">İçerik Üretimi</h2>
           <p style="color:var(--text-secondary); font-size:14px;">Deneyimlerinizi ve materyallerinizi meslektaşlarınızla paylaşın.</p>
         </div>
+        ${auth.currentUser?.email === 'aldibasozcan@gmail.com' ? `
+          <div style="display:flex; align-items:center; gap:8px; background:var(--brand-green-soft); color:var(--brand-green); padding:8px 16px; border-radius:100px; font-weight:800; font-size:13px; border:1px solid var(--brand-green);">
+            ${icon('checkCircle', 16)} Moderatör Yetkisi: Aktif
+          </div>
+        ` : ''}
       </div>
       
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px; align-items:start;">
@@ -51,10 +57,10 @@ export async function renderPublish(navigate) {
           
           <div style="background:var(--brand-green-soft); color:var(--brand-green); padding:16px; border-radius:var(--radius-md); font-size:13px; font-weight:600; margin-bottom:24px; display:flex; align-items:start; gap:12px; line-height:1.5;">
             <div style="margin-top:2px;">${icon('info', 18)}</div>
-            <div>Gönderdiğiniz içerikler kalite kontrol (moderasyon) sürecinden geçtikten sonra açık sayfalarda onaylanarak yayınlanmaktadır.</div>
+            <div>${auth.currentUser?.email === 'aldibasozcan@gmail.com' ? 'Yönetici olduğunuz için gönderdiğiniz içerikler <b>doğrudan yayınlanacaktır.</b>' : 'Gönderdiğiniz içerikler kalite kontrol (moderasyon) sürecinden geçtikten sonra açık sayfalarda onaylanarak yayınlanmaktadır.'}</div>
           </div>
           
-          <button class="btn btn-primary" id="btn-submit-post" style="width:100%; padding:14px; font-size:15px; font-weight:800;">Onaya Gönder</button>
+          <button class="btn btn-primary" id="btn-submit-post" style="width:100%; padding:14px; font-size:15px; font-weight:800;">${auth.currentUser?.email === 'aldibasozcan@gmail.com' ? 'Hemen Yayınla' : 'Onaya Gönder'}</button>
         </div>
 
         <!-- Right: My Posts History -->
@@ -115,9 +121,13 @@ export async function renderPublish(navigate) {
 
         try {
           await submitPost({ type, category, title, summary, content });
+          const msg = auth.currentUser?.email === 'aldibasozcan@gmail.com' 
+            ? 'İçeriğiniz yönetici yetkisiyle doğrudan yayınlandı!' 
+            : 'İçerik başarıyla iletildi. Moderatör onayından sonra yayınlanacaktır.';
+            
           addNotification({
             type: 'success',
-            text: 'İçeriğiniz başarıyla iletildi. Moderatör onayından sonra yayınlanacaktır.',
+            text: msg,
             link: 'publish'
           });
           

@@ -10,12 +10,15 @@ const POSTS_COLLECTION = 'public_posts';
 export async function submitPost(data) {
   if (!auth.currentUser) throw new Error("Giriş yapmanız gerekiyor.");
   
+  const isAdmin = auth.currentUser.email === 'aldibasozcan@gmail.com';
+  if (isAdmin) localStorage.setItem('_is_admin', 'true');
+
   const post = {
     ...data,
     authorId: auth.currentUser.uid,
     authorName: auth.currentUser.displayName || auth.currentUser.email.split('@')[0],
     authorEmail: auth.currentUser.email,
-    status: 'pending',
+    status: isAdmin ? 'approved' : 'pending',
     createdAt: Date.now()
   };
 
