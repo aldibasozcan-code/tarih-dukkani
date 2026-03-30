@@ -1,9 +1,11 @@
 import { icon } from '../components/icons.js';
-import { submitPost, getMyPosts } from '../store/publicData.js';
+import { submitPost, getMyPosts, updatePost, deletePost } from '../store/publicData.js';
 import { addNotification } from '../store/store.js';
 import { auth } from '../lib/firebase.js';
 
 let myPosts = [];
+let editMode = false;
+let editingPostId = null;
 
 export async function renderPublish(navigate) {
   myPosts = await getMyPosts();
@@ -25,7 +27,7 @@ export async function renderPublish(navigate) {
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px; align-items:start;">
         <!-- Left: Submit Form -->
         <div style="background:white; border-radius:var(--radius-lg); border:1px solid var(--border); padding:24px; box-shadow:var(--shadow-sm);">
-          <h3 style="font-size:18px; font-weight:800; color:var(--text-primary); margin-bottom:20px; border-bottom:1px solid var(--border); padding-bottom:12px;">Yeni İçerik Oluştur</h3>
+          <h3 id="form-title" style="font-size:18px; font-weight:800; color:var(--text-primary); margin-bottom:20px; border-bottom:1px solid var(--border); padding-bottom:12px;">Yeni İçerik Oluştur</h3>
           
           <div class="form-group mb-4">
             <label style="font-weight:700; color:var(--text-secondary); margin-bottom:8px; display:block; font-size:13px;">Yayınlanacak Yer</label>
@@ -57,10 +59,13 @@ export async function renderPublish(navigate) {
           
           <div style="background:var(--brand-green-soft); color:var(--brand-green); padding:16px; border-radius:var(--radius-md); font-size:13px; font-weight:600; margin-bottom:24px; display:flex; align-items:start; gap:12px; line-height:1.5;">
             <div style="margin-top:2px;">${icon('info', 18)}</div>
-            <div>${auth.currentUser?.email === 'aldibasozcan@gmail.com' ? 'Yönetici olduğunuz için gönderdiğiniz içerikler <b>doğrudan yayınlanacaktır.</b>' : 'Gönderdiğiniz içerikler kalite kontrol (moderasyon) sürecinden geçtikten sonra açık sayfalarda onaylanarak yayınlanmaktadır.'}</div>
+            <div id="status-hint">${auth.currentUser?.email === 'aldibasozcan@gmail.com' ? 'Yönetici olduğunuz için gönderdiğiniz içerikler <b>doğrudan yayınlanacaktır.</b>' : 'Gönderdiğiniz içerikler kalite kontrol (moderasyon) sürecinden geçtikten sonra açık sayfalarda onaylanarak yayınlanmaktadır.'}</div>
           </div>
           
-          <button class="btn btn-primary" id="btn-submit-post" style="width:100%; padding:14px; font-size:15px; font-weight:800;">${auth.currentUser?.email === 'aldibasozcan@gmail.com' ? 'Hemen Yayınla' : 'Onaya Gönder'}</button>
+          <div style="display:flex; gap:12px;">
+            <button class="btn btn-secondary" id="btn-cancel-edit" style="display:none; flex:1; padding:14px; font-size:15px; font-weight:800;">Vazgeç</button>
+            <button class="btn btn-primary" id="btn-submit-post" style="flex:2; padding:14px; font-size:15px; font-weight:800;">Onaya Gönder</button>
+          </div>
         </div>
 
         <!-- Right: My Posts History -->
@@ -75,7 +80,7 @@ export async function renderPublish(navigate) {
           ` : `
             <div style="display:flex; flex-direction:column; gap:16px;">
               ${myPosts.map(post => `
-                <div style="padding:16px; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--bg-primary); display:flex; flex-direction:column; gap:8px;">
+                <div class="post-card" data-post-id="${post.id}" style="padding:16px; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--bg-primary); display:flex; flex-direction:column; gap:8px;">
                   <div style="display:flex; justify-content:space-between; align-items:start;">
                     <div style="font-weight:800; font-size:15px; color:var(--text-primary);">${post.title}</div>
                     <span class="badge ${post.status === 'approved' ? 'badge-success' : 'badge-warning'}" style="font-size:11px;">
@@ -90,6 +95,14 @@ export async function renderPublish(navigate) {
                       ${new Date(post.createdAt).toLocaleDateString('tr-TR')}
                     </div>
                   </div>
+                  <div style="margin-top:12px; padding-top:12px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:8px;">
+                    <button class="btn btn-ghost btn-sm btn-edit-post" data-id="${post.id}" style="color:var(--text-secondary); font-weight:700; padding:4px 8px;">
+                      ${icon('edit', 14)} Düzenle
+                    </button>
+                    <button class="btn btn-ghost btn-sm btn-delete-post" data-id="${post.id}" style="color:var(--danger); font-weight:700; padding:4px 8px;">
+                      ${icon('trash', 14)} Sil
+                    </button>
+                  </div>
                 </div>
               `).join('')}
             </div>
@@ -103,44 +116,104 @@ export async function renderPublish(navigate) {
     html,
     init: (el) => {
       const submitBtn = el.querySelector('#btn-submit-post');
+      const cancelBtn = el.querySelector('#btn-cancel-edit');
+      const formTitle = el.querySelector('#form-title');
+      const statusHint = el.querySelector('#status-hint');
       
-      submitBtn.addEventListener('click', async () => {
-        const type = el.querySelector('#pub-type').value;
-        const category = el.querySelector('#pub-category').value.trim();
-        const title = el.querySelector('#pub-title').value.trim();
-        const summary = el.querySelector('#pub-summary').value.trim();
-        const content = el.querySelector('#pub-content').value.trim();
+      const resetForm = () => {
+        editMode = false;
+        editingPostId = null;
+        formTitle.innerHTML = 'Yeni İçerik Oluştur';
+        submitBtn.innerHTML = auth.currentUser?.email === 'aldibasozcan@gmail.com' ? 'Hemen Yayınla' : 'Onaya Gönder';
+        cancelBtn.style.display = 'none';
+        el.querySelector('#pub-type').value = 'forum';
+        el.querySelector('#pub-category').value = '';
+        el.querySelector('#pub-title').value = '';
+        el.querySelector('#pub-summary').value = '';
+        el.querySelector('#pub-content').value = '';
+      };
 
-        if (!title || !content || !category) {
+      // Edit Mode Toggle
+      el.querySelectorAll('.btn-edit-post').forEach(btn => {
+        btn.onclick = () => {
+          const id = btn.dataset.id;
+          const post = myPosts.find(p => p.id === id);
+          if (!post) return;
+
+          editMode = true;
+          editingPostId = id;
+          formTitle.innerHTML = 'İçeriği Düzenle';
+          submitBtn.innerHTML = 'Güncellemeleri Kaydet';
+          cancelBtn.style.display = 'block';
+
+          el.querySelector('#pub-type').value = post.type;
+          el.querySelector('#pub-category').value = post.category;
+          el.querySelector('#pub-title').value = post.title;
+          el.querySelector('#pub-summary').value = post.summary || '';
+          el.querySelector('#pub-content').value = post.content;
+          
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+      });
+
+      cancelBtn.onclick = resetForm;
+
+      // Delete logic
+      el.querySelectorAll('.btn-delete-post').forEach(btn => {
+        btn.onclick = async () => {
+          const id = btn.dataset.id;
+          if (!confirm('Bu içeriği silmek istediğinize emin misiniz?')) return;
+          
+          btn.disabled = true;
+          btn.innerHTML = 'Siliniyor...';
+          try {
+            await deletePost(id);
+            addNotification({ type: 'info', text: 'İçerik başarıyla silindi.', link: 'publish' });
+            navigate('publish');
+          } catch (error) {
+            btn.disabled = false;
+            btn.innerHTML = icon('trash', 14) + ' Sil';
+            alert('Hata: ' + error.message);
+          }
+        };
+      });
+
+      submitBtn.addEventListener('click', async () => {
+        const data = {
+          type: el.querySelector('#pub-type').value,
+          category: el.querySelector('#pub-category').value.trim(),
+          title: el.querySelector('#pub-title').value.trim(),
+          summary: el.querySelector('#pub-summary').value.trim(),
+          content: el.querySelector('#pub-content').value.trim()
+        };
+
+        if (!data.title || !data.content || !data.category) {
           alert('Lütfen Kategori, Başlık ve İçerik alanlarını doldurunuz.');
           return;
         }
 
         submitBtn.disabled = true;
-        submitBtn.innerHTML = 'İletiliyor...';
+        submitBtn.innerHTML = editMode ? 'Güncelleniyor...' : 'İletiliyor...';
 
         try {
-          await submitPost({ type, category, title, summary, content });
-          const msg = auth.currentUser?.email === 'aldibasozcan@gmail.com' 
-            ? 'İçeriğiniz yönetici yetkisiyle doğrudan yayınlandı!' 
-            : 'İçerik başarıyla iletildi. Moderatör onayından sonra yayınlanacaktır.';
-            
-          addNotification({
-            type: 'success',
-            text: msg,
-            link: 'publish'
-          });
-          
-          // Clear form
-          el.querySelector('#pub-category').value = '';
-          el.querySelector('#pub-title').value = '';
-          el.querySelector('#pub-summary').value = '';
-          el.querySelector('#pub-content').value = '';
-          
-          navigate('publish'); // Refresh page
+          if (editMode && editingPostId) {
+            await updatePost(editingPostId, data);
+            addNotification({
+              type: 'success',
+              text: 'İçerik başarıyla güncellendi.',
+              link: 'publish'
+            });
+          } else {
+            await submitPost(data);
+            const isAdmin = auth.currentUser?.email === 'aldibasozcan@gmail.com';
+            const msg = isAdmin ? 'İçeriğiniz yönetici yetkisiyle doğrudan yayınlandı!' : 'İçerik başarıyla iletildi. Moderatör onayından sonra yayınlanacaktır.';
+            addNotification({ type: 'success', text: msg, link: 'publish' });
+          }
+          resetForm();
+          navigate('publish'); // Refresh
         } catch (error) {
            submitBtn.disabled = false;
-           submitBtn.innerHTML = 'Onaya Gönder';
+           submitBtn.innerHTML = editMode ? 'Güncellenmeleri Kaydet' : (auth.currentUser?.email === 'aldibasozcan@gmail.com' ? 'Hemen Yayınla' : 'Onaya Gönder');
            alert('Hata: ' + error.message);
         }
       });

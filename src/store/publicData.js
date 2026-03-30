@@ -114,3 +114,44 @@ export async function getMyPosts() {
     return [];
   }
 }
+/**
+ * Bir gönderiyi günceller.
+ * @param {String} postId 
+ * @param {Object} data - { title, content, category, type }
+ */
+export async function updatePost(postId, data) {
+  if (!auth.currentUser) throw new Error("Giriş yapmanız gerekiyor.");
+  
+  const isAdmin = auth.currentUser.email === 'aldibasozcan@gmail.com';
+  const postRef = doc(db, POSTS_COLLECTION, postId);
+  
+  const updates = {
+    ...data,
+    status: isAdmin ? 'approved' : 'pending', // Admin değilse tekrar onaya düşer
+    updatedAt: Date.now()
+  };
+
+  try {
+    await updateDoc(postRef, updates);
+    return updates;
+  } catch (error) {
+    console.error("Yazı güncellenirken hata oluştu:", error);
+    throw error;
+  }
+}
+
+/**
+ * Bir gönderiyi tamamen siler.
+ * @param {String} postId 
+ */
+export async function deletePost(postId) {
+  if (!auth.currentUser) throw new Error("Giriş yapmanız gerekiyor.");
+  const postRef = doc(db, POSTS_COLLECTION, postId);
+  
+  try {
+    await deleteDoc(postRef);
+  } catch (error) {
+    console.error("Yazı silinirken hata oluştu:", error);
+    throw error;
+  }
+}
