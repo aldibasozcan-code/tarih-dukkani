@@ -4,6 +4,7 @@
 import { getState, subscribe, markAllNotificationsRead, addNotification } from '../store/store.js';
 import { icon } from './icons.js';
 import { formatDistanceToNow } from '../utils/helpers.js';
+import { auth } from '../lib/firebase.js';
 
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Anasayfa', icon: 'dashboard' },
@@ -14,6 +15,7 @@ const NAV_ITEMS = [
   { id: 'calendar', label: 'Takvim', icon: 'calendar' },
   { id: 'chat', label: 'Mesajlar', icon: 'chat' },
   { id: 'liveClass', label: 'Canlı Sınıf', icon: 'liveClass' },
+  { id: 'publish', label: 'İçerik Üretimi', icon: 'upload' },
   { id: 'settings', label: 'Ayarlar', icon: 'settings' },
 ];
 
@@ -62,6 +64,14 @@ function renderSidebar(state, currentPage, navigate) {
           ${item.label}
         </button>
       `).join('')}
+
+      ${auth.currentUser?.email === 'aldibasozcan@gmail.com' ? `
+        <div style="margin: 16px 0; border-top: 1px dashed var(--border);"></div>
+        <button class="nav-item ${currentPage === 'admin' ? 'active' : ''}" data-nav="admin" style="color:var(--brand-green); font-weight:800;">
+          <svg style="width:18px;height:18px;margin-right:12px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+          Kontrol Merkezi
+        </button>
+      ` : ''}
     </nav>
     <div style="margin-top:auto; padding: 12px 16px; border-top: 1px solid var(--border);">
       <button class="nav-item" id="logout-btn" style="color: var(--danger); margin-bottom: 12px; transition: all 0.2s;">
@@ -97,6 +107,11 @@ function renderTopbar(state, unreadCount) {
       </div>
     </div>
     <div class="topbar-actions">
+      <div class="desktop-only" style="align-items:center; gap:8px; margin-right:16px; padding-right:16px; border-right:1px solid var(--border);">
+        <button class="btn btn-ghost btn-sm" data-nav="home" style="font-weight:700;">${icon('home', 15)} Site Anasayfası</button>
+        <button class="btn btn-ghost btn-sm" data-nav="forum" style="font-weight:700;">${icon('chat', 15)} Forum</button>
+        <button class="btn btn-ghost btn-sm" data-nav="blog" style="font-weight:700;">${icon('book', 15)} Blog</button>
+      </div>
       <button class="icon-btn" id="notif-btn" data-tooltip="Bildirimler">
         ${icon('bell', 18)}
         ${unreadCount > 0 ? `<span class="notif-badge">${unreadCount}</span>` : ''}

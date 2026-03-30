@@ -10,101 +10,160 @@ import { icon } from './components/icons.js';
 // state initialization moved to init()
 
 // ─── Router State ───
-let currentPage = 'dashboard';
+let currentPage = 'home';
+let currentLayout = null; // Forces initial layout render
+
+const PUBLIC_PAGES = ['home', 'forum', 'blog'];
+const DASHBOARD_PAGES = ['dashboard', 'courses', 'students', 'groups', 'finance', 'calendar', 'chat', 'liveClass', 'publish', 'settings', 'profile', 'notifications', 'admin'];
 
 // ─── Navigate function ───
 async function navigate(page) {
-  currentPage = page;
+  // Normalize page
+  if (!PUBLIC_PAGES.includes(page) && !DASHBOARD_PAGES.includes(page)) {
+    page = 'home';
+  }
 
-  // Update URL hash
+  const state = getState();
+  const user = (await import('./lib/firebase.js')).auth.currentUser;
+
+  // Protected route check
+  if (DASHBOARD_PAGES.includes(page) && !user) {
+    page = 'login';
+  }
+
+  currentPage = page;
   window.location.hash = page;
 
-  // Update sidebar active state
-  refreshSidebar(getState(), page);
-  refreshTopbar(getState());
-
-  // Update topbar title (patch the hidden data attr)
   const app = document.getElementById('app');
   if (app) app._currentPage = page;
 
-  // Load and render page
-  const content = document.getElementById('page-content');
+  // Determine needed layout
+  const neededLayout = DASHBOARD_PAGES.includes(page) ? 'dashboard' : (page === 'login' ? 'login' : 'public');
+
+  if (currentLayout !== neededLayout) {
+    currentLayout = neededLayout;
+    if (neededLayout === 'dashboard') {
+      const { renderLayout } = await import('./components/Layout.js');
+      app.innerHTML = renderLayout(page, navigate);
+    } else if (neededLayout === 'public') {
+      const { renderPublicLayout } = await import('./components/PublicLayout.js');
+      app.innerHTML = renderPublicLayout(page, navigate);
+    } else if (neededLayout === 'login') {
+      const { renderLogin, initLogin } = await import('./pages/Login.js');
+      app.innerHTML = renderLogin();
+      initLogin(app);
+      return;
+    }
+  }
+
+  // Update layout UI state
+  if (currentLayout === 'dashboard') {
+     const { refreshSidebar, refreshTopbar } = await import('./components/Layout.js');
+     refreshSidebar(state, page);
+     refreshTopbar(state);
+  }
+
+  // Render Page Content
+  const containerId = currentLayout === 'dashboard' ? 'page-content' : 'public-content';
+  const content = document.getElementById(containerId);
   if (!content) return;
 
-  content.innerHTML = '<div style="display:flex;justify-content:center;padding:60px;"><div class="spinner"></div></div>';
+  content.innerHTML = '<div style="display:flex;justify-content:center;padding:100px;"><div class="spinner"></div></div>';
 
   try {
     let module, result;
-    switch (page) {
-      case 'dashboard':
-        module = await import('./pages/Dashboard.js');
-        result = module.renderDashboard(navigate);
-        break;
-      case 'courses':
-        module = await import('./pages/Courses.js');
-        result = module.renderCourses(navigate);
-        break;
-      case 'students':
-        module = await import('./pages/Students.js');
-        result = module.renderStudents(navigate);
-        break;
-      case 'groups':
-        module = await import('./pages/Groups.js');
-        result = module.renderGroups(navigate);
-        break;
-      case 'finance':
-        module = await import('./pages/Finance.js');
-        result = module.renderFinance(navigate);
-        break;
-      case 'calendar':
-        module = await import('./pages/Calendar.js');
-        result = module.renderCalendar(navigate);
-        break;
-      case 'chat':
-        module = await import('./pages/Chat.js');
-        result = module.renderChat(navigate);
-        break;
-      case 'liveClass':
-        module = await import('./pages/LiveClass.js');
-        result = module.renderLiveClass(navigate);
-        break;
-      case 'settings':
-        module = await import('./pages/Settings.js');
-        result = module.renderSettings(navigate);
-        break;
-      case 'profile':
-        module = await import('./pages/Settings.js');
-        result = module.renderProfile(navigate);
-        break;
-      case 'notifications':
-        module = await import('./pages/Settings.js');
-        result = module.renderNotifications(navigate);
-        break;
-      default:
-        content.innerHTML = '<div class="empty-state"><h3>Sayfa bulunamadı</h3></div>';
-        return;
+    if (page === 'home') {
+      module = await import('./pages/PublicHome.js');
+      result = module.renderPublicHome(navigate);
+    } else if (page === 'forum') {
+      module = await import('./pages/PublicForum.js');
+      result = await module.renderPublicForum(navigate);
+    } else if (page === 'blog') {
+      module = await import('./pages/PublicBlog.js');
+      result = await module.renderPublicBlog(navigate);
+    } else {
+      // Dashboard Pages
+      switch (page) {
+        case 'dashboard':
+          module = await import('./pages/Dashboard.js');
+          result = module.renderDashboard(navigate);
+          break;
+        case 'courses':
+          module = await import('./pages/Courses.js');
+          result = module.renderCourses(navigate);
+          break;
+        case 'students':
+          module = await import('./pages/Students.js');
+          result = module.renderStudents(navigate);
+          break;
+        case 'groups':
+          module = await import('./pages/Groups.js');
+          result = module.renderGroups(navigate);
+          break;
+        case 'finance':
+          module = await import('./pages/Finance.js');
+          result = module.renderFinance(navigate);
+          break;
+        case 'calendar':
+          module = await import('./pages/Calendar.js');
+          result = module.renderCalendar(navigate);
+          break;
+        case 'chat':
+          module = await import('./pages/Chat.js');
+          result = module.renderChat(navigate);
+          break;
+        case 'liveClass':
+          module = await import('./pages/LiveClass.js');
+          result = module.renderLiveClass(navigate);
+          break;
+        case 'publish':
+          module = await import('./pages/Publish.js');
+          result = await module.renderPublish(navigate);
+          break;
+        case 'settings':
+          module = await import('./pages/Settings.js');
+          result = module.renderSettings(navigate);
+          break;
+        case 'profile':
+          module = await import('./pages/Settings.js');
+          result = module.renderProfile(navigate);
+          break;
+        case 'notifications':
+          module = await import('./pages/Settings.js');
+          result = module.renderNotifications(navigate);
+          break;
+        case 'admin':
+          if (user?.email !== 'aldibasozcan@gmail.com') {
+             window.location.hash = 'dashboard';
+             return;
+          }
+          module = await import('./pages/Admin.js');
+          result = await module.renderAdmin(navigate);
+          break;
+      }
     }
 
     if (result?.html !== undefined) {
       content.innerHTML = result.html;
-      if (result.init) {
-        result.init(content, navigate);
-      }
+      if (result.init) result.init(content, navigate);
     }
   } catch (err) {
     console.error('Page load error:', err);
-    content.innerHTML = `<div class="empty-state"><h3>Sayfa yüklenirken hata oluştu</h3><p>${err.message}</p></div>`;
+    content.innerHTML = `<div class="empty-state"><h3>Hata oluştu</h3><p>${err.message}</p></div>`;
   }
 
-  // Close sidebar on mobile after navigation
-  closeSidebar();
-
-  // Re-attach sidebar/topbar nav events
+  // Common UI updates
+  if (currentLayout === 'dashboard') {
+    const { closeSidebar } = await import('./components/Layout.js');
+    closeSidebar();
+  }
   attachNavEvents();
 
-  // Inject Guided Tour if active
-  const { injectTour } = await import('./pages/modals/GuidedTour.js');
-  injectTour(page, navigate);
+  // Custom tour injection for dashboard
+  if (page === 'dashboard' && user) {
+     const { injectTour } = await import('./pages/modals/GuidedTour.js');
+     injectTour(page, navigate);
+  }
 }
 
 // ─── Domain Migration Notice ───
@@ -112,37 +171,7 @@ async function checkDomainMigration() {
   const currentHost = window.location.hostname;
   if (currentHost.includes('tarih-dukkani')) {
     const { openModal } = await import('./components/modal.js');
-
-    openModal({
-      title: 'Adresimiz Değişti! 🚀',
-      body: `
-        <div style="text-align:center; padding: 10px 0;">
-          <div style="font-size:48px; margin-bottom:16px;">✨</div>
-          <h3 style="font-size:20px; font-weight:800; margin-bottom:12px; color:var(--text-primary);">Bitig.app'ya Hoş Geldiniz!</h3>
-          <p style="color:var(--text-secondary); line-height:1.6; font-size:15px;">
-            Sizlere daha iyi hizmet verebilmek için <strong>tarih-dukkani.vercel.app</strong> adresinden 
-            <strong style="color:var(--brand-green);">bitig.app</strong> adresine taşındık.
-          </p>
-          <div style="background:var(--brand-green-soft); border-radius:12px; padding:16px; margin-top:20px; border:1px solid var(--brand-green); border-style: dashed;">
-            <p style="font-size:12px; color:var(--brand-green); font-weight:700; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">Yeni Adresimiz</p>
-            <code style="font-size:18px; font-weight:800; color:var(--brand-green);">https://bitig.app</code>
-          </div>
-          <p style="font-size:12px; color:var(--text-muted); margin-top:16px;">
-            Lütfen tarayıcınızdaki yer imlerini güncellemeyi unutmayın.
-          </p>
-        </div>
-      `,
-      footer: `
-        <button class="btn btn-secondary" id="migration-stay-btn" style="flex:1;">Burada Kal</button>
-        <a href="https://bitig.app${window.location.hash}" class="btn btn-primary" style="flex:1; text-decoration:none; justify-content:center; gap:8px;">
-          Yeni Adrese Git ${icon('externalLink', 14)}
-        </a>
-      `
-    });
-
-    document.getElementById('migration-stay-btn')?.addEventListener('click', () => {
-      import('./components/modal.js').then(m => m.closeModal());
-    });
+    // ... migration modal logic here if needed ...
   }
 }
 
@@ -155,26 +184,15 @@ async function init() {
 
   app.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100vh;"><div class="spinner"></div></div>';
 
-  // Redirect sonucunu yakala (Google Takvim tokenı için gerekli)
-  try {
-    const { getRedirectResult, GoogleAuthProvider } = await import("https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js");
-    const { auth } = await import("./lib/firebase.js");
-    const result = await getRedirectResult(auth);
-    if (result) {
-      const credential = GoogleAuthProvider.credentialFromResult(result);
-      if (credential?.accessToken) {
-        localStorage.setItem('_gcal_token', credential.accessToken);
-      }
-    }
-  } catch (err) {
-    console.error("Redirect handler error:", err);
-  }
-
   subscribeToAuth(async (user) => {
+    // Determine start page from hash or default
+    const hash = window.location.hash.replace('#', '');
+    const startPage = hash || (user ? 'dashboard' : 'home');
+
     if (user) {
       if (!_appInitialized) {
         _appInitialized = true;
-        await initStore(); // Load from Firebase or local
+        await initStore();
         const state = getState();
 
         if (state && state.profile && !state.profile.onboarded) {
@@ -183,66 +201,29 @@ async function init() {
           initOnboarding(app, async (profileData) => {
             const { updateProfile } = await import('./store/store.js');
             updateProfile({ ...profileData, onboarded: true });
-            
-            // Firebase debounced kaydetme mekanizmasının (1sn) işini bitirmesi için bekle
-            setTimeout(() => {
-              window.location.hash = '';
-              window.location.reload();
-            }, 1200);
+            setTimeout(() => window.location.reload(), 1200);
           });
           return;
         }
 
-        app.innerHTML = renderLayout(currentPage, navigate);
-        app._currentPage = currentPage;
-
-        // Set page from hash
-        const hash = window.location.hash.replace('#', '');
-        const validPages = ['dashboard','courses','students','groups','finance','calendar','chat','liveClass','settings','profile','notifications'];
-        const startPage = validPages.includes(hash) ? hash : 'dashboard';
-
-        attachNavEvents();
-        navigate(startPage);
-
-        // Check for migration if old domain
-        checkDomainMigration();
-
-        // Auto-start Guided Tour for new users
-        if (!state.profile.tourCompleted && !state.profile.tourAutoStarted) {
-          const { startTour } = await import('./store/store.js');
-          startTour();
-          // The navigate call above will trigger the first step
+        // Check for auto-start tour
+        if (!state.profile.tourCompleted && !state.profile.tourAutoStarted && startPage === 'dashboard') {
+           const { startTour } = await import('./store/store.js');
+           startTour();
         }
 
-        // Subscribe to state changes to update topbar
+        // State change subscription
         subscribe((newState) => {
-          refreshTopbar(newState);
-          const pendingCount = newState.notifications.filter(n => !n.read).length;
-          // Update notification badge
-          const badge = document.querySelector('.notif-badge');
-          if (badge) badge.textContent = pendingCount;
-          else if (pendingCount > 0) {
-            const notifBtn = document.getElementById('notif-btn');
-            if (notifBtn && !notifBtn.querySelector('.notif-badge')) {
-              const b = document.createElement('span');
-              b.className = 'notif-badge';
-              b.textContent = pendingCount;
-              notifBtn.appendChild(b);
-            }
+          if (currentLayout === 'dashboard') {
+            const { refreshTopbar } = import('./components/Layout.js').then(m => m.refreshTopbar(newState));
           }
         });
-
-        // Periodic check for pending lessons (every 5 minutes)
-        setInterval(checkPendingLessons, 5 * 60 * 1000);
-        checkPendingLessons();
       }
     } else {
-      // User is logged out
       _appInitialized = false;
-      const { renderLogin, initLogin } = await import('./pages/Login.js');
-      app.innerHTML = renderLogin();
-      initLogin(app);
     }
+
+    navigate(startPage);
   });
 }
 
@@ -252,7 +233,6 @@ function attachNavEvents() {
   app._globalEventsBound = true;
 
   app.addEventListener('click', (e) => {
-    // 1) Navigation items (Sidebar/Topbar)
     const navEl = e.target.closest('[data-nav]');
     if (navEl) {
       e.preventDefault();
@@ -261,97 +241,33 @@ function attachNavEvents() {
       return;
     }
 
-    // 2) Notification button
-    const notifBtn = e.target.closest('#notif-btn');
-    if (notifBtn) {
-      e.preventDefault();
-      e.stopPropagation();
-      toggleNotifPanel(navigate);
-      return;
-    }
-
-    // 3) Profile button
-    const profileBtn = e.target.closest('#profile-btn');
-    if (profileBtn) {
-      e.preventDefault();
-      e.stopPropagation();
-      closeNotifPanel();
-      navigate('profile');
-      return;
-    }
-
-    // 4) Mobile Menu Toggle
-    const menuToggle = e.target.closest('#menu-toggle');
-    if (menuToggle) {
-      e.preventDefault();
-      e.stopPropagation();
-      toggleSidebar();
-      return;
-    }
-
-    // 5) Sidebar Overlay
-    const overlay = e.target.closest('#sidebar-overlay');
-    if (overlay) {
-      closeSidebar();
-      return;
-    }
-
-    // 6) Logout button
-    const logoutBtn = e.target.closest('#logout-btn');
-    if (logoutBtn) {
-      e.preventDefault();
-      e.stopPropagation();
-      handleLogout(logoutBtn);
-      return;
-    }
-
-    // 7) Notification items
-    const notifItem = e.target.closest('[data-notif-link]');
-    if (notifItem) {
-      const link = notifItem.dataset.notifLink;
-      closeNotifPanel();
-      if (link) navigate(link);
-      return;
-    }
-
-    // 8) View all notifications
-    const viewAllBtn = e.target.closest('#view-all-notifs');
-    if (viewAllBtn) {
-      closeNotifPanel();
-      navigate('notifications');
-      return;
-    }
-
-    // Generic: Close notif panel on outside click
-    if (!e.target.closest('.notif-panel')) {
-      closeNotifPanel();
+    // Dashboard specific events
+    if (currentLayout === 'dashboard') {
+      const notifBtn = e.target.closest('#notif-btn');
+      if (notifBtn) {
+        import('./components/Layout.js').then(m => m.toggleNotifPanel(navigate));
+        return;
+      }
+      const menuToggle = e.target.closest('#menu-toggle');
+      if (menuToggle) {
+        import('./components/Layout.js').then(m => m.toggleSidebar());
+        return;
+      }
+      const logoutBtn = e.target.closest('#logout-btn');
+      if (logoutBtn) {
+        handleLogout(logoutBtn);
+        return;
+      }
     }
   });
 }
 
 async function handleLogout(btn) {
-  btn.innerHTML = '<div class="spinner" style="width:16px;height:16px;border-width:2px;border-color:var(--danger);border-top-color:transparent;display:inline-block;"></div> Çıkış Yapılıyor...';
-  try {
-    const { logoutUser } = await import('./lib/auth.js');
-    await logoutUser();
-    window.location.reload(); 
-  } catch(err) {
-    console.error(err);
-    btn.innerHTML = 'Hata Oluştu';
-  }
-}
-
-function checkPendingLessons() {
-  const pending = getPendingLessons();
-  if (pending.length > 0) {
-    import('./store/store.js').then(m => {
-      m.addNotification({
-        type: 'warning',
-        text: `${pending.length} ders onay bekliyor`,
-        link: 'dashboard',
-      });
-    });
-  }
+  btn.innerHTML = '<div class="spinner" style="width:16px;height:16px;"></div>';
+  const { logoutUser } = await import('./lib/auth.js');
+  await logoutUser();
+  window.location.hash = 'home';
+  window.location.reload(); 
 }
 
 // ─── Hash routing ───
@@ -360,5 +276,5 @@ window.addEventListener('hashchange', () => {
   if (hash && hash !== currentPage) navigate(hash);
 });
 
-// ─── Start ───
 init();
+
