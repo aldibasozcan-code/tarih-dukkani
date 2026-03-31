@@ -10,14 +10,19 @@ import { icon } from './components/icons.js';
 // state initialization moved to init()
 
 // ─── Router State ───
-let currentPage = 'home';
+let currentPage = '';
 let currentLayout = null; // Forces initial layout render
 
-const PUBLIC_PAGES = ['home', 'forum', 'blog'];
+const PUBLIC_PAGES = ['home', 'forum', 'blog', 'post-detail'];
 const DASHBOARD_PAGES = ['dashboard', 'courses', 'students', 'groups', 'finance', 'calendar', 'chat', 'liveClass', 'publish', 'settings', 'profile', 'notifications', 'admin'];
 
 // ─── Navigate function ───
 async function navigate(page) {
+  let postId = null;
+  if (page.includes(':')) {
+    [page, postId] = page.split(':');
+  }
+
   // Normalize page
   if (!PUBLIC_PAGES.includes(page) && !DASHBOARD_PAGES.includes(page)) {
     page = 'home';
@@ -31,8 +36,17 @@ async function navigate(page) {
     page = 'login';
   }
 
-  currentPage = page;
-  window.location.hash = page;
+  const fullHash = postId ? `${page}:${postId}` : page;
+  
+  if (currentPage === fullHash && document.getElementById('app')._pageLoaded) {
+     return; // Already on this page
+  }
+
+  currentPage = fullHash;
+  if (window.location.hash.replace('#', '') !== fullHash) {
+     window.location.hash = fullHash;
+  }
+
 
   const app = document.getElementById('app');
   if (app) app._currentPage = page;
@@ -81,6 +95,9 @@ async function navigate(page) {
     } else if (page === 'blog') {
       module = await import('./pages/PublicBlog.js');
       result = await module.renderPublicBlog(navigate);
+    } else if (page === 'post-detail') {
+      module = await import('./pages/PublicPostDetail.js');
+      result = await module.renderPublicPostDetail(postId, navigate);
     } else {
       // Dashboard Pages
       switch (page) {
@@ -146,6 +163,7 @@ async function navigate(page) {
     if (result?.html !== undefined) {
       content.innerHTML = result.html;
       if (result.init) result.init(content, navigate);
+      app._pageLoaded = true;
     }
   } catch (err) {
     console.error('Page load error:', err);
@@ -251,11 +269,6 @@ function attachNavEvents() {
       const menuToggle = e.target.closest('#menu-toggle');
       if (menuToggle) {
         import('./components/Layout.js').then(m => m.toggleSidebar());
-        return;
-      }
-      const logoutBtn = e.target.closest('#logout-btn');
-      if (logoutBtn) {
-        handleLogout(logoutBtn);
         return;
       }
     }

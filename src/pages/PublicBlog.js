@@ -22,7 +22,7 @@ export async function renderPublicBlog(navigate) {
               <p style="color:var(--text-secondary); font-size:18px;">Değerli bilgi birikiminizi ve makalelerinizi platformumuzda paylaşabilirsiniz.</p>
            </div>
         ` : posts.map((post, i) => `
-          <div class="blog-card stagger-${i}" style="background:white; border:1px solid var(--border); border-radius:var(--radius-xl); overflow:hidden; transition:var(--transition); display:flex; flex-direction:column; box-shadow:var(--shadow-sm); cursor:pointer;" onmouseover="this.style.transform='translateY(-6px)'; this.style.boxShadow='var(--shadow-lg)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow-sm)'">
+          <div class="blog-card stagger-${i}" data-id="${post.id}" style="background:white; border:1px solid var(--border); border-radius:var(--radius-xl); overflow:hidden; transition:var(--transition); display:flex; flex-direction:column; box-shadow:var(--shadow-sm); cursor:pointer;" onmouseover="this.style.transform='translateY(-6px)'; this.style.boxShadow='var(--shadow-lg)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow-sm)'">
             <div class="blog-image" style="background:var(--brand-green-soft); height:220px; display:flex; align-items:center; justify-content:center; position:relative;">
                <div style="background:white; color:var(--brand-green); width:72px; height:72px; border-radius:16px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:32px; box-shadow:var(--shadow-md);">${post.title[0]}</div>
                <div style="position:absolute; top:20px; right:20px; background:rgba(255,255,255,0.9); padding:6px 12px; border-radius:100px; font-size:12px; font-weight:700; color:var(--brand-green); display:flex; align-items:center; gap:6px;">
@@ -42,7 +42,7 @@ export async function renderPublicBlog(navigate) {
                        <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">Eğitim Uzmanı</div>
                      </div>
                   </div>
-                  <button class="btn btn-ghost" style="font-size:13px; font-weight:800; padding:8px; color:var(--brand-green);">İncele ${icon('chevronRight', 16)}</button>
+                  <button class="btn btn-ghost" data-id="${post.id}" style="font-size:13px; font-weight:800; padding:8px; color:var(--brand-green);">İncele ${icon('chevronRight', 16)}</button>
                </div>
             </div>
           </div>
@@ -65,7 +65,14 @@ export async function renderPublicBlog(navigate) {
   return { 
     html,
     init: (el, navigateFn) => {
-      // Sadece okuma sayfası olduğu için özel bir init işlemine gerek kalmadı
+      el.querySelectorAll('.blog-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+          const id = e.currentTarget.dataset.id;
+          if (id) {
+            navigateFn(`post-detail:${id}`);
+          }
+        });
+      });
     }
   };
 }

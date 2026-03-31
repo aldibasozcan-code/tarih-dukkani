@@ -246,7 +246,7 @@ function initFinance(el, navigate) {
     el.querySelector('#transactions-table').innerHTML = renderTransactionTable(stats.filteredTxs);
     el.querySelector('#table-stats-info').textContent = `${stats.filteredTxs.length} işlem listelendi`;
     
-    initTransactionButtons(el, navigate);
+    initTransactionButtons(el, navigate, updateView);
   };
 
   // Period Tabs
@@ -286,20 +286,21 @@ function initFinance(el, navigate) {
   });
 
   el.querySelector('#btn-add-transaction')?.addEventListener('click', () => {
-    openAddTransactionModal(navigate);
+    openAddTransactionModal(navigate, updateView);
   });
 
   // Initial update
   updateView();
 }
 
-function initTransactionButtons(el, navigate) {
+function initTransactionButtons(el, navigate, updateView) {
   // Confirm Transaction
   el.querySelectorAll('[data-confirm-transaction]').forEach(btn => {
     btn.addEventListener('click', () => {
       import('../store/store.js').then(m => {
         m.confirmTransaction(btn.dataset.confirmTransaction);
-        navigate('finance');
+        if (updateView) updateView();
+        else navigate('finance');
       });
     });
   });
@@ -315,7 +316,8 @@ function initTransactionButtons(el, navigate) {
         onConfirm: () => { 
           import('../store/store.js').then(m => {
             m.deleteTransaction(btn.dataset.deleteTransaction); 
-            navigate('finance'); 
+            if (updateView) updateView();
+            else navigate('finance'); 
           });
         },
       });
@@ -364,6 +366,7 @@ function openAddTransactionModal(navigate) {
       date: document.getElementById('tx-date').value,
     });
     closeModal();
-    navigate('finance');
+    if (updateView) updateView();
+    else navigate('finance');
   });
 }

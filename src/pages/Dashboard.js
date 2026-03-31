@@ -22,11 +22,39 @@ function getGreetingIcon() {
 
 function getRandomQuote() {
   const quotes = [
-    "Eğitim, dünyayı değiştirmek için kullanabileceğiniz en güçlü silahtır.",
-    "Bir öğretmenin etkilediği alanı kimse tam olarak ölçemez.",
-    "Öğretmek, iki kez öğrenmektir.",
-    "Gelecek, gençlerin, gençler ise öğretmenlerin eseridir.",
-    "En iyi öğretmen, öğrencisine ne göreceğini değil, nereye bakacağını gösterendir."
+    // Antik Yunan & Roma
+    "Devletin temeli gençlerin eğitimidir. - Aristoteles",
+    "Sadece eğitimli olanlar özgürdür. - Epiktetos",
+    "Eğitimli bir zihin, düşünceleri kabul etmeden de onları anlayabilme yeteneğine sahiptir. - Aristoteles",
+    "Bir insanın eğitimli olduğunun kanıtı, bir başkasının fikrine saygı göstermesidir. - Marcus Aurelius",
+    "Eğitim bir meşaleyi yakmaktır, bir kabı doldurmak değil. - Sokrates",
+    "Eğitimin kökleri acı, fakat meyveleri tatlıdır. - Aristo",
+
+    // Antik Çin & Hint
+    "Öğrenmek akıntıya karşı kürek çekmek gibidir, durduğunuz an geriye gidersiniz. - Çin Atasözü",
+    "Bilgi sahibi olup da uygulamamak, hiç bilmemekle eşdeğerdir. - Konfüçyüs",
+    "Bir yıllık refah için tahıl ek, on yıllık refah için ağaç dik, yüz yıllık refah için insan eğit. - Guanzi",
+    "Bilgi, paylaşıldıkça çoğalan tek hazinedir. - Hint Atasözü",
+    "Gerçek bilgelik, neyi bildiğini ve neyi bilmediğini bilmektir. - Konfüçyüs",
+
+    // Antik Mısır & Mezopotamya
+    "Bilgelik bir kuyu gibidir; her gün içilir ama asla bitmez. - Antik Mısır Atasözü",
+    "Bilgi yoluyla özgürlüğe ulaşılır. - Antik Tablet Yazıtı",
+
+    // Ortaçağ Doğu & Batı
+    "İlim, amelsiz bir ağaç gibidir; meyvesi olmaz. - İbn-i Sina",
+    "Cahilliğin tek ilacı eğitimdir. - Farabi",
+    "İlim meclislerinde sükût etmek, bin rekat namazdan hayırlıdır. - İbn-i Sina",
+    "Aklı olanın her şeye gücü yeter. - Yusuf Has Hacib",
+    "Bilgi sevgisi, bilgeliğin başlangıcıdır. - Thomas Aquinas",
+
+    // Modern Pedagoji & Düşünürler
+    "Eğitim hayata hazırlık değil, hayatın kendisidir. - John Dewey",
+    "Çocuk, insanlığın babasıdır. - Maria Montessori",
+    "Eğitimin asıl amacı, karakteri şekillendirmektir. - Herbert Spencer",
+    "Dünyayı değiştirmek için kullanabileceğiniz en güçlü silah eğitimdir. - Nelson Mandela",
+    "Öğretmek, iki kez öğrenmektir. - Joseph Joubert",
+    "Bana bir harf öğretenin kırk yıl kölesi olurum. - Hz. Ali"
   ];
   return quotes[Math.floor(Math.random() * quotes.length)];
 }
@@ -74,10 +102,13 @@ export function renderDashboard(navigate) {
           </div>
         </div>
         
-        <div style="position:relative; z-index:2; display:none; @media (min-width: 1024px) { display: block; }">
-           <div style="width:120px; height:120px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:30px; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(10px);">
-              ${icon('courses', 48)}
+        <div class="banner-quote-container">
+           <div style="font-size:11px; text-transform:uppercase; font-weight:800; letter-spacing:1px; margin-bottom:12px; opacity:0.7;">
+             Günün İlhamı
            </div>
+           <p style="font-style:italic; font-size:15px; line-height:1.6; font-weight:500; margin:0;">
+             "${getRandomQuote()}"
+           </p>
         </div>
       </div>
 
@@ -183,16 +214,7 @@ export function renderDashboard(navigate) {
             </div>
           </div>
 
-          <!-- Motivational Quote Card -->
-          <div class="card" style="background:var(--brand-green); color:white; border:none; position:relative; overflow:hidden;">
-            <div style="position:absolute; top:-10px; right:-10px; opacity:0.1; transform:rotate(20deg);">
-              ${icon('chat', 80)}
-            </div>
-            <div style="position:relative; z-index:1;">
-               <div style="font-size:11px; text-transform:uppercase; font-weight:800; letter-spacing:1px; margin-bottom:12px; opacity:0.7;">Günün İlhamı</div>
-               <p style="font-style:italic; font-size:15px; line-height:1.6; font-weight:500;">"${getRandomQuote()}"</p>
-            </div>
-          </div>
+          <!-- Toplam Kazanç Bölümü -->
         </div>
 
         <!-- Right: Small Sections -->
