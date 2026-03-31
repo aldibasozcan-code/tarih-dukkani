@@ -796,7 +796,7 @@ export function renderNotifications(navigate) {
       <div class="card" style="padding:0;">
         ${state.notifications.length === 0 ? `<div class="empty-state">${icon('bell', 40)}<h3>Bildirim yok</h3></div>` : ''}
         ${state.notifications.map(n => `
-          <div class="notif-item ${n.read ? '' : 'unread'}" style="padding:16px 20px;">
+          <div class="notif-item ${n.read ? '' : 'unread'}" ${n.link ? `data-nav="${n.link}"` : ''} style="padding:16px 20px; ${n.link ? 'cursor:pointer;' : ''}">
             <div class="notif-icon" style="margin-top:2px;">
               <div style="width:32px;height:32px;border-radius:8px;background:${n.type === 'warning' ? 'rgba(255,159,67,0.15)' : n.type === 'success' ? 'rgba(46,213,115,0.15)' : 'rgba(99,202,183,0.15)'};display:flex;align-items:center;justify-content:center;">
                 ${n.type === 'warning' ? icon('alertCircle', 16) : n.type === 'success' ? icon('checkCircle', 16) : icon('bell', 16)}

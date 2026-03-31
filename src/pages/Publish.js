@@ -37,9 +37,50 @@ export async function renderPublish(navigate) {
             </select>
           </div>
           
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+            <div class="form-group mb-4">
+              <label style="font-weight:700; color:var(--text-secondary); margin-bottom:8px; display:block; font-size:13px;">Sınıf Seviyesi</label>
+              <select id="pub-grade" class="form-control">
+                <option value="">Seçiniz...</option>
+                <option value="5. Sınıf">5. Sınıf</option>
+                <option value="6. Sınıf">6. Sınıf</option>
+                <option value="7. Sınıf">7. Sınıf</option>
+                <option value="8. Sınıf">8. Sınıf (LGS)</option>
+                <option value="9. Sınıf">9. Sınıf</option>
+                <option value="10. Sınıf">10. Sınıf</option>
+                <option value="11. Sınıf">11. Sınıf</option>
+                <option value="12. Sınıf">12. Sınıf (YKS)</option>
+                <option value="TYT-AYT">TYT-AYT / Karma</option>
+                <option value="Diğer">Diğer</option>
+              </select>
+            </div>
+            
+            <div class="form-group mb-4">
+              <label style="font-weight:700; color:var(--text-secondary); margin-bottom:8px; display:block; font-size:13px;">Kategori / Tür</label>
+              <select id="pub-category" class="form-control">
+                <option value="Konu Anlatımı">Konu Anlatımı / Özet</option>
+                <option value="Yaprak Test">Yaprak Test / Deneme</option>
+                <option value="Yazılı Hazırlık">Yazılı Hazırlık</option>
+                <option value="Ders Sunumu">Ders Sunumu / Materyal</option>
+                <option value="Rehberlik">Rehberlik / Motivasyon</option>
+              </select>
+            </div>
+          </div>
+
           <div class="form-group mb-4">
-            <label style="font-weight:700; color:var(--text-secondary); margin-bottom:8px; display:block; font-size:13px;">Kategori / Branş</label>
-            <input type="text" id="pub-category" class="form-control" placeholder="Örn: 8. Sınıf LGS, Pedagoji, YKS">
+            <label style="font-weight:700; color:var(--text-secondary); margin-bottom:8px; display:block; font-size:13px;">Konu / Ünite Adı</label>
+            <input type="text" id="pub-topic" class="form-control" placeholder="Örn: Osmanlı Kuruluş, Milli Mücadele, 1. Ünite...">
+          </div>
+          
+          <div class="form-group mb-4">
+            <label style="font-weight:700; color:var(--text-secondary); margin-bottom:8px; display:block; font-size:13px;">Etiketler (En fazla 5 adet)</label>
+            <div id="pub-tags-container" style="display:flex; flex-wrap:wrap; gap:8px; background:var(--bg-secondary); padding:12px; border-radius:var(--radius-md); border:1px solid var(--border); margin-bottom:12px;">
+              <!-- Tags populated via JS -->
+            </div>
+            <div style="display:flex; gap:8px;">
+               <input type="text" id="pub-custom-tag" class="form-control" placeholder="Yeni etiket yazın..." style="padding:8px 16px; font-size:13px;">
+               <button type="button" id="btn-add-tag" class="btn btn-secondary" style="padding:8px 20px; font-size:13px; font-weight:800;">Ekle</button>
+            </div>
           </div>
           
           <div class="form-group mb-4">
@@ -88,13 +129,20 @@ export async function renderPublish(navigate) {
                     </span>
                   </div>
                   <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
-                    <div style="font-size:12px; color:var(--text-secondary); text-transform:uppercase; font-weight:700;">
-                      ${post.type === 'forum' ? 'Forum' : 'Blog'} · ${post.category}
+                      ${post.type === 'forum' ? 'Forum' : 'Blog'} · ${post.grade || ''} · ${post.category}
                     </div>
-                    <div style="font-size:12px; color:var(--text-muted);">
+                    <div style="font-size:12px; color:var(--text-muted); font-style:italic;">
+                      ${post.topic || ''}
+                    </div>
+                  </div>
                       ${new Date(post.createdAt).toLocaleDateString('tr-TR')}
                     </div>
                   </div>
+                  ${post.tags && post.tags.length > 0 ? `
+                    <div style="display:flex; flex-wrap:wrap; gap:4px; margin-top:8px;">
+                      ${post.tags.map(t => `<span style="font-size:10px; color:var(--brand-green); font-weight:700; background:rgba(0,102,51,0.05); padding:2px 6px; border-radius:4px;">#${t}</span>`).join('')}
+                    </div>
+                  ` : ''}
                   <div style="margin-top:12px; padding-top:12px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:8px;">
                     <button class="btn btn-ghost btn-sm btn-edit-post" data-id="${post.id}" style="color:var(--text-secondary); font-weight:700; padding:4px 8px;">
                       ${icon('edit', 14)} Düzenle
@@ -127,11 +175,111 @@ export async function renderPublish(navigate) {
         submitBtn.innerHTML = auth.currentUser?.email === 'aldibasozcan@gmail.com' ? 'Hemen Yayınla' : 'Onaya Gönder';
         cancelBtn.style.display = 'none';
         el.querySelector('#pub-type').value = 'forum';
-        el.querySelector('#pub-category').value = '';
+        updateCategoryOptions('forum');
+        el.querySelector('#pub-grade').value = '';
+        el.querySelector('#pub-topic').value = '';
+        selectedTags = [];
+        updateTagChips();
         el.querySelector('#pub-title').value = '';
         el.querySelector('#pub-summary').value = '';
         el.querySelector('#pub-content').value = '';
       };
+
+      const forumCategories = [
+        { val: 'Konu Anlatımı', label: 'Konu Anlatımı / Özet' },
+        { val: 'Yaprak Test', label: 'Yaprak Test / Deneme' },
+        { val: 'Yazılı Hazırlık', label: 'Yazılı Hazırlık' },
+        { val: 'Ders Sunumu', label: 'Ders Sunumu / Materyal' },
+        { val: 'Rehberlik', label: 'Rehberlik / Motivasyon' }
+      ];
+
+      const blogCategories = [
+        { val: 'Akademik Makale', label: 'Akademik Makale' },
+        { val: 'Pedagojik İnceleme', label: 'Pedagojik İnceleme' },
+        { val: 'Eğitim Teknolojileri', label: 'Eğitim Teknolojileri (EdTech)' },
+        { val: 'MEB Gündemi', label: 'MEB Gündemi & Mevzuat' },
+        { val: 'Deneyim Paylaşımı', label: 'Deneyim Paylaşımı' }
+      ];
+
+      const updateCategoryOptions = (type, selectedVal = null) => {
+        const catSelect = el.querySelector('#pub-category');
+        const cats = type === 'blog' ? blogCategories : forumCategories;
+        catSelect.innerHTML = cats.map(c => `<option value="${c.val}" ${selectedVal === c.val ? 'selected' : ''}>${c.label}</option>`).join('');
+        
+        // Also update tags when type changes
+        selectedTags = [];
+        updateTagChips();
+      };
+
+      const forumTags = ['deneme', 'konuozeti', 'cikmissorular', 'mufredat', 'etkinlik', 'sunum', 'yazilihazirlik'];
+      const blogTags = ['akademik', 'pedagoji', 'edtech', 'mebGundemi', 'rehberlik', 'inceleme', 'deneyim'];
+      let selectedTags = [];
+
+      const updateTagChips = (initialTags = null) => {
+        const container = el.querySelector('#pub-tags-container');
+        const type = el.querySelector('#pub-type').value;
+        const baseTags = type === 'blog' ? blogTags : forumTags;
+        
+        if (initialTags !== null) {
+          selectedTags = [...initialTags];
+        }
+
+        // Show predefined tags + any custom tags currently selected
+        const allDisplayTags = [...new Set([...baseTags, ...selectedTags])];
+
+        container.innerHTML = allDisplayTags.map(tag => {
+          const isActive = selectedTags.includes(tag);
+          return `
+            <div class="tag-chip ${isActive ? 'active' : ''}" data-tag="${tag}" style="cursor:pointer; padding:6px 14px; border-radius:100px; font-size:12px; font-weight:700; border:1px solid ${isActive ? 'var(--brand-green)' : 'var(--border)'}; background:${isActive ? 'var(--brand-green)' : 'white'}; color:${isActive ? 'white' : 'var(--text-secondary)'}; transition:all 0.2s ease;">
+              #${tag}
+            </div>
+          `;
+        }).join('');
+
+        container.querySelectorAll('.tag-chip').forEach(chip => {
+          chip.onclick = () => {
+            const tag = chip.dataset.tag;
+            if (selectedTags.includes(tag)) {
+              selectedTags = selectedTags.filter(t => t !== tag);
+            } else {
+              if (selectedTags.length >= 5) {
+                 addNotification({ type: 'info', text: 'En fazla 5 etiket seçebilirsiniz.' });
+                 return;
+              }
+              selectedTags.push(tag);
+            }
+            updateTagChips();
+          };
+        });
+      };
+
+      // Custom Tag Logic
+      const addCustomTag = () => {
+        const input = el.querySelector('#pub-custom-tag');
+        const val = input.value.trim().toLowerCase().replace(/\s+/g, '-');
+        if (!val) return;
+        if (selectedTags.includes(val)) {
+          input.value = '';
+          return;
+        }
+        if (selectedTags.length >= 5) {
+          addNotification({ type: 'info', text: 'En fazla 5 etiket seçebilirsiniz.' });
+          return;
+        }
+        selectedTags.push(val);
+        input.value = '';
+        updateTagChips();
+      };
+
+      el.querySelector('#btn-add-tag').onclick = addCustomTag;
+      el.querySelector('#pub-custom-tag').onkeydown = (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          addCustomTag();
+        }
+      };
+
+      updateTagChips(); // Initial run
 
       // Edit Mode Toggle
       el.querySelectorAll('.btn-edit-post').forEach(btn => {
@@ -147,7 +295,10 @@ export async function renderPublish(navigate) {
           cancelBtn.style.display = 'block';
 
           el.querySelector('#pub-type').value = post.type;
-          el.querySelector('#pub-category').value = post.category;
+          updateCategoryOptions(post.type, post.category);
+          el.querySelector('#pub-grade').value = post.grade || '';
+          el.querySelector('#pub-topic').value = post.topic || '';
+          updateTagChips(post.tags || []);
           el.querySelector('#pub-title').value = post.title;
           el.querySelector('#pub-summary').value = post.summary || '';
           el.querySelector('#pub-content').value = post.content;
@@ -181,14 +332,17 @@ export async function renderPublish(navigate) {
       submitBtn.addEventListener('click', async () => {
         const data = {
           type: el.querySelector('#pub-type').value,
-          category: el.querySelector('#pub-category').value.trim(),
+          grade: el.querySelector('#pub-grade').value,
+          category: el.querySelector('#pub-category').value,
+          topic: el.querySelector('#pub-topic').value.trim(),
+          tags: selectedTags,
           title: el.querySelector('#pub-title').value.trim(),
           summary: el.querySelector('#pub-summary').value.trim(),
           content: el.querySelector('#pub-content').value.trim()
         };
 
-        if (!data.title || !data.content || !data.category) {
-          alert('Lütfen Kategori, Başlık ve İçerik alanlarını doldurunuz.');
+        if (!data.title || !data.content || !data.grade) {
+          alert('Lütfen Sınıf Seviyesi, Başlık ve İçerik alanlarını doldurunuz.');
           return;
         }
 

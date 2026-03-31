@@ -127,7 +127,8 @@ export async function updatePost(postId, data) {
   
   const updates = {
     ...data,
-    status: isAdmin ? 'approved' : 'pending', // Admin değilse tekrar onaya düşer
+    tags: Array.isArray(data.tags) ? data.tags : [],
+    status: isAdmin ? 'approved' : 'pending',
     updatedAt: Date.now()
   };
 
@@ -184,47 +185,74 @@ export async function seedInitialData() {
   const seedPosts = [
     {
       type: 'forum',
-      category: 'LGS',
+      category: 'LGS', // Geriye dönük uyumluluk için tutuyoruz
+      grade: '8. Sınıf',
+      topic: 'İnkılap Tarihi',
       title: 'LGS İnkılap Tarihi - 10 Sayfalık Tam Ünite Özeti (PDF)',
       summary: 'LGS hazırlık sürecinde tüm üniteleri kapsayan, MEB müfredatına %100 uyumlu özet notlar. Kavram haritaları destekli.',
-      content: 'Bu materyal, 8. Sınıf T.C. İnkılap Tarihi ve Atatürkçülük dersinin tüm ünitelerini kapsamaktadır. Birinci Dünya Savaşı\'ndan Atatürk Dönemi Dış Politika\'ya kadar tüm kritik noktalar özetlenmiştir. Özellikle kronolojik sıra ve neden-sonuç ilişkileri üzerine kurulmuştur.\n\nÖğrencileriniz için PDF olarak çıktı alıp dağıtabilirsiniz.',
+      content: 'Bu materyal, 8. Sınıf T.C. İnkılap Tarihi ve Atatürkçülük dersinin tüm ünitelerini kapsamaktadır...',
+      tags: ['konuozeti', 'mufredat'],
       authorName: 'Bitig Rehber',
       authorId: 'system',
       status: 'approved',
-      createdAt: Date.now() - 1000 * 60 * 60 * 24 * 2 // 2 gün önce
+      createdAt: Date.now() - 1000 * 60 * 60 * 24 * 2
+    },
+    {
+      type: 'forum',
+      category: 'Yazılı Hazırlık',
+      grade: '9. Sınıf',
+      topic: '1. Dönem 1. Yazılı',
+      title: '9. Sınıf Tarih 1. Dönem 1. Yazılı Hazırlık Soruları (2024)',
+      summary: 'Yeni müfredata uygun, açık uçlu ve senaryo temelli yazılı hazırlık soruları ve cevap anahtarı.',
+      content: '9. sınıf öğrencilerimiz için hazırladığımız yazılı provasıdır...',
+      tags: ['yazilihazirlik', 'deneme'],
+      authorName: 'Müverrih Hoca',
+      authorId: 'system',
+      status: 'approved',
+      createdAt: Date.now() - 1000 * 60 * 60 * 12
     },
     {
       type: 'forum',
       category: 'YKS',
+      grade: 'TYT-AYT',
+      topic: 'Soru Analizi',
       title: 'YKS Tarih: Son 5 Yılın Soru Analizi ve Kritik Konular',
       summary: 'TYT ve AYT sınavlarında en çok çıkan 100 temel tarih kavramı ve son 5 yılın soru dağılım grafiği.',
-      content: 'YKS hazırlığında öğrencilerin en çok zorlandığı nokta, hangi konuya ne kadar ağırlık verecekleridir. Bu analiz raporu, ÖSYM\'nin son yıllardaki soru sorma eğilimlerini ortaya koymaktadır. \n\nÖzellikle "İlk Türk Devletleri" ve "Atatürk İlkeleri" konularındaki her yıl çıkan garanti soruları kaçırmamak için mutlaka inceleyin.',
+      content: 'YKS hazırlığında öğrencilerin en çok zorlandığı nokta...',
+      tags: ['cikmissorular', 'mufredat'],
       authorName: 'Tarih Zümre Başkanı',
       authorId: 'system',
       status: 'approved',
-      createdAt: Date.now() - 1000 * 60 * 60 * 5 // 5 saat önce
+      createdAt: Date.now() - 1000 * 60 * 60 * 5
     },
     {
       type: 'forum',
-      category: 'Lise (9-12)',
-      title: '9. Sınıf 1. Ünite: Tarih ve Zaman - İnteraktif Sunum',
-      summary: 'Tarih biliminin yöntemi ve kaynakların sınıflandırılması üzerine hazırladığım ders sunumu ve etkinlik kağıdı.',
-      content: '9. sınıfın ilk ünitesi olan "Tarih ve Zaman", öğrencilerin tarih bilincini oluşturmak için kritiktir. Bu sunumda bol görsel ve video bağlantıları bulunmaktadır. Ayrıca sunum sonunda öğrenciyi aktif kılan bir "Doğru-Yanlış" etkinliği mevcuttur.',
+      category: 'Lise',
+      grade: '10. Sınıf',
+      topic: 'Osmanlı Devleti',
+      title: '10. Sınıf: Dünya Gücü Osmanlı (1453-1595) İnteraktif Sunum',
+      summary: 'İstanbul\'un Fethi ve yükseliş dönemini kapsayan görsel ağırlıklı ders materyali.',
+      content: '10. sınıfın en önemli konularından biri olan Osmanlı Yükseliş dönemi için hazırladığım sunumdur. Haritalar ve 3D canlandırmalar içermektedir.',
+      tags: ['sunum', 'etkinlik'],
       authorName: 'Mehmet Hoca',
       authorId: 'system',
       status: 'approved',
       createdAt: Date.now() - 1000 * 60 * 60 * 48 // 2 gün önce
     },
     {
-      type: 'forum',
-      category: 'YKS',
-      title: 'Tarih Dersi İçin Hafıza Teknikleri ve Kodlamalar',
-      summary: 'Anlaşmalar, savaşlar ve kronolojik olayları ezberlemeyi kolaylaştıran özgün kodlama yöntemleri.',
-      content: 'Tarih dersinde çok fazla isim ve tarih olduğu için ezber yükü fazladır. Bu materyalde, öğrencilerin akılda tutmasını kolaylaştıracak tekerlemeler ve görsel kodlamalar yer almaktadır. Örneğin; Mudanya Mütarekesi maddeleri için hazırladığımız özel şifre içermektedir.',
-      authorName: 'Akademik Başarı',
-      authorId: 'system',
-      status: 'approved',
-      createdAt: Date.now() - 1000 * 60 * 60 * 24 // 1 gün önce
+      id: 'blog-3',
+      type: 'blog',
+      title: 'Dijital Çağda Tarih Okuryazarlığı',
+      summary: 'Yapay zeka ve dijital kaynakların tarih eğitimindeki kritik rolü üzerine bir inceleme.',
+      content: 'Günümüzde bilgiye ulaşım hızlanırken, bilginin doğruluğunu teyit etmek her zamankinden daha önemli hale gelmiştir...',
+      category: 'Akademik Makale',
+      grade: 'TYT-AYT',
+      tags: ['akademik', 'pedagoji'],
+      authorId: 'admin_1',
+      authorName: 'Dr. Ahmet Yılmaz',
+      authorEmail: 'aldibasozcan@gmail.com',
+      createdAt: Date.now() - 1000 * 60 * 60 * 12,
+      status: 'approved'
     }
   ];
 

@@ -172,8 +172,9 @@ async function navigate(page) {
 
   // Common UI updates
   if (currentLayout === 'dashboard') {
-    const { closeSidebar } = await import('./components/Layout.js');
+    const { closeSidebar, closeNotifPanel } = await import('./components/Layout.js');
     closeSidebar();
+    closeNotifPanel();
   }
   attachNavEvents();
 

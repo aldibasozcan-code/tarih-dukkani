@@ -157,11 +157,11 @@ function renderNotifPanel(state, navigate) {
     <div class="notif-panel fade-in">
       <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border);">
         <span style="font-weight:700;font-size:14px;">Bildirimler</span>
-        <button class="btn btn-ghost btn-sm" id="view-all-notifs">Tümünü Gör</button>
+        <button class="btn btn-ghost btn-sm" id="view-all-notifs" data-nav="notifications">Tümünü Gör</button>
       </div>
       ${notifs.length === 0 ? '<div style="padding:24px;text-align:center;color:var(--text-muted);">Bildirim yok</div>' : ''}
       ${notifs.map(n => `
-        <div class="notif-item ${n.read ? '' : 'unread'}" data-notif-link="${n.link || ''}">
+        <div class="notif-item ${n.read ? '' : 'unread'}" ${n.link ? `data-nav="${n.link}"` : ''} data-notif-link="${n.link || ''}">
           <div class="notif-icon">
             ${n.type === 'warning' ? icon('alertCircle', 16) : n.type === 'success' ? icon('checkCircle', 16) : icon('bell', 16)}
           </div>
