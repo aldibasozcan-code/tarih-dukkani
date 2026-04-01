@@ -1,6 +1,7 @@
 import { icon } from '../components/icons.js';
 import { getApprovedPosts } from '../store/publicData.js';
 import { auth } from '../lib/firebase.js';
+import { sharePost } from '../utils/share.js';
 
 export async function renderPublicBlog(navigate) {
   const allPosts = await getApprovedPosts('blog');
@@ -41,36 +42,44 @@ export async function renderPublicBlog(navigate) {
     }
 
     return posts.map((post, i) => `
-      <div class="blog-card stagger-${i}" data-id="${post.id}" style="background:white; border:1px solid var(--border); border-radius:var(--radius-xl); overflow:hidden; transition:var(--transition); display:flex; flex-direction:column; box-shadow:var(--shadow-sm); cursor:pointer;" onmouseover="this.style.transform='translateY(-6px)'; this.style.boxShadow='var(--shadow-lg)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow-sm)'">
-        <div class="blog-image" style="background:var(--brand-green-soft); height:200px; display:flex; align-items:center; justify-content:center; position:relative;">
-           <div style="background:white; color:var(--brand-green); width:64px; height:64px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:28px; box-shadow:var(--shadow-md);">${post.title[0]}</div>
-           <div style="position:absolute; top:20px; right:20px; background:rgba(255,255,255,0.9); padding:6px 12px; border-radius:100px; font-size:12px; font-weight:700; color:var(--brand-green); display:flex; align-items:center; gap:6px;">
+      <div class="blog-card stagger-${i}" data-id="${post.id}" style="background:rgba(255, 255, 255, 0.75); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.5); border-radius:24px; overflow:hidden; transition:all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1); display:flex; flex-direction:column; box-shadow:var(--shadow-md); cursor:pointer;" onmouseover="this.style.transform='translateY(-12px) scale(1.02)'; this.style.boxShadow='0 20px 40px rgba(0,0,0,0.08)'; this.style.background='rgba(255,255,255,0.95)'" onmouseout="this.style.transform='translateY(0) scale(1)'; this.style.boxShadow='var(--shadow-md)'; this.style.background='rgba(255, 255, 255, 0.75)'">
+        <div class="blog-image" style="background:linear-gradient(45deg, var(--brand-green-soft), #d1fae5); height:220px; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden;">
+            <!-- Abstract background pattern for blog image -->
+           <div style="position:absolute; inset:0; opacity:0.1; background-image: radial-gradient(var(--brand-green) 1px, transparent 1px); background-size: 20px 20px;"></div>
+           <div style="background:white; color:var(--brand-green); width:72px; height:72px; border-radius:18px; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:32px; box-shadow:var(--shadow-lg); z-index:1; border:2px solid rgba(255,255,255,0.8);">${post.title[0]}</div>
+           <div style="position:absolute; top:20px; right:20px; background:rgba(255,255,255,0.9); backdrop-filter:blur(4px); padding:8px 14px; border-radius:12px; font-size:12px; font-weight:800; color:var(--brand-green); display:flex; align-items:center; gap:8px; box-shadow:var(--shadow-sm); z-index:1;">
              ${icon('clock', 14)} 4-5 dk
            </div>
         </div>
-        <div class="blog-content" style="padding:32px; flex:1; display:flex; flex-direction:column;">
-           <div style="display:flex; gap:8px; margin-bottom:16px;">
-             <span class="badge badge-info" style="border-radius:100px; padding:6px 16px; font-size:12px; text-transform:uppercase; letter-spacing:0.5px;">${post.category}</span>
-             ${post.grade ? `<span style="background:var(--bg-secondary); color:var(--text-secondary); padding:6px 14px; border-radius:100px; font-size:12px; font-weight:700;">${post.grade}</span>` : ''}
+        <div class="blog-content" style="padding:36px; flex:1; display:flex; flex-direction:column;">
+           <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:20px;">
+             <span class="badge" style="background:var(--brand-green-soft); color:var(--brand-green); border-radius:8px; padding:6px 14px; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; font-weight:800;">${post.category}</span>
+             ${post.grade ? `<span style="background:white; border:1px solid var(--border); color:var(--text-secondary); padding:6px 14px; border-radius:8px; font-size:11px; font-weight:800; text-transform:uppercase;">${post.grade}</span>` : ''}
            </div>
-           <h3 style="font-size:20px; font-weight:800; margin-bottom:12px; line-height:1.4; color:var(--text-primary);">${post.title}</h3>
-           <p style="font-size:14px; color:var(--text-secondary); line-height:1.6; margin-bottom:24px; flex:1;">${post.summary || post.content.substring(0, 140) + '...'}</p>
+           
+           <h3 style="font-size:24px; font-weight:900; margin-bottom:16px; line-height:1.3; color:var(--text-primary); letter-spacing:-0.5px;">${post.title}</h3>
+           <p style="font-size:15px; color:var(--text-secondary); line-height:1.7; margin-bottom:28px; flex:1; text-align: justify; opacity:0.9;">${post.summary || post.content.substring(0, 160) + '...'}</p>
            
            ${post.tags && post.tags.length > 0 ? `
-             <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:20px;">
-               ${post.tags.map(t => `<span class="tag-link" data-tag="${t}" style="font-size:10px; color:var(--brand-green); font-weight:700; background:rgba(0,102,51,0.05); padding:3px 8px; border-radius:4px; transition:all 0.2s;">#${t}</span>`).join('')}
+             <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:24px;">
+               ${post.tags.map(t => `<span class="tag-link" data-tag="${t}" style="font-size:11px; color:var(--brand-green); font-weight:700; background:white; border:1px solid var(--brand-green-soft); padding:4px 10px; border-radius:8px; transition:all 0.2s;">#${t}</span>`).join('')}
              </div>
            ` : ''}
 
-           <div style="border-top:1px solid var(--border); padding-top:20px; display:flex; align-items:center; justify-content:space-between; margin-top:auto;">
-              <div style="display:flex; align-items:center; gap:12px;">
-                 <div style="width:36px; height:36px; background:var(--brand-green); color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:14px;">${post.authorName ? post.authorName[0] : 'Ö'}</div>
+           <div style="border-top:1px solid var(--border); padding-top:24px; display:flex; align-items:center; justify-content:space-between; margin-top:auto;">
+              <div style="display:flex; align-items:center; gap:14px;">
+                 <div style="width:44px; height:44px; background:var(--brand-green); color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:16px; box-shadow:0 4px 10px rgba(0,69,38,0.2);">${post.authorName ? post.authorName[0] : 'Ö'}</div>
                  <div>
-                   <div style="font-weight:800; color:var(--text-primary); font-size:13px;">${post.authorName || 'Öğretmen'}</div>
-                   <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Eğitim Yazarı</div>
+                   <div style="font-weight:900; color:var(--text-primary); font-size:14px;">${post.authorName || 'Öğretmen'}</div>
+                   <div style="font-size:12px; color:var(--text-muted); margin-top:2px; font-weight:600;">Eğitim Yazarı</div>
                  </div>
               </div>
-              <div style="color:var(--brand-green);">${icon('chevronRight', 20)}</div>
+              <div style="display:flex; align-items:center; gap:10px;">
+                 <button class="btn-share-post" data-title="${post.title}" data-id="${post.id}" style="background:white; border:1px solid var(--border); width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--text-secondary); cursor:pointer; transition:var(--transition);" onmouseover="this.style.background='var(--brand-green-soft)'; this.style.color='var(--brand-green)'; this.style.borderColor='var(--brand-green)'" onmouseout="this.style.background='white'; this.style.color='var(--text-secondary)'; this.style.borderColor='var(--border)'">
+                    ${icon('externalLink', 16)}
+                 </button>
+                 <div style="color:var(--brand-green); background:var(--brand-green-soft); width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center;">${icon('chevronRight', 20)}</div>
+              </div>
            </div>
         </div>
       </div>
@@ -101,9 +110,15 @@ export async function renderPublicBlog(navigate) {
         </div>
       </header>
 
-      <div id="blog-posts-grid" style="padding:60px 5%; display:grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap:32px; max-width:1400px; margin:0 auto;">
-        ${renderPostsHtml(getFilteredPosts())}
-      </div>
+      <section class="blog-grid-section" style="padding:100px 5%; background: 
+        radial-gradient(at 100% 0%, rgba(0, 69, 38, 0.05) 0px, transparent 50%), 
+        radial-gradient(at 0% 100%, rgba(5, 150, 105, 0.05) 0px, transparent 50%), 
+        #f8fafc; position:relative; overflow:hidden;">
+        
+        <div id="blog-posts-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap:40px; max-width:1400px; margin:0 auto; position:relative; z-index:1;">
+          ${renderPostsHtml(getFilteredPosts())}
+        </div>
+      </section>
 
       <!-- Newsletter Banner -->
       <section style="margin:40px 5% 100px; background:linear-gradient(135deg, var(--bg-secondary) 0%, #ffffff 100%); border:1px solid var(--border); padding:80px 40px; border-radius:var(--radius-xl); text-align:center; box-shadow:var(--shadow-md);">
@@ -157,6 +172,12 @@ export async function renderPublicBlog(navigate) {
               currentTag = e.target.dataset.tag;
               updateUI();
               window.scrollTo({ top: 300, behavior: 'smooth' });
+              return;
+            }
+            if (e.target.closest('.btn-share-post')) {
+              e.stopPropagation();
+              const btn = e.target.closest('.btn-share-post');
+              sharePost(btn.dataset.title, btn.dataset.id);
               return;
             }
             navigateFn(`post-detail:${card.dataset.id}`);

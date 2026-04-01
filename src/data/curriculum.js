@@ -42,6 +42,7 @@ export const CONTENT_TYPES = [
   { id: 'yeni_nesil', label: 'Yeni Nesil', icon: '💡', color: '#f6c90e' },
   { id: 'tarama', label: 'Konu Tarama Testi', icon: '✅', color: '#ff9f43' },
   { id: 'deneme', label: 'Deneme Sınavı', icon: '📋', color: '#ff5a65' },
+  { id: 'video', label: 'Ders Videosu', icon: '🎬', color: '#ff0000' },
 ];
 
 // Default curriculum structure (MEB Maarif Modeli'ne uygun - 2024/2025)

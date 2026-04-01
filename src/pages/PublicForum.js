@@ -1,6 +1,7 @@
 import { icon } from '../components/icons.js';
 import { getApprovedPosts, seedInitialData } from '../store/publicData.js';
 import { auth } from '../lib/firebase.js';
+import { sharePost } from '../utils/share.js';
 
 export async function renderPublicForum(navigate) {
   // Seed if empty
@@ -56,39 +57,44 @@ export async function renderPublicForum(navigate) {
     return posts.map((post, i) => {
       const isNew = (Date.now() - post.createdAt) < (1000 * 60 * 60 * 24);
       return `
-      <div class="forum-card stagger-${i}" data-id="${post.id}" style="background:white; border:1px solid var(--border); border-radius:var(--radius-xl); padding:32px; box-shadow:var(--shadow-sm); display:flex; flex-direction:column; transition:var(--transition); cursor:pointer; position:relative;" onmouseover="this.style.transform='translateY(-8px)'; this.style.boxShadow='var(--shadow-lg)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow-sm)'">
-        ${isNew ? `<div style="position:absolute; top:20px; right:20px; background:var(--danger); color:white; font-size:10px; font-weight:900; padding:4px 8px; border-radius:4px; text-transform:uppercase; z-index:2;">YENİ</div>` : ''}
+      <div class="forum-card stagger-${i}" data-id="${post.id}" style="background:rgba(255, 255, 255, 0.7); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.5); border-top:4px solid var(--brand-green); border-radius:24px; padding:32px; box-shadow:var(--shadow-md); display:flex; flex-direction:column; transition:all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1); cursor:pointer; position:relative; overflow:hidden;" onmouseover="this.style.transform='translateY(-12px) scale(1.02)'; this.style.boxShadow='0 20px 40px rgba(0,0,0,0.08)'; this.style.background='rgba(255,255,255,0.95)'" onmouseout="this.style.transform='translateY(0) scale(1)'; this.style.boxShadow='var(--shadow-md)'; this.style.background='rgba(255, 255, 255, 0.7)'">
+        ${isNew ? `<div style="position:absolute; top:0; right:0; background:var(--danger); color:white; font-size:10px; font-weight:900; padding:6px 12px; border-bottom-left-radius:12px; text-transform:uppercase; z-index:2; letter-spacing:1px;">YENİ</div>` : ''}
         
-        <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:20px;">
-           <span style="font-size:10px; text-transform:uppercase; font-weight:800; letter-spacing:1px; background:var(--brand-green-soft); color:var(--brand-green); padding:4px 10px; border-radius:4px;">${post.grade || 'Genel'}</span>
-           <span style="font-size:10px; text-transform:uppercase; font-weight:800; letter-spacing:1px; background:var(--bg-secondary); color:var(--text-secondary); padding:4px 10px; border-radius:4px;">${post.category}</span>
+        <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:20px; align-items:center;">
+           <span style="font-size:11px; text-transform:uppercase; font-weight:800; letter-spacing:0.5px; background:var(--brand-green-soft); color:var(--brand-green); padding:6px 12px; border-radius:8px;">${post.grade || 'Genel'}</span>
+           <span style="font-size:11px; text-transform:uppercase; font-weight:800; letter-spacing:0.5px; background:white; color:var(--text-secondary); padding:6px 12px; border-radius:8px; border:1px solid var(--border);">${post.category}</span>
         </div>
 
-        <h3 style="font-size:20px; font-weight:800; margin-bottom:12px; line-height:1.4; color:var(--text-primary);">${post.title}</h3>
+        <h3 style="font-size:22px; font-weight:900; margin-bottom:16px; line-height:1.3; color:var(--text-primary); letter-spacing:-0.5px;">${post.title}</h3>
         
         ${post.topic ? `
-          <div style="font-size:13px; color:var(--brand-green); font-weight:700; margin-bottom:16px; display:flex; align-items:center; gap:6px;">
-            ${icon('book', 14)} ${post.topic}
+          <div style="font-size:14px; color:var(--brand-green); font-weight:700; margin-bottom:18px; display:flex; align-items:center; gap:8px; background:rgba(0,69,38,0.04); padding:8px 12px; border-radius:10px; align-self:flex-start;">
+            ${icon('book', 16)} ${post.topic}
           </div>
         ` : ''}
 
-        <p style="font-size:14px; color:var(--text-secondary); line-height:1.6; margin-bottom:24px; flex:1;">${post.summary || post.content.substring(0,120) + '...'}</p>
+        <p style="font-size:15px; color:var(--text-secondary); line-height:1.7; margin-bottom:28px; flex:1; text-align: justify; opacity:0.9;">${post.summary || post.content.substring(0,130) + '...'}</p>
         
         ${post.tags && post.tags.length > 0 ? `
-          <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:20px;">
-            ${post.tags.map(t => `<span class="tag-link" data-tag="${t}" style="font-size:10px; color:var(--brand-green); font-weight:700; background:rgba(0,102,51,0.05); padding:3px 8px; border-radius:4px; transition:all 0.2s;">#${t}</span>`).join('')}
+          <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:24px;">
+            ${post.tags.map(t => `<span class="tag-link" data-tag="${t}" style="font-size:11px; color:var(--brand-green); font-weight:700; background:white; border:1px solid var(--brand-green-soft); padding:4px 10px; border-radius:8px; transition:all 0.2s;">#${t}</span>`).join('')}
           </div>
         ` : ''}
 
-        <div style="border-top:1px solid var(--border); padding-top:20px; display:flex; align-items:center; justify-content:space-between; margin-top:auto;">
-           <div style="display:flex; align-items:center; gap:10px;">
-             <div style="width:36px; height:36px; background:var(--brand-green); color:white; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:800;">${post.authorName[0]}</div>
+        <div style="border-top:1px solid var(--border); padding-top:24px; display:flex; align-items:center; justify-content:space-between; margin-top:auto;">
+           <div style="display:flex; align-items:center; gap:12px;">
+             <div style="width:40px; height:40px; background:var(--brand-green); color:white; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:900; box-shadow:0 4px 10px rgba(0,69,38,0.2);">${post.authorName[0]}</div>
              <div>
-               <div style="font-size:13px; font-weight:800; color:var(--text-primary);">${post.authorName}</div>
-               <div style="font-size:11px; color:var(--text-muted);">${new Date(post.createdAt).toLocaleDateString('tr-TR')}</div>
+               <div style="font-size:14px; font-weight:800; color:var(--text-primary);">${post.authorName}</div>
+               <div style="font-size:12px; color:var(--text-muted);">${new Date(post.createdAt).toLocaleDateString('tr-TR')}</div>
              </div>
            </div>
-           <div style="color:var(--brand-green);">${icon('chevronRight', 20)}</div>
+           <div style="display:flex; align-items:center; gap:10px;">
+             <button class="btn-share-post" data-title="${post.title}" data-id="${post.id}" style="background:white; border:1px solid var(--border); width:36px; height:36px; border-radius:12px; display:flex; align-items:center; justify-content:center; color:var(--text-secondary); cursor:pointer; transition:var(--transition);" onmouseover="this.style.background='var(--brand-green-soft)'; this.style.color='var(--brand-green)'; this.style.borderColor='var(--brand-green)'" onmouseout="this.style.background='white'; this.style.color='var(--text-secondary)'; this.style.borderColor='var(--border)'">
+                ${icon('externalLink', 16)}
+             </button>
+             <div style="color:var(--brand-green); background:var(--brand-green-soft); width:36px; height:36px; border-radius:12px; display:flex; align-items:center; justify-content:center;">${icon('chevronRight', 20)}</div>
+           </div>
         </div>
       </div>
       `;
@@ -119,9 +125,23 @@ export async function renderPublicForum(navigate) {
         </div>
       </header>
 
-      <div id="forum-posts-grid" style="padding:60px 5%; display:grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap:24px; max-width:1400px; margin:0 auto;">
-        ${renderPostsHtml(getFilteredPosts())}
-      </div>
+      <section class="forum-grid-section" style="padding:100px 5%; background: 
+        radial-gradient(at 0% 0%, rgba(0, 69, 38, 0.08) 0px, transparent 50%), 
+        radial-gradient(at 50% 0%, rgba(5, 150, 105, 0.05) 0px, transparent 50%), 
+        radial-gradient(at 100% 0%, rgba(0, 69, 38, 0.08) 0px, transparent 50%), 
+        radial-gradient(at 50% 50%, rgba(236, 253, 245, 0.5) 0px, transparent 50%), 
+        radial-gradient(at 0% 100%, rgba(5, 150, 105, 0.08) 0px, transparent 50%), 
+        radial-gradient(at 100% 100%, rgba(0, 69, 38, 0.08) 0px, transparent 50%),
+        #f8fafc; position:relative; overflow:hidden;">
+        
+        <!-- Decorative blurred orbs for even more depth -->
+        <div style="position:absolute; top:15%; left:5%; width:500px; height:500px; background:var(--brand-green-soft); border-radius:50%; filter:blur(120px); opacity:0.7; z-index:0; pointer-events:none;"></div>
+        <div style="position:absolute; bottom:10%; right:5%; width:450px; height:450px; background:rgba(5,150,105,0.12); border-radius:50%; filter:blur(100px); opacity:0.5; z-index:0; pointer-events:none;"></div>
+        
+        <div id="forum-posts-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap:40px; max-width:1400px; margin:0 auto; position:relative; z-index:1;">
+          ${renderPostsHtml(getFilteredPosts())}
+        </div>
+      </section>
     </div>
   `;
 
@@ -163,6 +183,12 @@ export async function renderPublicForum(navigate) {
               e.stopPropagation();
               currentTag = e.target.dataset.tag;
               updateUI();
+              return;
+            }
+            if (e.target.closest('.btn-share-post')) {
+              e.stopPropagation();
+              const btn = e.target.closest('.btn-share-post');
+              sharePost(btn.dataset.title, btn.dataset.id);
               return;
             }
             navigateFn(`post-detail:${card.dataset.id}`);

@@ -80,7 +80,13 @@ function renderSidebar(state, currentPage, navigate) {
         </svg>
         Çıkış Yap
       </button>
-      <div style="font-size:11px; color:var(--text-on-green-muted); opacity:0.8;">${state.settings.footerText || 'v1.0 • Öğretmen Paneli'}</div>
+      <div style="display:flex; gap:12px; margin-bottom:16px; padding:0 4px;">
+        <a href="https://x.com" target="_blank" style="color:var(--text-on-green-muted); opacity:0.7; transition:all 0.2s;" onmouseover="this.style.opacity='1'; this.style.transform='translateY(-2px)'" onmouseout="this.style.opacity='0.7'; this.style.transform='translateY(0)'">${icon('xSocial', 15)}</a>
+        <a href="https://instagram.com" target="_blank" style="color:var(--text-on-green-muted); opacity:0.7; transition:all 0.2s;" onmouseover="this.style.opacity='1'; this.style.transform='translateY(-2px)'" onmouseout="this.style.opacity='0.7'; this.style.transform='translateY(0)'">${icon('instagram', 15)}</a>
+        <a href="https://telegram.me" target="_blank" style="color:var(--text-on-green-muted); opacity:0.7; transition:all 0.2s;" onmouseover="this.style.opacity='1'; this.style.transform='translateY(-2px)'" onmouseout="this.style.opacity='0.7'; this.style.transform='translateY(0)'">${icon('telegram', 15)}</a>
+        <a href="https://youtube.com" target="_blank" style="color:var(--text-on-green-muted); opacity:0.7; transition:all 0.2s;" onmouseover="this.style.opacity='1'; this.style.transform='translateY(-2px)'" onmouseout="this.style.opacity='0.7'; this.style.transform='translateY(0)'">${icon('youtube', 15)}</a>
+      </div>
+      <div style="font-size:11px; color:var(--text-on-green-muted); opacity:0.5; font-weight:700; letter-spacing:0.5px; text-transform:uppercase;">${state.settings.footerText || 'v1.0 • BITIKA.APP'}</div>
     </div>
   `;
 }

@@ -51,19 +51,18 @@ export async function renderPublicPostDetail(postId, navigate) {
       <div class="post-body-container" style="max-width:900px; margin:-60px auto 100px; padding:0 24px; position:relative; z-index:3;">
         <div style="background:white; padding:60px; border-radius:var(--radius-xl); border:1px solid var(--border); box-shadow:var(--shadow-xl);">
            <div class="post-content-rich" style="font-size:19px; line-height:1.8; color:var(--text-primary);">
-              ${(post.content || '').split('\n').map(p => p.trim() ? `<p style="margin-bottom:24px;">${p}</p>` : '').join('') || '<p style="color:var(--text-muted); font-style:italic;">Bu yazı henüz içerik barındırmıyor.</p>'}
+              ${(post.content || '').split('\n').map(p => p.trim() ? `<p style="margin-bottom:24px; text-align: justify;">${p}</p>` : '').join('') || '<p style="color:var(--text-muted); font-style:italic;">Bu yazı henüz içerik barındırmıyor.</p>'}
            </div>
 
-           <div style="margin-top:60px; padding-top:40px; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px;">
-              <div style="display:flex; gap:12px;">
-                 <button class="btn btn-ghost" style="gap:8px;">${icon('star', 20)} Faydalı Buldum</button>
-                 <button class="btn btn-ghost" style="gap:8px;">${icon('chat', 20)} Yorum Yap</button>
-              </div>
-              <div style="display:flex; gap:12px;">
-                 <button class="btn btn-secondary" style="border-radius:50%; width:44px; height:44px; padding:0; display:flex; align-items:center; justify-content:center;">${icon('info', 18)}</button>
-                 <button class="btn btn-secondary" style="border-radius:50%; width:44px; height:44px; padding:0; display:flex; align-items:center; justify-content:center;">${icon('settings', 18)}</button>
-              </div>
-           </div>
+          <div style="margin-top:60px; padding:40px; border-radius:var(--radius-xl); background:var(--bg-secondary); border:1px solid var(--border);">
+            <h4 style="font-size:18px; font-weight:800; color:var(--brand-green); margin-bottom:20px; text-align:center;">Bu Yazıyı Paylaşın</h4>
+            <div style="display:flex; justify-content:center; gap:16px; flex-wrap:wrap;">
+              <button class="btn-share-action" data-type="whatsapp" style="flex:1; min-width:140px; display:flex; align-items:center; justify-content:center; gap:10px; background:#25D366; color:white; border:none; padding:12px 20px; border-radius:100px; font-weight:700; cursor:pointer; transition:all 0.2s;">${icon('whatsapp', 18)} WhatsApp</button>
+              <button class="btn-share-action" data-type="telegram" style="flex:1; min-width:140px; display:flex; align-items:center; justify-content:center; gap:10px; background:#0088cc; color:white; border:none; padding:12px 20px; border-radius:100px; font-weight:700; cursor:pointer; transition:all 0.2s;">${icon('telegram', 18)} Telegram</button>
+              <button class="btn-share-action" data-type="x" style="flex:1; min-width:140px; display:flex; align-items:center; justify-content:center; gap:10px; background:#000; color:white; border:none; padding:12px 20px; border-radius:100px; font-weight:700; cursor:pointer; transition:all 0.2s;">${icon('xSocial', 18)} X (Twitter)</button>
+              <button class="btn-share-action" data-type="copy" style="flex:1; min-width:140px; display:flex; align-items:center; justify-content:center; gap:10px; background:white; color:var(--text-primary); border:1px solid var(--border); padding:12px 20px; border-radius:100px; font-weight:700; cursor:pointer; transition:all 0.2s;">${icon('copy', 18)} Kopyala</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -80,5 +79,26 @@ export async function renderPublicPostDetail(postId, navigate) {
     </div>
   `;
 
-  return { html };
+  return { 
+    html,
+    init: (el) => {
+      const url = `${window.location.origin}/#post-detail:${post.id}`;
+      const text = encodeURIComponent(`${post.title} - bitika.app`);
+
+      el.querySelectorAll('.btn-share-action').forEach(btn => {
+        btn.onclick = () => {
+          const type = btn.dataset.type;
+          if (type === 'whatsapp') window.open(`https://wa.me/?text=${text}%20${url}`);
+          else if (type === 'telegram') window.open(`https://t.me/share/url?url=${url}&text=${text}`);
+          else if (type === 'x') window.open(`https://x.com/intent/post?text=${text}&url=${url}`);
+          else if (type === 'copy') {
+            navigator.clipboard.writeText(decodeURIComponent(url));
+            const originalIcon = btn.innerHTML;
+            btn.innerHTML = `${icon('check', 18)} Kopyalandı!`;
+            setTimeout(() => { btn.innerHTML = originalIcon; }, 2000);
+          }
+        };
+      });
+    }
+  };
 }

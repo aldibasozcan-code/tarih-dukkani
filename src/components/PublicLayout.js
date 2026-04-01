@@ -65,11 +65,16 @@ export function renderPublicLayout(currentPage, navigate) {
             <a href="#" class="footer-link" data-nav="dashboard">Materyal Paylaşımı</a>
           </div>
           <div>
-            <h4 style="margin-bottom:20px; font-weight:700;">İletişim</h4>
-            <div style="color:rgba(255,255,255,0.6); font-size:14px; margin-bottom:12px;">destek@bitika.app</div>
-            <div style="display:flex; gap:12px; margin-top:20px;">
-              ${icon('chat', 20)}
-              ${icon('calendar', 20)}
+            <h4 style="margin-bottom:20px; font-weight:700;">Bizi Takip Edin</h4>
+            <div style="display:flex; gap:12px;">
+              <a href="https://x.com" target="_blank" class="social-icon-circle">${icon('xSocial', 18)}</a>
+              <a href="https://instagram.com" target="_blank" class="social-icon-circle">${icon('instagram', 18)}</a>
+              <a href="https://telegram.me" target="_blank" class="social-icon-circle">${icon('telegram', 18)}</a>
+              <a href="https://youtube.com" target="_blank" class="social-icon-circle">${icon('youtube', 18)}</a>
+            </div>
+            <div style="margin-top:24px;">
+              <div style="color:rgba(255,255,255,0.5); font-size:12px; margin-bottom:4px; text-transform:uppercase; letter-spacing:1px; font-weight:700;">Destek</div>
+              <div style="color:white; font-size:14px; font-weight:600;">destek@bitika.app</div>
             </div>
           </div>
         </div>

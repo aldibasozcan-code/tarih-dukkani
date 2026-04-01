@@ -55,17 +55,17 @@ export async function renderPublish(navigate) {
               </select>
             </div>
             
-            <div class="form-group mb-4">
-              <label style="font-weight:700; color:var(--text-secondary); margin-bottom:8px; display:block; font-size:13px;">Kategori / Tür</label>
-              <select id="pub-category" class="form-control">
-                <option value="Konu Anlatımı">Konu Anlatımı / Özet</option>
-                <option value="Yaprak Test">Yaprak Test / Deneme</option>
-                <option value="Yazılı Hazırlık">Yazılı Hazırlık</option>
-                <option value="Ders Sunumu">Ders Sunumu / Materyal</option>
-                <option value="Rehberlik">Rehberlik / Motivasyon</option>
-              </select>
-            </div>
+          <div class="form-group mb-4">
+            <label style="font-weight:700; color:var(--text-secondary); margin-bottom:8px; display:block; font-size:13px;">Kategori / Tür</label>
+            <select id="pub-category" class="form-control">
+              <option value="Konu Anlatımı">Konu Anlatımı / Özet</option>
+              <option value="Yaprak Test">Yaprak Test / Deneme</option>
+              <option value="Yazılı Hazırlık">Yazılı Hazırlık</option>
+              <option value="Ders Sunumu">Ders Sunumu / Materyal</option>
+              <option value="Rehberlik">Rehberlik / Motivasyon</option>
+            </select>
           </div>
+        </div>
 
           <div class="form-group mb-4">
             <label style="font-weight:700; color:var(--text-secondary); margin-bottom:8px; display:block; font-size:13px;">Konu / Ünite Adı</label>
@@ -210,6 +210,10 @@ export async function renderPublish(navigate) {
         selectedTags = [];
         updateTagChips();
       };
+
+      el.querySelector('#pub-type').addEventListener('change', (e) => {
+        updateCategoryOptions(e.target.value);
+      });
 
       const forumTags = ['deneme', 'konuozeti', 'cikmissorular', 'mufredat', 'etkinlik', 'sunum', 'yazilihazirlik'];
       const blogTags = ['akademik', 'pedagoji', 'edtech', 'mebGundemi', 'rehberlik', 'inceleme', 'deneyim'];
