@@ -26,7 +26,12 @@ export function renderCalendar(navigate) {
             </div>
           </div>
           <div class="card" style="flex: 1; padding: 0; overflow: hidden; display: flex; min-height: calc(100vh - 200px);">
-            <iframe src="https://calendar.google.com/calendar/embed?src=${encodeURIComponent(calId)}&ctz=${Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Istanbul'}&showTitle=0&showPrint=0&showTabs=1&showCalendars=0&showTz=0" style="border: 0; width: 100%; height: 100%;" frameborder="0" scrolling="no"></iframe>
+            ${(() => {
+              const ids = calId.split(',').map(id => id.trim()).filter(id => id);
+              const srcParams = ids.map(id => `src=${encodeURIComponent(id)}`).join('&');
+              const tzone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Istanbul';
+              return `<iframe src="https://calendar.google.com/calendar/embed?${srcParams}&ctz=${tzone}&showTitle=0&showPrint=0&showTabs=1&showCalendars=0&showTz=0" style="border: 0; width: 100%; height: 100%;" frameborder="0" scrolling="no"></iframe>`;
+            })()}
           </div>
         </div>
       `,

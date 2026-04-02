@@ -122,8 +122,11 @@ export function renderSettings(navigate) {
             </p>
           </div>
           <div class="form-group">
-            <label>Google Takvim ID (Örn: mailiniz@gmail.com)</label>
-            <input type="text" id="g-cal-id" value="${state.settings.calendarId || ''}" placeholder="adınız@gmail.com veya özel takvim ID'si">
+            <label>Google Takvim ID(leri)</label>
+            <input type="text" id="g-cal-id" value="${state.settings.calendarId || ''}" placeholder="Örn: mail1@gmail.com, mail2@gmail.com">
+            <p style="font-size:11px;color:var(--text-muted);margin-top:4px;">
+              Birden fazla takvim eklemek için ID'leri virgül (,) ile ayırarak yazın. İlk sıradaki takvime yeni dersler otomatik eklenir.
+            </p>
           </div>
           <button class="btn btn-primary" id="btn-save-calendar">${icon('check', 14)} Takvim Ayarlarını Kaydet</button>
         </div>

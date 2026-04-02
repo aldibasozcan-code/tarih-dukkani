@@ -458,7 +458,8 @@ export function deleteGroup(id) {
 async function addEventToGoogleCalendar(lesson) {
   const token = localStorage.getItem('_gcal_token');
   const state = getState();
-  const calId = state.settings?.calendarId || 'primary';
+  const rawCalId = state.settings?.calendarId || 'primary';
+  const calId = rawCalId.split(',')[0].trim() || 'primary';
   const encodedCalId = encodeURIComponent(calId);
 
   // Doğrudan yetki yoksa (veya süresi dolduysa) Google Takvim Ekleme sayfasını yeni sekmede aç.
