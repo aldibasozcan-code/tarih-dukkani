@@ -81,8 +81,8 @@ export function renderPublicLayout(currentPage, navigate) {
         <div style="border-top:1px solid rgba(255,255,255,0.1); padding-top:40px; display:flex; justify-content:space-between; align-items:center; font-size:13px; color:rgba(255,255,255,0.4);">
           <div>© 2026 bitika.app. Tüm hakları saklıdır.</div>
           <div style="display:flex; gap:24px;">
-            <a href="#terms-of-service" data-nav="terms-of-service" style="color:inherit; text-decoration:none;">Kullanım Koşulları</a>
-            <a href="#privacy" data-nav="privacy" style="color:inherit; text-decoration:none;">Gizlilik Politikası</a>
+            <a href="/terms.html" style="color:inherit; text-decoration:none;">Kullanım Koşulları</a>
+            <a href="/privacy.html" style="color:inherit; text-decoration:none;">Gizlilik Politikası</a>
           </div>
         </div>
       </footer>

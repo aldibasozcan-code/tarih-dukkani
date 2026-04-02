@@ -64,8 +64,8 @@ export function renderLogin() {
         <div class="login-footer">
           <p>© ${new Date().getFullYear()} Bitig.app. Tüm Hakları Saklıdır.</p>
           <div style="margin-top: 12px; display: flex; justify-content: center; gap: 16px;">
-            <a href="#privacy" style="color: var(--text-muted); text-decoration: none; font-weight: 600; font-size: 11px;">Gizlilik Politikası</a>
-            <a href="#terms-of-service" style="color: var(--text-muted); text-decoration: none; font-weight: 600; font-size: 11px;">Kullanım Şartları</a>
+            <a href="/privacy.html" style="color: var(--text-muted); text-decoration: none; font-weight: 600; font-size: 11px;">Gizlilik Politikası</a>
+            <a href="/terms.html" style="color: var(--text-muted); text-decoration: none; font-weight: 600; font-size: 11px;">Kullanım Şartları</a>
           </div>
         </div>
       </div>
