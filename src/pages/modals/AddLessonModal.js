@@ -1,7 +1,7 @@
 // ═════════════════════════════════════════════════
 // ADD LESSON MODAL
 // ═════════════════════════════════════════════════
-import { getState, addLesson } from '../../store/store.js';
+import { getState, addLesson, checkLessonConflict } from '../../store/store.js';
 import { SUBJECTS, getSubjectsForBranches } from '../../data/curriculum.js';
 import { openModal, closeModal } from '../../components/modal.js';
 import { escHtml } from '../../utils/helpers.js';
@@ -10,18 +10,19 @@ import { icon } from '../../components/icons.js';
 export function openAddLessonModal(onSave, prefill = {}) {
   const state = getState();
   const today = new Date().toISOString().split('T')[0];
+  const hasGCal = !!localStorage.getItem('_gcal_token');
 
   openModal({
     title: 'Ders Ekle',
     body: `
-      <div id="l-conflict-alert" class="login-alert error" style="display: none; margin-bottom: 24px; font-size: 15px; line-height: 1.6; align-items: flex-start; gap: 16px; padding: 20px 24px; border-radius: var(--radius-lg); background: rgba(220, 38, 38, 0.08); border: 1px solid rgba(220, 38, 38, 0.3); color: var(--danger); box-shadow: 0 4px 12px rgba(220,38,38,0.1);"></div>
+      <div id="l-conflict-alert" class="login-alert error" style="display: none; margin-bottom: 24px; font-size: 14px; line-height: 1.5; align-items: flex-start; gap: 12px; padding: 16px; border-radius: var(--radius-lg); background: rgba(220, 38, 38, 0.05); border: 1px solid rgba(220, 38, 38, 0.2); color: var(--danger);"></div>
       
       <div class="form-row">
         <div class="form-group">
           <label>Tür *</label>
           <select id="l-type">
             <option value="student">Bireysel Öğrenci</option>
-            <option value="group">Grup</option>
+            <option value="group" ${prefill.type === 'group' ? 'selected' : ''}>Grup</option>
           </select>
         </div>
         <div class="form-group" id="l-ref-group">
@@ -63,10 +64,20 @@ export function openAddLessonModal(onSave, prefill = {}) {
         <label>Notlar</label>
         <textarea id="l-notes" rows="2" placeholder="Ders notları..."></textarea>
       </div>
+
+      <div class="form-group" style="margin-top:10px;">
+        <label class="checkbox-container" style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:14px;">
+          <input type="checkbox" id="l-sync-google" ${hasGCal ? 'checked' : ''} style="width:18px; height:18px;">
+          <span style="display:flex; align-items:center; gap:6px;">
+            ${icon('calendar', 16)} Google Takvim ile Senkronize Et
+            ${hasGCal ? '<span style="color:var(--success); font-size:11px; font-weight:700;">(Bağlı)</span>' : '<span style="color:var(--text-muted); font-size:11px;">(Hesap bağlı değilsa manuel eklenebilir)</span>'}
+          </span>
+        </label>
+      </div>
     `,
     footer: `
       <button class="btn btn-secondary" id="l-cancel">İptal</button>
-      <button class="btn btn-primary" id="l-save">Ekle</button>
+      <button class="btn btn-primary" id="l-save">Dersi Takvime Ekle</button>
     `,
   });
 
@@ -189,12 +200,45 @@ export function openAddLessonModal(onSave, prefill = {}) {
     updateUnitOptions();
   });
 
+  function checkConflictLive() {
+    const date = document.getElementById('l-date').value;
+    const start = document.getElementById('l-start').value;
+    const end = document.getElementById('l-end').value || addMins(start, 60);
+
+    if (!date || !start) return;
+
+    const conflict = checkLessonConflict(date, start, end);
+    if (conflict) {
+      conflictAlert.style.display = 'flex';
+      if (conflict.type === 'internal') {
+        conflictAlert.innerHTML = `
+          <div style="margin-top:2px;">${icon('alertCircle', 20)}</div>
+          <div style="flex:1;">
+            <strong>Zaman Çakışması (Yerel):</strong> ${conflict.lesson.startTime} - ${conflict.lesson.endTime} saatleri arasında <strong>"${escHtml(conflict.lesson.title)}"</strong> dersi var.
+          </div>
+        `;
+      } else {
+        conflictAlert.innerHTML = `
+          <div style="margin-top:2px;">${icon('calendar', 20)}</div>
+          <div style="flex:1;">
+            <strong>Google Takvim Çakışması:</strong> ${conflict.event.startTime} - ${conflict.event.endTime} saatleri arasında <strong>"${escHtml(conflict.event.title)}"</strong> etkinliği var.
+          </div>
+        `;
+      }
+    } else {
+      conflictAlert.style.display = 'none';
+    }
+  }
+
   unitSel.addEventListener('change', updateTopicOptions);
 
+  document.getElementById('l-date')?.addEventListener('change', checkConflictLive);
   document.getElementById('l-start')?.addEventListener('change', (e) => {
     const endEl = document.getElementById('l-end');
     if (endEl) endEl.value = addMins(e.target.value, 60);
+    checkConflictLive();
   });
+  document.getElementById('l-end')?.addEventListener('change', checkConflictLive);
 
   document.getElementById('l-cancel')?.addEventListener('click', closeModal);
   document.getElementById('l-save')?.addEventListener('click', () => {
@@ -203,50 +247,20 @@ export function openAddLessonModal(onSave, prefill = {}) {
     const date = document.getElementById('l-date').value;
     const start = document.getElementById('l-start').value;
     const end = document.getElementById('l-end').value || addMins(start, 60);
+    const syncToGoogle = document.getElementById('l-sync-google')?.checked;
 
     if (!refId || !date || !start) { alert('Öğrenci/grup, tarih ve başlangıç saati zorunludur.'); return; }
 
-    // Çakışma Kontrolü (Conflict Check)
-    const existingLessons = state.lessons.filter(l => l.date === date && l.status !== 'postponed');
-    
-    // Time comparison helper (convert HH:MM to minutes since midnight)
-    const toMins = (timeStr) => {
-      const [h, m] = timeStr.split(':').map(Number);
-      return h * 60 + m;
-    };
-    
-    const startMins = toMins(start);
-    const endMins = toMins(end);
-
-    const checkConflict = existingLessons.find(l => {
-      const lStart = toMins(l.startTime);
-      const lEnd = toMins(l.endTime);
-      // Overlap condition:
-      // (start < lEnd) && (end > lStart)
-      return (startMins < lEnd) && (endMins > lStart);
-    });
-
-    if (checkConflict) {
-      conflictAlert.style.display = 'flex';
-      conflictAlert.innerHTML = `
-        <div style="margin-top:2px;">${icon('alertCircle', 28)}</div>
-        <div style="flex:1;">
-          <strong style="display:block; margin-bottom:6px; color:var(--danger); font-size:17px; font-weight: 700;">Zaman Çakışması</strong>
-          ${checkConflict.startTime} - ${checkConflict.endTime} saatleri arasında zaten <strong>"${escHtml(checkConflict.title)}"</strong> adlı dersiniz planlanmış görünüyor.<br>
-          <span style="opacity: 0.9; font-size: 14px; margin-top: 8px; font-weight: 500; display: inline-block; color:var(--text-secondary);">Lütfen çakışmayan farklı bir saat veya tarih seçerek tekrar deneyin.</span>
-        </div>
-      `;
-      document.querySelector('.modal-body').scrollTo({ top: 0, behavior: 'smooth' });
+    // Final Conflict Check
+    const conflict = checkLessonConflict(date, start, end);
+    if (conflict) {
+      alert(`Seçilen saatte bir çakışma var: ${conflict.type === 'internal' ? conflict.lesson.title : conflict.event.title}`);
       return;
     }
     
-    conflictAlert.style.display = 'none';
-
     const unitVal = unitSel.value;
     const [subjectId, gradeId, unitId] = (unitVal && unitVal.includes('|')) ? unitVal.split('|') : ['', '', ''];
     const topicId = topicSel.value;
-    
-    // Fetch descriptive titles
     const topicText = topicSel.options[topicSel.selectedIndex]?.text?.replace('✓ ', '').trim() || '';
 
     const refEntity = type === 'student'
@@ -267,6 +281,7 @@ export function openAddLessonModal(onSave, prefill = {}) {
       grade: refEntity?.grade || '',
       notes: document.getElementById('l-notes').value.trim(),
       fee: parseFloat(feeInput.value) || 0,
+      syncToGoogle: !!syncToGoogle
     });
 
     closeModal();

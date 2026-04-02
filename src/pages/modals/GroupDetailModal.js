@@ -1,7 +1,7 @@
 // ═════════════════════════════════════════════════
 // GROUP DETAIL MODAL
 // ═════════════════════════════════════════════════
-import { getState } from '../../store/store.js';
+import { getState, getFutureLessonsForRef } from '../../store/store.js';
 import { icon } from '../../components/icons.js';
 import { openModal, closeModal } from '../../components/modal.js';
 import { escHtml, getAvatarColor, getInitials, getGroupInitials, formatCurrency, formatDate } from '../../utils/helpers.js';
@@ -17,13 +17,6 @@ export function openGroupDetail(groupId, navigate) {
     ? group.curriculum
     : activeSubjects.map(s => ({ subject: s, grade: group.grade }));
   const completedSet = new Set(group.completedTopics || []);
-
-  // Get upcoming lessons for this group
-  const today = new Date().toISOString().split('T')[0];
-  const upcomingLessons = state.lessons
-    .filter(l => l.refId === groupId && l.date >= today)
-    .sort((a, b) => a.date.localeCompare(b.date))
-    .slice(0, 5);
 
   // Calculate total lessons done (status === 'completed')
   const completedLessonsCount = state.lessons.filter(l => l.type === 'group' && l.refId === group.id && l.status === 'completed').length;
@@ -86,17 +79,25 @@ export function openGroupDetail(groupId, navigate) {
       <div class="grid grid-2" style="margin-bottom:20px;">
         <!-- Upcoming lessons -->
         <div class="card card-sm">
-          <div style="font-weight:700;font-size:13px;margin-bottom:12px;color:var(--accent);">Yaklaşan Dersler</div>
-          ${upcomingLessons.length === 0 ? '<p style="font-size:12px;color:var(--text-muted);">Ders yok</p>' : ''}
-          ${upcomingLessons.map(l => `
-            <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
-              <div class="dot dot-blue" style="flex-shrink:0;"></div>
-              <div style="flex:1;">
-                <div style="font-size:12px;font-weight:600;">${formatDate(l.date)}</div>
-                <div style="font-size:11px;color:var(--text-muted);">${l.startTime} – ${l.endTime}</div>
-              </div>
-            </div>
-          `).join('')}
+          <div style="font-weight:700;font-size:13px;margin-bottom:12px;color:var(--accent);">Planlanmış Gelecek Dersler</div>
+          <div style="max-height: 250px; overflow-y: auto; padding-right: 4px;">
+            ${(() => {
+              const futureLessons = getFutureLessonsForRef('group', group.id);
+              if (futureLessons.length === 0) return '<p style="font-size:12px;color:var(--text-muted);padding:10px;text-align:center;">Ders yok</p>';
+              
+              return futureLessons.map(l => `
+                <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+                  <div style="width:36px;height:36px;border-radius:8px;background:var(--accent-glow);display:flex;align-items:center;justify-content:center;color:var(--accent);font-weight:700;font-size:10px;text-align:center;line-height:1.2;flex-shrink:0;">
+                    ${formatDate(l.date).split(' ').slice(0, 2).join('<br>')}
+                  </div>
+                  <div style="flex:1;">
+                    <div style="font-size:12px;font-weight:700;">${l.startTime} – ${l.endTime}</div>
+                    <div style="font-size:10px;color:var(--text-muted);">${formatDate(l.date).split(' ').slice(2).join(' ')}</div>
+                  </div>
+                </div>
+              `).join('');
+            })()}
+          </div>
         </div>
 
         <!-- Stats -->

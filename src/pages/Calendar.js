@@ -337,4 +337,18 @@ function initCalendarEvents(el, navigate) {
       // Potentially open detail modal here
     });
   });
+
+  el.querySelectorAll('.cal-drop-zone').forEach(zone => {
+    zone.addEventListener('click', (e) => {
+      if (e.target !== zone) return; // Only trigger if clicking the empty area
+      const date = zone.dataset.date;
+      const hour = zone.dataset.hour;
+      const startTime = hour ? `${String(hour).padStart(2, '0')}:00` : '14:00';
+      
+      import('./modals/AddLessonModal.js').then(m => {
+        m.openAddLessonModal(() => navigate('calendar', true), { date, startTime });
+      });
+    });
+    zone.style.cursor = 'pointer';
+  });
 }

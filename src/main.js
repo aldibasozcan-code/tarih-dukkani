@@ -278,6 +278,11 @@ function attachNavEvents() {
         import('./components/Layout.js').then(m => m.toggleSidebar());
         return;
       }
+      const logoutBtn = e.target.closest('#logout-btn');
+      if (logoutBtn) {
+        handleLogout(logoutBtn);
+        return;
+      }
     }
   });
 }

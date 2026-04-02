@@ -1,7 +1,7 @@
 // ═════════════════════════════════════════════════
 // STUDENT DETAIL MODAL
 // ═════════════════════════════════════════════════
-import { getState } from '../../store/store.js';
+import { getState, getFutureLessonsForRef } from '../../store/store.js';
 import { icon } from '../../components/icons.js';
 import { openModal, closeModal } from '../../components/modal.js';
 import { escHtml, getAvatarColor, getInitials, formatCurrency, formatDate } from '../../utils/helpers.js';
@@ -140,6 +140,38 @@ function buildDetailBody(student, subjects, state, activeSubjects) {
         <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">Kalan Konu</div>
         <div style="font-size:24px;font-weight:800;color:var(--warning);">${remainingTopics}</div>
         <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Toplam: ${totalTopics} konu</div>
+      </div>
+    </div>
+
+    <!-- Future Lessons -->
+    <div style="margin-bottom:20px;">
+      <h3 style="font-size:14px;font-weight:700;margin-bottom:10px;color:var(--accent);">Planlanmış Gelecek Dersler</h3>
+      <div class="card card-sm">
+        ${(() => {
+          const futureLessons = getFutureLessonsForRef('student', student.id);
+          if (futureLessons.length === 0) return '<p style="font-size:12px;color:var(--text-muted);padding:10px;text-align:center;">Planlanmış gelecek ders bulunmuyor.</p>';
+          
+          return `
+            <div style="max-height: 200px; overflow-y: auto; padding-right: 4px;">
+              ${futureLessons.map(l => `
+                <div style="display:flex;align-items:center;gap:12px;padding:10px;border-bottom:1px solid rgba(0,0,0,0.05);transition:background 0.2s;border-radius:8px;" class="list-item-hover">
+                  <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-glow);display:flex;align-items:center;justify-content:center;color:var(--accent);font-weight:700;font-size:11px;text-align:center;line-height:1.2;flex-shrink:0;">
+                    ${formatDate(l.date).split(' ').slice(0, 2).join('<br>')}
+                  </div>
+                  <div style="flex:1;">
+                    <div style="font-size:13px;font-weight:700;color:var(--text-primary);">${l.startTime} – ${l.endTime}</div>
+                    <div style="font-size:11px;color:var(--text-muted);">${formatDate(l.date).split(' ').slice(2).join(' ')}</div>
+                  </div>
+                  <div style="text-align:right;">
+                    <span class="badge ${l.status === 'scheduled' ? 'badge-info' : 'badge-warning'}" style="font-size:10px;">
+                      ${l.status === 'scheduled' ? 'Planlandı' : l.status.toUpperCase()}
+                    </span>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        })()}
       </div>
     </div>
 

@@ -513,13 +513,52 @@ async function addEventToGoogleCalendar(lesson) {
   }
 }
 
+export function checkLessonConflict(date, startTime, endTime, excludeId = null) {
+  const state = getState();
+  
+  // Time comparison helper (HH:MM to minutes)
+  const toMins = (t) => {
+    const [h, m] = t.split(':').map(Number);
+    return h * 60 + m;
+  };
+  
+  const startM = toMins(startTime);
+  const endM = toMins(endTime);
+
+  // 1. Check internal lessons
+  const internalConflict = state.lessons.find(l => {
+    if (l.id === excludeId) return false;
+    if (l.date !== date || l.status === 'postponed' || l.status === 'passive') return false;
+    const lStart = toMins(l.startTime);
+    const lEnd = toMins(l.endTime);
+    return (startM < lEnd) && (endM > lStart);
+  });
+
+  if (internalConflict) return { type: 'internal', lesson: internalConflict };
+
+  // 2. Check Google events (cached in state)
+  const googleConflict = (state.googleEvents || []).find(e => {
+    if (e.date !== date) return false;
+    const eStart = toMins(e.startTime);
+    const eEnd = toMins(e.endTime);
+    return (startM < eEnd) && (endM > eStart);
+  });
+
+  if (googleConflict) return { type: 'google', event: googleConflict };
+
+  return null;
+}
+
 export function addLesson(data) {
   const id = generateId();
-  const lesson = { id, ...data, status: 'upcoming', homework: null };
+  const { syncToGoogle, ...lessonData } = data;
+  const lesson = { id, ...lessonData, status: 'upcoming', homework: null };
   setState(s => ({ lessons: [...s.lessons, lesson] }));
   
-  // Arkaplanda Google Takvim'e Senkronize Et
-  addEventToGoogleCalendar(lesson);
+  // Arkaplanda Google Takvim'e Senkronize Et (Kullanıcı seçtiyse veya varsayılan)
+  if (syncToGoogle !== false) {
+    addEventToGoogleCalendar(lesson);
+  }
   
   return lesson;
 }
@@ -959,6 +998,14 @@ export async function getLessonsInRange(startDate, endDate) {
   
   const localLessons = state.lessons.filter(l => l.date >= startStr && l.date <= endStr && l.status !== 'passive');
   return [...localLessons, ...googleEvents];
+}
+
+export function getFutureLessonsForRef(type, refId) {
+  const state = getState();
+  const today = new Date().toISOString().split('T')[0];
+  return state.lessons
+    .filter(l => l.type === type && l.refId === refId && l.date >= today && l.status !== 'passive')
+    .sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
 }
 
 export function getMonthlyStats() {
