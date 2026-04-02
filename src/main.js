@@ -17,7 +17,7 @@ const PUBLIC_PAGES = ['home', 'forum', 'blog', 'post-detail'];
 const DASHBOARD_PAGES = ['dashboard', 'courses', 'students', 'groups', 'finance', 'calendar', 'chat', 'liveClass', 'publish', 'settings', 'profile', 'notifications', 'admin'];
 
 // ─── Navigate function ───
-async function navigate(page) {
+async function navigate(page, force = false) {
   let postId = null;
   if (page.includes(':')) {
     [page, postId] = page.split(':');
@@ -38,7 +38,7 @@ async function navigate(page) {
 
   const fullHash = postId ? `${page}:${postId}` : page;
   
-  if (currentPage === fullHash && document.getElementById('app')._pageLoaded) {
+  if (!force && currentPage === fullHash && document.getElementById('app')._pageLoaded) {
      return; // Already on this page
   }
 

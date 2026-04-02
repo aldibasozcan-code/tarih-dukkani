@@ -137,3 +137,36 @@ export function debounce(fn, delay = 300) {
   let t;
   return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), delay); };
 }
+
+// ─── YouTube URL Helpers ───
+export function getYoutubeVideoId(url) {
+  if (!url) return null;
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+  const match = url.match(regExp);
+  return (match && match[2].length === 11) ? match[2] : null;
+}
+
+export function isYoutubeUrl(url) {
+  return !!getYoutubeVideoId(url);
+}
+
+// ─── Google Drive URL Helpers ───
+export function getGoogleDrivePreviewUrl(url) {
+  if (!url) return null;
+  // Match file share links
+  const fileIdMatch = url.match(/\/file\/d\/([^\/]+)/) || url.match(/[?&]id=([^\/&]+)/);
+  if (fileIdMatch) {
+    return `https://drive.google.com/file/d/${fileIdMatch[1]}/preview`;
+  }
+  // Match doc/sheet share links
+  const docIdMatch = url.match(/\/d\/([^\/]+)/);
+  if (docIdMatch && (url.includes('docs.google.com') || url.includes('drive.google.com'))) {
+    // For documents, we change the last part to 'preview' or just keep the ID
+    return `https://docs.google.com/viewer?srcid=${docIdMatch[1]}&pid=explorer&efp=repts&a=v&chrome=false&embedded=true`;
+  }
+  return null;
+}
+
+export function isGoogleDriveUrl(url) {
+  return url?.includes('drive.google.com') || url?.includes('docs.google.com');
+}

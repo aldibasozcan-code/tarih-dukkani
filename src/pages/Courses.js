@@ -4,7 +4,7 @@
 import { getState, addMaterial, deleteMaterial, addUnit, updateUnit, deleteUnit, addTopic, updateTopic, deleteTopic } from '../store/store.js';
 import { icon } from '../components/icons.js';
 import { SUBJECTS, ALL_GRADES, CONTENT_TYPES, SUBJECT_GRADES, getSubjectsForBranches } from '../data/curriculum.js';
-import { escHtml } from '../utils/helpers.js';
+import { escHtml, getYoutubeVideoId, isYoutubeUrl, getGoogleDrivePreviewUrl, isGoogleDriveUrl } from '../utils/helpers.js';
 import { openModal, closeModal } from '../components/modal.js';
 
 export function renderCourses(navigate) {
@@ -124,10 +124,25 @@ function renderCurriculumContent(state, grade) {
                       ${topicMaterials.length === 0 ? '<span style="color:var(--text-muted); font-size:12px;">İçerik yok.</span>' : ''}
                       ${topicMaterials.map(m => {
                         const cType = CONTENT_TYPES.find(ct => ct.id === m.contentType);
+                        const isYoutube = isYoutubeUrl(m.link);
+                        const isDrive = isGoogleDriveUrl(m.link);
+                        const videoId = getYoutubeVideoId(m.link);
+                        const drivePreview = isDrive ? getGoogleDrivePreviewUrl(m.link) : null;
+                        
+                        let clickAttrs = 'target="_blank"';
+                        let classList = 'hover-underline';
+                        if (isYoutube) {
+                          clickAttrs = `data-video-id="${videoId}" data-video-title="${escHtml(m.title)}"`;
+                          classList += ' youtube-link';
+                        } else if (isDrive && drivePreview) {
+                          clickAttrs = `data-preview-url="${escHtml(drivePreview)}" data-preview-title="${escHtml(m.title)}"`;
+                          classList += ' drive-link';
+                        }
+
                         return `
                         <div style="display:flex; align-items:center; gap: 8px; font-size:13px;">
-                          <span style="font-size:14px;">${cType?.icon || '📄'}</span>
-                          <a href="${escHtml(m.link)}" target="_blank" style="color:var(--primary); text-decoration:none; display:flex; align-items:center; gap:4px;" class="hover-underline">
+                          <span style="font-size:14px;">${isYoutube ? '🎬' : (isDrive ? '📁' : (cType?.icon || '📄'))}</span>
+                          <a href="${escHtml(m.link)}" ${clickAttrs} class="${classList}" style="color:var(--primary); text-decoration:none; display:flex; align-items:center; gap:4px;">
                             ${escHtml(m.title)}
                           </a>
                           <button class="btn btn-ghost btn-sm" data-delete-material="${m.id}" style="padding:0px 4px; color:var(--danger); opacity:0.6; margin-left:auto;" title="İçeriği Sil">${icon('x', 14)}</button>
@@ -147,10 +162,25 @@ function renderCurriculumContent(state, grade) {
                 <div style="display:flex; flex-direction:column; gap:6px; padding-left: 8px;">
                   ${unitMaterials.map(m => {
                     const cType = CONTENT_TYPES.find(ct => ct.id === m.contentType);
+                    const isYoutube = isYoutubeUrl(m.link);
+                    const isDrive = isGoogleDriveUrl(m.link);
+                    const videoId = getYoutubeVideoId(m.link);
+                    const drivePreview = isDrive ? getGoogleDrivePreviewUrl(m.link) : null;
+
+                    let clickAttrs = 'target="_blank"';
+                    let classList = 'hover-underline';
+                    if (isYoutube) {
+                      clickAttrs = `data-video-id="${videoId}" data-video-title="${escHtml(m.title)}"`;
+                      classList += ' youtube-link';
+                    } else if (isDrive && drivePreview) {
+                      clickAttrs = `data-preview-url="${escHtml(drivePreview)}" data-preview-title="${escHtml(m.title)}"`;
+                      classList += ' drive-link';
+                    }
+
                     return `
                     <div style="display:flex; align-items:center; gap: 8px; font-size:13px; background: rgba(255,159,67,0.08); padding: 6px 10px; border-radius: 6px;">
-                      <span style="font-size:14px;">${cType?.icon || '📋'}</span>
-                      <a href="${escHtml(m.link)}" target="_blank" style="color:var(--text); font-weight: 500; text-decoration:none; display:flex; align-items:center; gap:4px;" class="hover-underline">
+                      <span style="font-size:14px;">${isYoutube ? '🎬' : (isDrive ? '📁' : (cType?.icon || '📋'))}</span>
+                      <a href="${escHtml(m.link)}" ${clickAttrs} class="${classList}" style="color:var(--text); font-weight: 500; text-decoration:none; display:flex; align-items:center; gap:4px;">
                         ${escHtml(m.title)}
                       </a>
                       <button class="btn btn-ghost btn-sm" data-delete-material="${m.id}" style="padding:0px 4px; color:var(--danger); opacity:0.8; margin-left:auto;">${icon('x', 14)}</button>
@@ -230,11 +260,78 @@ function initMaterialButtons(el, navigate) {
       e.stopPropagation();
       openCurriculumConfirmModal('İçeriği Sil', 'Bu metaryali silmek istediğinize emin misiniz?', () => {
         deleteMaterial(btn.dataset.deleteMaterial);
-        // Dispatch custom event to trigger app re-render or do manual refresh 
-        navigate('courses'); 
+        // Force app re-render to reflect changes immediately
+        navigate('courses', true); 
       });
     });
   });
+
+  el.querySelectorAll('.youtube-link').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const videoId = link.dataset.videoId;
+      const title = link.dataset.videoTitle;
+      if (videoId) {
+        openVideoModal(videoId, title);
+      }
+    });
+  });
+
+  el.querySelectorAll('.drive-link').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const previewUrl = link.dataset.previewUrl;
+      const title = link.dataset.previewTitle;
+      if (previewUrl) {
+        openDrivePreviewModal(previewUrl, title);
+      }
+    });
+  });
+}
+
+function openVideoModal(videoId, title) {
+  const body = `
+    <div style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; border-radius:12px; background:#000; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+      <iframe 
+        style="position:absolute; top:0; left:0; width:100%; height:100%; border:0;" 
+        src="https://www.youtube.com/embed/${videoId}?autoplay=1" 
+        title="${escHtml(title)}" 
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+        allowfullscreen>
+      </iframe>
+    </div>
+  `;
+
+  openModal({
+    title: title || 'Video İzle',
+    size: 'lg',
+    body,
+    footer: `<button class="btn btn-secondary" id="btn-close-video">Kapat</button>`
+  });
+
+  document.getElementById('btn-close-video')?.addEventListener('click', closeModal);
+}
+
+function openDrivePreviewModal(previewUrl, title) {
+  const body = `
+    <div style="height: 70vh; border-radius: 12px; overflow: hidden; background: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+      <iframe 
+        src="${previewUrl}" 
+        style="width: 100%; height: 100%; border: none;" 
+        allow="autoplay"
+        loading="lazy">
+      </iframe>
+    </div>
+  `;
+
+  openModal({
+    title: title || 'Dosya Önizleme',
+    size: 'xl',
+    body,
+    footer: `<button class="btn btn-secondary" id="btn-close-drive">Kapat</button>`
+  });
+
+  document.getElementById('btn-close-drive')?.addEventListener('click', closeModal);
 }
 
 // targetUnitId allows us to open the modal specifically for a unit test (without topic)

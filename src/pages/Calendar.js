@@ -33,10 +33,10 @@ export function renderCalendar(navigate) {
       init: (el, nav) => {
         el.querySelector('#btn-switch-internal')?.addEventListener('click', () => {
           localStorage.setItem('_cal_internal', '1');
-          nav('calendar');
+          nav('calendar', true);
         });
         el.querySelector('#btn-add-lesson')?.addEventListener('click', () => {
-          import('./modals/AddLessonModal.js').then(m => m.openAddLessonModal(() => nav('calendar')));
+          import('./modals/AddLessonModal.js').then(m => m.openAddLessonModal(() => nav('calendar', true)));
         });
       }
     };
@@ -124,11 +124,11 @@ export function renderCalendar(navigate) {
 
       el.querySelector('#btn-switch-google')?.addEventListener('click', () => {
         localStorage.removeItem('_cal_internal');
-        nav('calendar');
+        nav('calendar', true);
       });
 
       el.querySelector('#btn-add-lesson')?.addEventListener('click', () => {
-        import('./modals/AddLessonModal.js').then(m => m.openAddLessonModal(() => nav('calendar')));
+        import('./modals/AddLessonModal.js').then(m => m.openAddLessonModal(() => nav('calendar', true)));
       });
 
       initCalendarDragDrop(el, nav);
@@ -302,7 +302,7 @@ function initCalendarDragDrop(el, navigate) {
       if (id && newDate && newStartTime) {
         const { updateLessonTime } = await import('../store/store.js');
         updateLessonTime(id, newDate, newStartTime);
-        setTimeout(() => navigate('calendar'), 100);
+        setTimeout(() => navigate('calendar', true), 100);
       }
     });
   });
