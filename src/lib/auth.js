@@ -21,12 +21,15 @@ export const loginUser = async (email, password) => {
 // Google ile giriş
 export const loginWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
+    provider.addScope('https://www.googleapis.com/auth/calendar.events.readonly');
     
     try {
-        // Pop-up bazen domain/cookie engellerine takılabiliyor, Redirect daha garantidir.
-        // Ancak kullanıcı deneyimi için önce popup deneyip hata olursa redirect'e düşebiliriz.
-        // Şimdilik doğrudan Popup hatası alanlar için daha sağlam bir yapı kuruyoruz.
-        return await signInWithPopup(auth, provider);
+        const result = await signInWithPopup(auth, provider);
+        const credential = GoogleAuthProvider.credentialFromResult(result);
+        if (credential?.accessToken) {
+            localStorage.setItem('_gcal_token', credential.accessToken);
+        }
+        return result;
     } catch (error) {
         if (error.code === 'auth/unauthorized-domain') {
             console.error("Domain yetkisi hatası! Redirect yöntemine geçiliyor...", window.location.hostname);

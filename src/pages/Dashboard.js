@@ -59,12 +59,12 @@ function getRandomQuote() {
   return quotes[Math.floor(Math.random() * quotes.length)];
 }
 
-export function renderDashboard(navigate) {
+export async function renderDashboard(navigate) {
   const state = getState();
   const today = new Date();
   const dateStr = today.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
 
-  const todayLessons = getTodayLessons();
+  const todayLessons = await getTodayLessons();
   const pendingLessons = getPendingLessons();
   const stats = getMonthlyStats();
   
@@ -73,6 +73,8 @@ export function renderDashboard(navigate) {
     const y = new Date().getFullYear();
     return l.date?.startsWith(`${y}-${String(m + 1).padStart(2, '0')}`) && l.status === 'completed';
   }).length;
+
+  const hasGCalToken = !!localStorage.getItem('_gcal_token');
 
   const html = `
     <div class="fade-in">
@@ -86,6 +88,16 @@ export function renderDashboard(navigate) {
         </div>
       ` : ''}
 
+      ${!hasGCalToken ? `
+        <div class="pending-alert fade-in-up" style="background:rgba(66, 133, 244, 0.1); border-color:rgba(66, 133, 244, 0.3); color:#1a73e8;">
+           <div style="display:flex;align-items:center;gap:12px;">
+             ${icon('calendar', 18)}
+             <span style="font-size:13px;">Google Takvim randevularını burada görmek için oturumunuzu tazeleyin.</span>
+           </div>
+           <button class="btn btn-sm" id="btn-reconnect-gcal" style="background:#4285f4; color:white;">Bağlan</button>
+        </div>
+      ` : ''}
+
       <!-- Premium Welcome Banner -->
       <div class="welcome-banner-modern fade-in-up stagger-1" style="margin-bottom:32px;">
         <div class="welcome-text">
@@ -93,7 +105,7 @@ export function renderDashboard(navigate) {
             <span style="background:rgba(255,255,255,0.2); padding:6px 12px; border-radius:20px; font-size:12px; font-weight:700;">${dateStr.toUpperCase()}</span>
           </div>
           <h2 style="font-size:42px;">${getGreeting()}, ${state.profile.name.split(' ')[0]}!</h2>
-          <p style="font-size:18px; opacity:0.9; margin-top:8px;">Bugün ajandanızda ${todayLessons.length} ders planlanmış görünüyor.</p>
+          <p style="font-size:18px; opacity:0.9; margin-top:8px;">Bugün ajandanızda ${todayLessons.length} ders ve etkinlik planlanmış görünüyor.</p>
           
           <div class="quick-actions" style="margin-top:32px;">
             <button class="btn btn-primary glass" id="btn-add-lesson" style="background:white; color:var(--brand-green); font-weight:800; padding:12px 24px;">
@@ -166,27 +178,36 @@ export function renderDashboard(navigate) {
             ${todayLessons.length === 0 ? `
               <div class="empty-state" style="padding:60px 20px; opacity:0.6;">
                 ${icon('calendar', 48)}
-                <p style="margin-top:12px; font-weight:600;">Bugün için planlanmış bir dersiniz bulunmuyor.</p>
+                <p style="margin-top:12px; font-weight:600;">Bugün için planlanmış bir kayıt bulunmuyor.</p>
               </div>
             ` : todayLessons.map(lesson => {
               const status = getLessonStatus(lesson);
               const si = getLessonStatusInfo(status);
+              const borderColor = lesson.isGoogle ? '#4285f4' : (si.badgeClass.includes('success') ? 'var(--success)' : si.badgeClass.includes('warning') ? 'var(--warning)' : 'var(--border)');
+              const badgeLabel = lesson.isGoogle ? 'Google Takvim' : si.label;
+              const badgeClass = lesson.isGoogle ? 'badge-info' : si.badgeClass;
+
               return `
-                <div class="card card-sm hover-lift" style="margin-bottom:12px; border-left:4px solid ${si.badgeClass.includes('success') ? 'var(--success)' : si.badgeClass.includes('warning') ? 'var(--warning)' : 'var(--border)'}; background:rgba(255,255,255,0.5);" data-lesson-id="${lesson.id}">
+                <div class="card card-sm hover-lift" style="margin-bottom:12px; border-left:4px solid ${borderColor}; background:rgba(255,255,255,0.5);" data-lesson-id="${lesson.id}">
                   <div style="display:flex;align-items:center;gap:16px;">
                     <div style="flex:1;">
                       <div style="font-weight:700;font-size:15px;color:var(--text-primary);">${lesson.title}</div>
                       <div style="display:flex; align-items:center; gap:4px; font-size:12px; color:var(--text-muted); margin-top:4px;">
                         ${icon('clock', 12)} ${lesson.startTime} – ${lesson.endTime}
+                        ${lesson.isGoogle ? `<span style="margin-left:8px; color:#4285f4; font-weight:700;">${icon('externalLink', 10)} GCal</span>` : ''}
                       </div>
                     </div>
                     <div style="text-align:right;">
-                      <span class="badge ${si.badgeClass}" style="border-radius:20px;">${si.label}</span>
+                      <span class="badge ${badgeClass}" style="border-radius:20px; ${lesson.isGoogle ? 'background:#4285f4; color:white;' : ''}">${badgeLabel}</span>
                       <div style="margin-top:8px; display:flex; gap:6px; justify-content:flex-end;">
-                        ${status === 'waiting' || status === 'ongoing' ? `
+                        ${(status === 'waiting' || status === 'ongoing') && !lesson.isGoogle ? `
                           <button class="btn btn-success btn-sm btn-icon" data-complete-lesson="${lesson.id}" title="Tamamla">${icon('check', 14)}</button>
                         ` : ''}
-                        <a href="${generateGoogleCalendarUrl(lesson)}" target="_blank" class="btn btn-secondary btn-sm btn-icon" title="Takvime Ekle">${icon('externalLink', 14)}</a>
+                        ${lesson.isGoogle ? `
+                          <a href="${lesson.link}" target="_blank" class="btn btn-secondary btn-sm btn-icon" title="Takvimde Gör">${icon('externalLink', 14)}</a>
+                        ` : `
+                          <a href="${generateGoogleCalendarUrl(lesson)}" target="_blank" class="btn btn-secondary btn-sm btn-icon" title="Takvime Ekle">${icon('externalLink', 14)}</a>
+                        `}
                       </div>
                     </div>
                   </div>
@@ -320,6 +341,13 @@ function initDashboard(el, navigate) {
   // Season Review
   el.querySelector('#show-season-review-btn')?.addEventListener('click', () => {
     import('./modals/SeasonReviewModal.js').then(m => m.openSeasonReviewModal());
+  });
+
+  // Reconnect Google
+  el.querySelector('#btn-reconnect-gcal')?.addEventListener('click', async () => {
+    const { loginWithGoogle } = await import('../lib/auth.js');
+    await loginWithGoogle();
+    navigate('dashboard', true);
   });
 }
 

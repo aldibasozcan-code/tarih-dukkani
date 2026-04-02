@@ -84,6 +84,15 @@ export function renderPublicHome(navigate) {
           </div>
         </div>
       </section>
+
+      <!-- Legal Footer for Google Verification -->
+      <footer style="padding:40px 5%; background:var(--bg-card); text-align:center; border-top:1px solid var(--border);">
+        <p style="color:var(--text-muted); font-size:13px; margin-bottom:12px;">© ${new Date().getFullYear()} bitika.app. Eğitim ve materyal paylaşım platformu.</p>
+        <div style="display:flex; justify-content:center; gap:32px;">
+          <a href="#privacy" data-nav="privacy" style="color:var(--brand-green); text-decoration:none; font-weight:700; font-size:14px;">Gizlilik Politikası</a>
+          <a href="#terms-of-service" data-nav="terms-of-service" style="color:var(--brand-green); text-decoration:none; font-weight:700; font-size:14px;">Kullanım Şartları</a>
+        </div>
+      </footer>
     </div>
   `;
 

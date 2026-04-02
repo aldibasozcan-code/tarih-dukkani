@@ -1,17 +1,18 @@
 // ═════════════════════════════════════════════════
 // CALENDAR PAGE
 // ═════════════════════════════════════════════════
-import { getState, getLessonStatus, generateGoogleCalendarUrl } from '../store/store.js';
+import { getState, getLessonStatus, generateGoogleCalendarUrl, getWeekLessons, getLessonsInRange } from '../store/store.js';
 import { icon } from '../components/icons.js';
 import { MONTHS_TR, DAYS_SHORT } from '../data/curriculum.js';
 import { getMonthDays, addDays, getLessonStatusInfo } from '../utils/helpers.js';
 
-export function renderCalendar(navigate) {
+export async function renderCalendar(navigate) {
   const state = getState();
   const calId = state?.settings?.calendarId;
   const isInternalForced = localStorage.getItem('_cal_internal') === '1';
 
   if (calId && !isInternalForced) {
+    // ... Google Iframe view ...
     return {
       html: `
         <div class="fade-in" style="height: 100%; display: flex; flex-direction: column;">
@@ -50,7 +51,11 @@ export function renderCalendar(navigate) {
   const now = new Date();
   let viewYear = now.getFullYear();
   let viewMonth = now.getMonth();
-  let view = 'week'; // Default to week for better interactivity
+  let viewSelection = 'week'; 
+
+  // Fetch initial data
+  const monday = _getMonday(now);
+  const initialLessons = await getWeekLessons(monday);
 
   const html = `
     <div class="fade-in">
@@ -61,11 +66,11 @@ export function renderCalendar(navigate) {
         </div>
         <div style="display:flex;gap:8px;align-items:center;">
           <div class="tabs">
-            <button class="tab-btn ${view === 'month' ? 'active' : ''}" data-view="month">Ay</button>
-            <button class="tab-btn ${view === 'week' ? 'active' : ''}" data-view="week">Hafta</button>
+            <button class="tab-btn" data-view="month">Ay</button>
+            <button class="tab-btn active" data-view="week">Hafta</button>
           </div>
           <button class="btn btn-secondary" id="cal-prev">${icon('chevronLeft', 14)}</button>
-          <span id="cal-title" style="font-weight:700;min-width:140px;text-align:center;">${MONTHS_TR[viewMonth]} ${viewYear}</span>
+          <span id="cal-title" style="font-weight:700;min-width:140px;text-align:center;">Haftalık Görünüm</span>
           <button class="btn btn-secondary" id="cal-next">${icon('chevronRight', 14)}</button>
           <button class="btn btn-ghost btn-sm" id="cal-today">Bugün</button>
           ${calId ? `<button class="btn btn-secondary btn-sm" id="btn-switch-google">${icon('calendar', 14)} Google'a Dön</button>` : ''}
@@ -74,7 +79,7 @@ export function renderCalendar(navigate) {
       </div>
 
       <div id="calendar-view">
-        ${renderMonthView(getState(), viewYear, viewMonth)}
+        ${renderWeekView(getState(), monday, initialLessons)}
       </div>
     </div>
   `;
@@ -82,21 +87,31 @@ export function renderCalendar(navigate) {
   return {
     html,
     init: (el, nav) => {
-      let _year = viewYear, _month = viewMonth, _view = 'month';
-      let _weekStart = _getMonday(now);
+      let _year = viewYear, _month = viewMonth, _view = 'week';
+      let _weekStart = monday;
 
-      function refresh() {
+      async function refresh() {
         const calView = el.querySelector('#calendar-view');
         const title = el.querySelector('#cal-title');
+        
+        calView.innerHTML = `<div style="display:flex;justify-content:center;padding:100px;"><div class="spinner"></div></div>`;
+        
         if (_view === 'month') {
-          calView.innerHTML = renderMonthView(getState(), _year, _month);
+          const days = getMonthDays(_year, _month);
+          const start = days[0].date;
+          const end = days[days.length-1].date;
+          const lessons = await getLessonsInRange(start, end);
+          
+          calView.innerHTML = renderMonthView(getState(), _year, _month, lessons);
           title.textContent = `${MONTHS_TR[_month]} ${_year}`;
         } else {
-          calView.innerHTML = renderWeekView(getState(), _weekStart);
+          const lessons = await getWeekLessons(_weekStart);
+          calView.innerHTML = renderWeekView(getState(), _weekStart, lessons);
           const weekEnd = addDays(_weekStart, 6);
           title.textContent = `${_weekStart.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })} – ${weekEnd.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })}`;
         }
         initCalendarEvents(el, nav);
+        initCalendarDragDrop(el, nav);
       }
 
       el.querySelectorAll('[data-view]').forEach(btn => {
@@ -151,7 +166,7 @@ function _getMonday(d) {
   return mon;
 }
 
-function renderMonthView(state, year, month) {
+function renderMonthView(state, year, month, lessons = []) {
   const today = new Date().toISOString().split('T')[0];
   const days = getMonthDays(year, month);
 
@@ -166,27 +181,28 @@ function renderMonthView(state, year, month) {
         ${days.map(({ date, currentMonth }) => {
           const dateStr = date.toISOString().split('T')[0];
           const isToday = dateStr === today;
-          const dayLessons = state.lessons.filter(l => l.date === dateStr).slice(0, 4);
+          const dayLessons = lessons.filter(l => l.date === dateStr).slice(0, 4);
           return `
             <div class="cal-day cal-drop-zone ${isToday ? 'today' : ''} ${!currentMonth ? 'other-month' : ''}" data-date="${dateStr}">
               <div class="cal-day-num">${date.getDate()}</div>
               <div style="display:flex; flex-direction:column; gap:2px; margin-top:4px;">
                 ${dayLessons.map(l => {
                   const status = getLessonStatus(l);
-                  const color = status === 'completed' ? 'var(--success)' : status === 'waiting' ? 'var(--warning)' : 'var(--accent)';
+                  const color = l.isGoogle ? '#4285f4' : (status === 'completed' ? 'var(--success)' : status === 'waiting' ? 'var(--warning)' : 'var(--accent)');
                   
                   return `
                     <div class="cal-lesson-card" 
-                         draggable="true" 
+                         ${!l.isGoogle ? 'draggable="true"' : ''} 
                          data-id="${l.id}" 
+                         data-is-google="${l.isGoogle ? 'true' : 'false'}"
                          data-start-time="${l.startTime}"
-                         style="font-size:10px; padding:2px 4px; border-radius:4px; background:${color}15; border-left:2px solid ${color}; color:var(--text-primary); cursor:grab; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                         style="font-size:10px; padding:2px 4px; border-radius:4px; background:${color}15; border-left:2px solid ${color}; color:var(--text-primary); cursor:${l.isGoogle ? 'pointer' : 'grab'}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
                       <strong>${l.startTime}</strong> ${l.title}
                     </div>
                   `;
                 }).join('')}
               </div>
-              ${state.lessons.filter(l => l.date === dateStr).length > 4 ? `<div style="font-size:9px;color:var(--text-muted);margin-top:2px;">+${state.lessons.filter(l => l.date === dateStr).length - 4} daha</div>` : ''}
+              ${lessons.filter(l => l.date === dateStr).length > 4 ? `<div style="font-size:9px;color:var(--text-muted);margin-top:2px;">+${lessons.filter(l => l.date === dateStr).length - 4} daha</div>` : ''}
             </div>
           `;
         }).join('')}
@@ -195,7 +211,7 @@ function renderMonthView(state, year, month) {
   `;
 }
 
-function renderWeekView(state, weekStart) {
+function renderWeekView(state, weekStart, lessons = []) {
   const today = new Date().toISOString().split('T')[0];
   const hours = Array.from({ length: 17 }, (_, i) => i + 7); // 07:00 to 23:00
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
@@ -225,27 +241,28 @@ function renderWeekView(state, weekStart) {
             </div>
             ${days.map(d => {
               const ds = d.toISOString().split('T')[0];
-              const lessons = state.lessons.filter(l => l.date === ds && parseInt(l.startTime) === h);
+              const dayHourLessons = lessons.filter(l => l.date === ds && parseInt(l.startTime) === h);
               return `
                 <div class="cal-drop-zone" data-date="${ds}" data-hour="${h}" style="border-right:1px solid var(--border-light); position:relative; transition:background 0.2s;">
-                  ${lessons.map(l => {
+                  ${dayHourLessons.map(l => {
                     const status = getLessonStatus(l);
-                    const color = status === 'completed' ? 'var(--success)' : status === 'waiting' ? 'var(--warning)' : 'var(--accent)';
+                    const color = l.isGoogle ? '#4285f4' : (status === 'completed' ? 'var(--success)' : status === 'waiting' ? 'var(--warning)' : 'var(--accent)');
                     return `
                       <div class="cal-lesson-card" 
-                           draggable="true" 
+                           ${!l.isGoogle ? 'draggable="true"' : ''}
                            data-id="${l.id}"
+                           data-is-google="${l.isGoogle ? 'true' : 'false'}"
                            data-start-time="${l.startTime}"
-                           style="position:absolute; left:4px; right:4px; top:4px; bottom:4px; z-index:5; background:${color}15; border-left:4px solid ${color}; border-radius:6px; padding:8px; cursor:grab; box-shadow:var(--shadow-sm); overflow:hidden;">
+                           style="position:absolute; left:4px; right:4px; top:4px; bottom:4px; z-index:5; background:${color}15; border-left:4px solid ${color}; border-radius:6px; padding:8px; cursor:${l.isGoogle ? 'pointer' : 'grab'}; box-shadow:var(--shadow-sm); overflow:hidden;">
                         <div style="font-size:10px; font-weight:700; color:${color}; margin-bottom:2px; display:flex; justify-content:space-between;">
                           <span>${l.startTime} - ${l.endTime}</span>
-                          ${icon('dragHandle', 12)}
+                          ${!l.isGoogle ? icon('dragHandle', 12) : ''}
                         </div>
                         <div style="font-size:12px; font-weight:700; color:var(--text-primary); margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
                           ${l.title}
                         </div>
                         <div style="font-size:10px; color:var(--text-muted); display:flex; gap:4px; align-items:center;">
-                          ${icon('book', 10)} ${l.subject.charAt(0).toUpperCase() + l.subject.slice(1)}
+                          ${icon('book', 10)} ${l.isGoogle ? 'Google Takvim' : (l.subject.charAt(0).toUpperCase() + l.subject.slice(1))}
                         </div>
                       </div>
                     `;

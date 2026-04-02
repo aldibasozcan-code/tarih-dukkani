@@ -90,6 +90,8 @@ function createDefaultState() {
     lessons: [],
     // Transactions: { id, type:'income'|'expense', amount, description, date, lessonId }
     transactions: [],
+    // Cache for Google Calendar events
+    googleEvents: [],
   };
 }
 
@@ -846,6 +848,7 @@ export function setTourStep(step) {
 
 // ─── Computed ───
 export function getLessonStatus(lesson) {
+  if (lesson.isGoogle) return 'completed'; // Google events are just displayed
   const now = new Date();
   const start = new Date(`${lesson.date}T${lesson.startTime}:00`);
   const end = new Date(`${lesson.date}T${lesson.endTime}:00`);
@@ -858,6 +861,54 @@ export function getLessonStatus(lesson) {
   return 'waiting'; // needs confirmation
 }
 
+async function fetchGoogleEvents(startDate, endDate) {
+  const token = localStorage.getItem('_gcal_token');
+  if (!token) return [];
+
+  const state = getState();
+  const rawCalId = state.settings?.calendarId || 'primary';
+  const calendarIds = rawCalId.split(',').map(id => id.trim()).filter(id => id);
+  if (calendarIds.length === 0) calendarIds.push('primary');
+
+  const allEvents = [];
+  for (const calId of calendarIds) {
+    try {
+      const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calId)}/events?timeMin=${startDate.toISOString()}&timeMax=${endDate.toISOString()}&singleEvents=true&orderBy=startTime`;
+      const res = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
+      
+      if (res.status === 401) {
+        localStorage.removeItem('_gcal_token');
+        return [];
+      }
+      if (!res.ok) continue;
+
+      const data = await res.json();
+      const events = (data.items || []).map(item => {
+        const start = item.start.dateTime || item.start.date;
+        const end = item.end.dateTime || item.end.date;
+        const s = new Date(start);
+        const e = new Date(end);
+        
+        return {
+          id: `google_${item.id}`,
+          type: 'google',
+          title: item.summary || '(Adsız Etkinlik)',
+          date: s.toISOString().split('T')[0],
+          startTime: s.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', hour12: false }),
+          endTime: e.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', hour12: false }),
+          isGoogle: true,
+          link: item.htmlLink,
+          subject: 'Google Takvim'
+        };
+      });
+      allEvents.push(...events);
+    } catch (err) {
+      console.error("Google fetch error:", err);
+    }
+  }
+  return allEvents;
+}
+
 export function getPendingLessons() {
   const state = getState();
   return state.lessons.filter(l => {
@@ -867,22 +918,47 @@ export function getPendingLessons() {
   });
 }
 
-export function getTodayLessons() {
+export async function getTodayLessons() {
   const state = getState();
-  const today = new Date().toISOString().split('T')[0];
-  return state.lessons
-    .filter(l => l.date === today && l.status !== 'passive')
-    .sort((a, b) => a.startTime.localeCompare(b.startTime));
+  const now = new Date();
+  const today = now.toISOString().split('T')[0];
+  
+  const startOfDay = new Date(today + 'T00:00:00Z');
+  const endOfDay = new Date(today + 'T23:59:59Z');
+  
+  const googleEvents = await fetchGoogleEvents(startOfDay, endOfDay);
+  const localLessons = state.lessons.filter(l => l.date === today && l.status !== 'passive');
+  
+  return [...localLessons, ...googleEvents].sort((a, b) => a.startTime.localeCompare(b.startTime));
 }
 
-export function getWeekLessons(weekStart) {
+export async function getWeekLessons(weekStart) {
   const state = getState();
+  const startDate = new Date(weekStart);
+  const endDate = new Date(startDate);
+  endDate.setDate(endDate.getDate() + 7);
+
+  const googleEvents = await fetchGoogleEvents(startDate, endDate);
+  
   const days = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekStart);
     d.setDate(d.getDate() + i);
     return d.toISOString().split('T')[0];
   });
-  return state.lessons.filter(l => days.includes(l.date) && l.status !== 'passive');
+  
+  const localLessons = state.lessons.filter(l => days.includes(l.date) && l.status !== 'passive');
+  return [...localLessons, ...googleEvents];
+}
+
+export async function getLessonsInRange(startDate, endDate) {
+  const state = getState();
+  const googleEvents = await fetchGoogleEvents(startDate, endDate);
+  
+  const startStr = startDate.toISOString().split('T')[0];
+  const endStr = endDate.toISOString().split('T')[0];
+  
+  const localLessons = state.lessons.filter(l => l.date >= startStr && l.date <= endStr && l.status !== 'passive');
+  return [...localLessons, ...googleEvents];
 }
 
 export function getMonthlyStats() {

@@ -13,7 +13,7 @@ import { icon } from './components/icons.js';
 let currentPage = '';
 let currentLayout = null; // Forces initial layout render
 
-const PUBLIC_PAGES = ['home', 'forum', 'blog', 'post-detail'];
+const PUBLIC_PAGES = ['home', 'forum', 'blog', 'post-detail', 'privacy', 'terms-of-service'];
 const DASHBOARD_PAGES = ['dashboard', 'courses', 'students', 'groups', 'finance', 'calendar', 'chat', 'liveClass', 'publish', 'settings', 'profile', 'notifications', 'admin'];
 
 // ─── Navigate function ───
@@ -98,12 +98,18 @@ async function navigate(page, force = false) {
     } else if (page === 'post-detail') {
       module = await import('./pages/PublicPostDetail.js');
       result = await module.renderPublicPostDetail(postId, navigate);
+    } else if (page === 'privacy') {
+      module = await import('./pages/PrivacyPolicy.js');
+      result = module.renderPrivacyPolicy(navigate);
+    } else if (page === 'terms-of-service') {
+      module = await import('./pages/TermsOfService.js');
+      result = module.renderTermsOfService(navigate);
     } else {
       // Dashboard Pages
       switch (page) {
         case 'dashboard':
           module = await import('./pages/Dashboard.js');
-          result = module.renderDashboard(navigate);
+          result = await module.renderDashboard(navigate);
           break;
         case 'courses':
           module = await import('./pages/Courses.js');
@@ -123,7 +129,7 @@ async function navigate(page, force = false) {
           break;
         case 'calendar':
           module = await import('./pages/Calendar.js');
-          result = module.renderCalendar(navigate);
+          result = await module.renderCalendar(navigate);
           break;
         case 'chat':
           module = await import('./pages/Chat.js');
