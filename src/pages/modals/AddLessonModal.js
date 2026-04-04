@@ -111,10 +111,11 @@ export function openAddLessonModal(onSave, prefill = {}) {
       return;
     }
 
+    const completedSet = new Set(entity.completedTopics || []);
     const activeSubjects = getSubjectsForBranches(state.profile.branches || []);
+    
     // entity.curriculum already has the correct subjects assigned during creation
-    // But we check active branches just in case profile changed
-    const subjectsForGrade = (entity.curriculum || []).filter(s => activeSubjects.includes(s.subject));
+    const subjectsForGrade = (entity.curriculum || []).filter(s => activeSubjects.length === 0 || activeSubjects.includes(s.subject));
     
     // Fallback: if student has no curriculum yet (old record), try teacher's current branches
     const subjectsToRender = subjectsForGrade.length > 0 
@@ -134,10 +135,10 @@ export function openAddLessonModal(onSave, prefill = {}) {
       
       if (units.length > 0) {
         hasUnits = true;
-        unitHtml += `<optgroup label="${subjectDef?.name || subject}">`;
+        unitHtml += `<optgroup label="${subjectDef?.icon || '📚'} ${subjectDef?.name || subject}">`;
         units.forEach(unit => {
           const allTopicsCompleted = unit.topics.length > 0 && unit.topics.every(t => completedSet.has(t.id));
-          unitHtml += `<option value="${subject}|${grade}|${unit.id}" ${allTopicsCompleted ? 'disabled style="color:rgba(255,255,255,0.2);"' : 'style="color:#fff;"'}>
+          unitHtml += `<option value="${subject}|${grade}|${unit.id}" ${allTopicsCompleted ? 'style="color:rgba(255,255,255,0.4); font-style:italic;"' : 'style="color:#fff;"'}>
             ${allTopicsCompleted ? '✓ ' : ''}${escHtml(unit.name)}
           </option>`;
         });
@@ -146,11 +147,11 @@ export function openAddLessonModal(onSave, prefill = {}) {
     });
 
     if (!hasUnits) {
-      unitHtml = '<option value="">Müfredat Bulunamadı</option>';
+      unitHtml = '<option value="">Müfredat bulunamadı (Branş/Sınıf kontrol edin)</option>';
     }
     unitSel.innerHTML = unitHtml;
     // Reset topic
-    unitSel.dispatchEvent(new Event('change'));
+    updateTopicOptions();
   }
 
   function updateTopicOptions() {
