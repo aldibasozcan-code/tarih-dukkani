@@ -32,8 +32,14 @@ export function formatDistanceToNow(date) {
   return formatDateShort(date.toISOString().split('T')[0]);
 }
 
+export function getLocalDateStr(date = new Date()) {
+  const offset = date.getTimezoneOffset();
+  const localDate = new Date(date.getTime() - (offset * 60 * 1000));
+  return localDate.toISOString().split('T')[0];
+}
+
 export function todayStr() {
-  return new Date().toISOString().split('T')[0];
+  return getLocalDateStr(new Date());
 }
 
 export function getWeekStart(date = new Date()) {

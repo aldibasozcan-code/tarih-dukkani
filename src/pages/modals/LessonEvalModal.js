@@ -8,8 +8,17 @@ import { escHtml } from '../../utils/helpers.js';
 
 export function openLessonEvalModal(lessonId, navigate) {
   const state = getState();
-  const lesson = state.lessons.find(l => l.id === lessonId);
-  if (!lesson) return;
+  let lesson = state.lessons.find(l => l.id === lessonId);
+  
+  // If not found in internal, check googleEvents cache
+  if (!lesson) {
+    lesson = state.googleEvents.find(e => e.id === lessonId);
+  }
+  
+  if (!lesson) {
+    console.error("Lesson not found:", lessonId);
+    return;
+  }
 
   const ref = lesson.type === 'student'
     ? state.students.find(s => s.id === lesson.refId)

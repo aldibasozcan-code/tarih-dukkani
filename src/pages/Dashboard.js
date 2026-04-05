@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════════════
 import { getState, getTodayLessons, getPendingLessons, getMonthlyStats, getLessonStatus, completeLesson, postponeLesson, addNextWeekLesson, generateGoogleCalendarUrl } from '../store/store.js';
 import { icon } from '../components/icons.js';
-import { formatCurrency, formatDate, formatDateShort, formatTime, getLessonStatusInfo, getAvatarColor, getInitials } from '../utils/helpers.js';
+import { formatCurrency, formatDate, formatDateShort, formatTime, getLessonStatusInfo, getAvatarColor, getInitials, getLocalDateStr, escHtml } from '../utils/helpers.js';
 import { openModal } from '../components/modal.js';
 
 function getGreeting() {
@@ -65,7 +65,7 @@ export async function renderDashboard(navigate) {
   const dateStr = today.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
 
   const todayLessons = await getTodayLessons();
-  const pendingLessons = getPendingLessons();
+  const pendingLessons = await getPendingLessons();
   const stats = getMonthlyStats();
   
   const completedThisMonth = state.lessons.filter(l => {
@@ -183,24 +183,38 @@ export async function renderDashboard(navigate) {
             ` : todayLessons.map(lesson => {
               const status = getLessonStatus(lesson);
               const si = getLessonStatusInfo(status);
-              const borderColor = lesson.isGoogle ? '#4285f4' : (si.badgeClass.includes('success') ? 'var(--success)' : si.badgeClass.includes('warning') ? 'var(--warning)' : 'var(--border)');
-              const badgeLabel = lesson.isGoogle ? 'Google Takvim' : si.label;
+              
+              const isMatchedGCal = lesson.isGoogle && lesson.refId;
+              const borderColor = lesson.isGoogle 
+                ? (isMatchedGCal ? 'var(--accent2)' : '#4285f4') 
+                : (si.badgeClass.includes('success') ? 'var(--success)' : si.badgeClass.includes('warning') ? 'var(--warning)' : 'var(--border)');
+              
+              const badgeLabel = lesson.isGoogle 
+                ? (isMatchedGCal ? 'Google Takvim' : 'G. Takvim') 
+                : si.label;
+                
               const badgeClass = lesson.isGoogle ? 'badge-info' : si.badgeClass;
+              const displayTitle = lesson.refName ? `${lesson.refName} ${lesson.title ? ' - ' + lesson.title : ''}` : lesson.title;
 
               return `
-                <div class="card card-sm hover-lift" style="margin-bottom:12px; border-left:4px solid ${borderColor}; background:rgba(255,255,255,0.5);" data-lesson-id="${lesson.id}">
-                  <div style="display:flex;align-items:center;gap:16px;">
+                <div class="card card-sm hover-lift" style="margin-bottom:12px; border-left:4px solid ${borderColor}; background:rgba(255,255,255,0.5); padding: 12px 16px;" data-lesson-id="${lesson.id}">
+                  <div style="display:flex;align-items:center;gap:12px;">
+                    ${lesson.refId ? `
+                      <div class="avatar" style="width:36px; height:36px; font-size:12px; background:${getAvatarColor(lesson.refName)}">
+                        ${getInitials(lesson.refName)}
+                      </div>
+                    ` : ''}
                     <div style="flex:1;">
-                      <div style="font-weight:700;font-size:15px;color:var(--text-primary);">${lesson.title}</div>
+                      <div style="font-weight:700;font-size:15px;color:var(--text-primary);">${escHtml(displayTitle)}</div>
                       <div style="display:flex; align-items:center; gap:4px; font-size:12px; color:var(--text-muted); margin-top:4px;">
                         ${icon('clock', 12)} ${lesson.startTime} – ${lesson.endTime}
                         ${lesson.isGoogle ? `<span style="margin-left:8px; color:#4285f4; font-weight:700;">${icon('externalLink', 10)} GCal</span>` : ''}
                       </div>
                     </div>
                     <div style="text-align:right;">
-                      <span class="badge ${badgeClass}" style="border-radius:20px; ${lesson.isGoogle ? 'background:#4285f4; color:white;' : ''}">${badgeLabel}</span>
+                      <span class="badge ${badgeClass}" style="border-radius:20px; font-size:10px; ${lesson.isGoogle && !isMatchedGCal ? 'background:#4285f4; color:white;' : ''}">${badgeLabel}</span>
                       <div style="margin-top:8px; display:flex; gap:6px; justify-content:flex-end;">
-                        ${(status === 'waiting' || status === 'ongoing') && !lesson.isGoogle ? `
+                        ${(status === 'waiting' || status === 'ongoing') ? `
                           <button class="btn btn-success btn-sm btn-icon" data-complete-lesson="${lesson.id}" title="Tamamla">${icon('check', 14)}</button>
                         ` : ''}
                         ${lesson.isGoogle ? `
@@ -289,7 +303,7 @@ function renderMiniChart(state) {
   const weekIncome = days.map((_, i) => {
     const d = new Date(now);
     d.setDate(d.getDate() - d.getDay() + i + 1);
-    const dStr = d.toISOString().split('T')[0];
+    const dStr = getLocalDateStr(d);
     return state.transactions
       .filter(t => t.date === dStr && t.type === 'income')
       .reduce((s, t) => s + t.amount, 0);
@@ -351,10 +365,11 @@ function initDashboard(el, navigate) {
   });
 }
 
-function openPendingModal(navigate) {
+async function openPendingModal(navigate) {
+  const pending = await getPendingLessons();
   import('../components/modal.js').then(m => m.openModal({
     title: 'Onay Bekleyen Dersler',
-    body: renderPendingLessons(navigate),
+    body: renderPendingLessons(pending, navigate),
     size: 'lg',
   }));
 
@@ -371,25 +386,30 @@ function openPendingModal(navigate) {
   }, 50);
 }
 
-function renderPendingLessons(navigate) {
-  const pending = getPendingLessons();
+function renderPendingLessons(pending, navigate) {
   if (pending.length === 0) {
     return `<div class="empty-state" style="padding:40px;">Onay bekleyen ders bulunmuyor.</div>`;
   }
   
   return `
     <div style="display:flex;flex-direction:column;gap:12px;">
-      ${pending.map(lesson => `
-        <div class="card card-sm" style="display:flex;align-items:center;justify-content:space-between;border-left:4px solid var(--warning);">
-          <div>
-            <div style="font-weight:700;font-size:14px;color:var(--text-primary);">${lesson.title}</div>
-            <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">${lesson.date} • ${lesson.startTime} - ${lesson.endTime}</div>
+      ${pending.map(lesson => {
+        const displayTitle = lesson.refName ? `${lesson.refName}${lesson.title ? ' - ' + lesson.title : ''}` : lesson.title;
+        return `
+          <div class="card card-sm" style="display:flex;align-items:center;justify-content:space-between;border-left:4px solid var(--warning);">
+            <div>
+              <div style="font-weight:700;font-size:14px;color:var(--text-primary);">${escHtml(displayTitle)}</div>
+              <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">
+                ${lesson.date} • ${lesson.startTime} - ${lesson.endTime}
+                ${lesson.isGoogle ? ` <span style="color:#4285f4; font-weight:700;">(Google)</span>` : ''}
+              </div>
+            </div>
+            <button class="btn btn-success btn-sm" data-complete-lesson-modal="${lesson.id}">
+              ✓ Onayla
+            </button>
           </div>
-          <button class="btn btn-success btn-sm" data-complete-lesson-modal="${lesson.id}">
-            ✓ Dersi Tamamla
-          </button>
-        </div>
-      `).join('')}
+        `;
+      }).join('')}
     </div>
   `;
 }

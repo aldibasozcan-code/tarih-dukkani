@@ -1833,3 +1833,40 @@ textarea { resize: vertical; min-height: 100px; }
   .hero-title { font-size: 36px; }
   .footer-grid { grid-template-columns: 1fr; }
 }
+
+/* ─── Drag and Drop ─── */
+.topic-item {
+  transition: transform 0.2s, background-color 0.2s;
+  position: relative;
+}
+
+.topic-item.dragging {
+  opacity: 0.4;
+  background: var(--bg-hover);
+  border-radius: 8px;
+  transform: scale(0.98);
+}
+
+.topic-drag-handle {
+  cursor: grab;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 4px;
+  transition: var(--transition);
+}
+
+.topic-drag-handle:hover {
+  background: var(--bg-hover);
+  color: var(--brand-green);
+}
+
+.topic-drag-handle:active {
+  cursor: grabbing;
+}
+
+.topic-drop-target {
+  border-top: 2px solid var(--brand-green);
+}

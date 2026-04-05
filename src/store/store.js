@@ -2,6 +2,7 @@
 // GLOBAL APP STATE - Firebase Firestore backed
 // ═══════════════════════════════════════════════════
 import { DEFAULT_CURRICULUM, CONTENT_TYPES, getSubjectsForBranches, SUBJECT_GRADES } from '../data/curriculum.js';
+import { todayStr, getLocalDateStr } from '../utils/helpers.js';
 import { db, auth } from '../lib/firebase.js';
 import { doc, getDoc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { deleteUser } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
@@ -86,7 +87,7 @@ function createDefaultState() {
     students: [],
     // Groups
     groups: [],
-    // Lessons list: { id, type:'student'|'group', refId, title, date, startTime, endTime, status:'upcoming'|'ongoing'|'waiting'|'completed'|'postponed', subject, grade, unitId, topicId, homework, notes }
+    // Lessons list: { id, type:'student'|'group', refId, title, date, startTime, endTime, status:'upcoming'|... , googleId }
     lessons: [],
     // Transactions: { id, type:'income'|'expense', amount, description, date, lessonId }
     transactions: [],
@@ -497,19 +498,24 @@ async function addEventToGoogleCalendar(lesson) {
       body: JSON.stringify(event)
     });
     
-    if (!res.ok) {
-      if (res.status === 401 || res.status === 403 || res.status === 404) {
-         console.warn("Google Takvim Yetki Hatası veya Takvim Bulunamadı. Otomatik sekme açılıyor.");
-         const url = generateGoogleCalendarUrl(lesson);
-         window.open(url, '_blank');
-      } else {
-         console.error("Google Calendar API Error:", await res.text());
-      }
+    if (res.ok) {
+      const data = await res.json();
+      return { success: true, googleId: data.id };
     }
+
+    if (res.status === 401 || res.status === 403 || res.status === 404) {
+      console.warn("Google Takvim Yetki Hatası veya Takvim Bulunamadı. Otomatik sekme açılıyor.");
+      const url = generateGoogleCalendarUrl(lesson);
+      window.open(url, '_blank');
+    } else {
+      console.error("Google Calendar API Error:", await res.text());
+    }
+    return { success: false };
   } catch (err) {
     console.error("Google Calendar Fetch Error:", err);
     const url = generateGoogleCalendarUrl(lesson);
     window.open(url, '_blank');
+    return { success: false };
   }
 }
 
@@ -555,9 +561,13 @@ export function addLesson(data) {
   const lesson = { id, ...lessonData, status: 'upcoming', homework: null };
   setState(s => ({ lessons: [...s.lessons, lesson] }));
   
-  // Arkaplanda Google Takvim'e Senkronize Et (Kullanıcı seçtiyse veya varsayılan)
+  // Arkaplanda Google Takvim'e Senkronize Et
   if (syncToGoogle !== false) {
-    addEventToGoogleCalendar(lesson);
+    addEventToGoogleCalendar(lesson).then(res => {
+      if (res && res.success && res.googleId) {
+        updateLesson(id, { googleId: res.googleId });
+      }
+    });
   }
   
   return lesson;
@@ -565,14 +575,31 @@ export function addLesson(data) {
 
 export function completeLesson(lessonId, extraOpts = {}) {
   const state = getState();
-  const lesson = state.lessons.find(l => l.id === lessonId);
-  if (!lesson) return;
+  let lesson = state.lessons.find(l => l.id === lessonId);
+  let isNewLesson = false;
+  
+  if (!lesson) {
+    const gEvent = (state.googleEvents || []).find(e => e.id === lessonId);
+    if (gEvent) {
+      const id = generateId();
+      lesson = { ...gEvent, id, status: 'completed', googleId: gEvent.googleId };
+      delete lesson.isGoogle; 
+      isNewLesson = true;
+      lessonId = id;
+    } else {
+      console.error("Lesson to complete not found:", lessonId);
+      return;
+    }
+  }
 
   const updates = {};
-  // Update lesson status
-  updates.lessons = state.lessons.map(l =>
-    l.id === lessonId ? { ...l, status: 'completed', ...extraOpts } : l
-  );
+  if (isNewLesson) {
+    updates.lessons = [...state.lessons, { ...lesson, ...extraOpts }];
+  } else {
+    updates.lessons = state.lessons.map(l =>
+      l.id === lessonId ? { ...l, status: 'completed', ...extraOpts } : l
+    );
+  }
 
   // Auto-add transaction
   const ref = lesson.type === 'student'
@@ -900,6 +927,27 @@ export function getLessonStatus(lesson) {
   return 'waiting'; // needs confirmation
 }
 
+function findMatchForTitle(title) {
+  const state = getState();
+  const lowerTitle = title.toLowerCase();
+  
+  // 1. Try exact student name match or title starts with student name
+  for (const s of state.students) {
+    if (lowerTitle.includes(s.name.toLowerCase())) {
+      return { type: 'student', refId: s.id, refName: s.name, grade: s.grade };
+    }
+  }
+  
+  // 2. Try group name match
+  for (const g of state.groups) {
+    if (lowerTitle.includes(g.name.toLowerCase())) {
+      return { type: 'group', refId: g.id, refName: g.name, grade: g.grade };
+    }
+  }
+  
+  return null;
+}
+
 async function fetchGoogleEvents(startDate, endDate) {
   const token = localStorage.getItem('_gcal_token');
   if (!token) return [];
@@ -927,18 +975,39 @@ async function fetchGoogleEvents(startDate, endDate) {
         const end = item.end.dateTime || item.end.date;
         const s = new Date(start);
         const e = new Date(end);
+        const dateStr = getLocalDateStr(s);
         
-        return {
+        // 1. Initial Google Event data
+        let ev = {
           id: `google_${item.id}`,
+          googleId: item.id,
           type: 'google',
           title: item.summary || '(Adsız Etkinlik)',
-          date: s.toISOString().split('T')[0],
+          date: dateStr,
           startTime: s.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', hour12: false }),
           endTime: e.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', hour12: false }),
           isGoogle: true,
           link: item.htmlLink,
           subject: 'Google Takvim'
         };
+
+        // 2. Check title against students/groups
+        const match = findMatchForTitle(ev.title);
+        if (match) {
+          ev.type = match.type;
+          ev.refId = match.refId;
+          ev.refName = match.refName;
+          ev.grade = match.grade;
+          ev.title = ev.title.replace(match.refName, '').replace(/^[\s\-\:]+/, '').trim() || ev.title;
+        }
+
+        // 3. Merge with local lesson if exists (to get status, notes, homework)
+        const local = state.lessons.find(l => l.googleId === item.id);
+        if (local) {
+          return { ...ev, ...local, isGoogle: true }; // Local fields override (status, notes, etc)
+        }
+
+        return ev;
       });
       allEvents.push(...events);
     } catch (err) {
@@ -948,27 +1017,66 @@ async function fetchGoogleEvents(startDate, endDate) {
   return allEvents;
 }
 
-export function getPendingLessons() {
+export async function getPendingLessons() {
   const state = getState();
-  return state.lessons.filter(l => {
+  
+  // 1. Get internal pending lessons
+  const localPending = state.lessons.filter(l => {
     if (l.status === 'passive') return false;
     if (l.status !== 'upcoming') return false;
     return getLessonStatus(l) === 'waiting';
   });
+
+  // 2. Get Google pending lessons (last 7 days to now)
+  const now = new Date();
+  const pastWeek = new Date();
+  pastWeek.setDate(now.getDate() - 7);
+  pastWeek.setHours(0, 0, 0, 0); 
+  
+  const googleEvents = await fetchGoogleEvents(pastWeek, now);
+  
+  // Cache for evaluate modal
+  if (googleEvents.length > 0) {
+    setState(s => {
+      const existingIds = new Set(s.googleEvents.map(e => e.id));
+      const newUnique = googleEvents.filter(e => !existingIds.has(e.id));
+      return { googleEvents: [...s.googleEvents, ...newUnique] };
+    });
+  }
+
+  const pendingGoogle = googleEvents.filter(e => {
+    if (!e.refId) return false;
+    return getLessonStatus(e) === 'waiting';
+  });
+
+  return [...localPending, ...pendingGoogle];
 }
 
 export async function getTodayLessons() {
   const state = getState();
   const now = new Date();
-  const today = now.toISOString().split('T')[0];
+  const today = todayStr();
   
-  const startOfDay = new Date(today + 'T00:00:00Z');
-  const endOfDay = new Date(today + 'T23:59:59Z');
+  const startOfDay = new Date(today + 'T00:00:00');
+  const endOfDay = new Date(today + 'T23:59:59');
   
   const googleEvents = await fetchGoogleEvents(startOfDay, endOfDay);
+
+  // Cache for evaluate modal
+  if (googleEvents.length > 0) {
+    setState(s => {
+      const existingIds = new Set(s.googleEvents.map(e => e.id));
+      const newUnique = googleEvents.filter(e => !existingIds.has(e.id));
+      return { googleEvents: [...s.googleEvents, ...newUnique] };
+    });
+  }
+
   const localLessons = state.lessons.filter(l => l.date === today && l.status !== 'passive');
   
-  return [...localLessons, ...googleEvents].sort((a, b) => a.startTime.localeCompare(b.startTime));
+  const googleIds = new Set(googleEvents.map(e => e.googleId).filter(Boolean));
+  const uniqueLocal = localLessons.filter(l => !l.googleId || !googleIds.has(l.googleId));
+  
+  return [...uniqueLocal, ...googleEvents].sort((a, b) => a.startTime.localeCompare(b.startTime));
 }
 
 export async function getWeekLessons(weekStart) {
@@ -982,27 +1090,53 @@ export async function getWeekLessons(weekStart) {
   const days = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekStart);
     d.setDate(d.getDate() + i);
-    return d.toISOString().split('T')[0];
+    return getLocalDateStr(d);
   });
   
   const localLessons = state.lessons.filter(l => days.includes(l.date) && l.status !== 'passive');
-  return [...localLessons, ...googleEvents];
+  
+  // Cache for evaluate modal
+  if (googleEvents.length > 0) {
+    setState(s => {
+      const existingIds = new Set(s.googleEvents.map(e => e.id));
+      const newUnique = googleEvents.filter(e => !existingIds.has(e.id));
+      return { googleEvents: [...s.googleEvents, ...newUnique] };
+    });
+  }
+
+  const googleIds = new Set(googleEvents.map(e => e.googleId).filter(Boolean));
+  const uniqueLocal = localLessons.filter(l => !l.googleId || !googleIds.has(l.googleId));
+  
+  return [...uniqueLocal, ...googleEvents];
 }
 
 export async function getLessonsInRange(startDate, endDate) {
-  const state = getState();
   const googleEvents = await fetchGoogleEvents(startDate, endDate);
   
-  const startStr = startDate.toISOString().split('T')[0];
-  const endStr = endDate.toISOString().split('T')[0];
+  const startStr = getLocalDateStr(startDate);
+  const endStr = getLocalDateStr(endDate);
   
+  const state = getState();
+  
+  // Cache for evaluate modal
+  if (googleEvents.length > 0) {
+    setState(s => {
+      const existingIds = new Set(s.googleEvents.map(e => e.id));
+      const newUnique = googleEvents.filter(e => !existingIds.has(e.id));
+      return { googleEvents: [...s.googleEvents, ...newUnique] };
+    });
+  }
+
   const localLessons = state.lessons.filter(l => l.date >= startStr && l.date <= endStr && l.status !== 'passive');
-  return [...localLessons, ...googleEvents];
+  const googleIds = new Set(googleEvents.map(e => e.googleId).filter(Boolean));
+  const uniqueLocal = localLessons.filter(l => !l.googleId || !googleIds.has(l.googleId));
+  
+  return [...uniqueLocal, ...googleEvents];
 }
 
 export function getFutureLessonsForRef(type, refId) {
   const state = getState();
-  const today = new Date().toISOString().split('T')[0];
+  const today = todayStr();
   return state.lessons
     .filter(l => l.type === type && l.refId === refId && l.date >= today && l.status !== 'passive')
     .sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
@@ -1011,8 +1145,8 @@ export function getFutureLessonsForRef(type, refId) {
 export function getMonthlyStats() {
   const state = getState();
   const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+  const monthStart = getLocalDateStr(new Date(now.getFullYear(), now.getMonth(), 1));
+  const monthEnd = getLocalDateStr(new Date(now.getFullYear(), now.getMonth() + 1, 0));
 
   const monthTransactions = state.transactions.filter(t =>
     t.date >= monthStart && t.date <= monthEnd
@@ -1097,6 +1231,22 @@ export function deleteTopic(subject, grade, unitId, topicId) {
         return u;
       });
     }
+    return { curriculum: curr };
+  });
+}
+
+export function reorderTopics(subject, grade, unitId, oldIndex, newIndex) {
+  setState(s => {
+    const curr = JSON.parse(JSON.stringify(s.curriculum));
+    const units = curr[subject]?.[grade];
+    if (!units) return {};
+    
+    const unit = units.find(u => u.id === unitId);
+    if (!unit || !unit.topics) return {};
+    
+    const [movedTopic] = unit.topics.splice(oldIndex, 1);
+    unit.topics.splice(newIndex, 0, movedTopic);
+    
     return { curriculum: curr };
   });
 }

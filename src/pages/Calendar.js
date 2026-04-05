@@ -4,7 +4,7 @@
 import { getState, getLessonStatus, generateGoogleCalendarUrl, getWeekLessons, getLessonsInRange } from '../store/store.js';
 import { icon } from '../components/icons.js';
 import { MONTHS_TR, DAYS_SHORT } from '../data/curriculum.js';
-import { getMonthDays, addDays, getLessonStatusInfo } from '../utils/helpers.js';
+import { getMonthDays, addDays, getLessonStatusInfo, getLocalDateStr, escHtml } from '../utils/helpers.js';
 
 export async function renderCalendar(navigate) {
   const state = getState();
@@ -167,7 +167,7 @@ function _getMonday(d) {
 }
 
 function renderMonthView(state, year, month, lessons = []) {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDateStr();
   const days = getMonthDays(year, month);
 
   return `
@@ -179,7 +179,7 @@ function renderMonthView(state, year, month, lessons = []) {
       </div>
       <div class="calendar-grid">
         ${days.map(({ date, currentMonth }) => {
-          const dateStr = date.toISOString().split('T')[0];
+          const dateStr = getLocalDateStr(date);
           const isToday = dateStr === today;
           const dayLessons = lessons.filter(l => l.date === dateStr).slice(0, 4);
           return `
@@ -188,7 +188,11 @@ function renderMonthView(state, year, month, lessons = []) {
               <div style="display:flex; flex-direction:column; gap:2px; margin-top:4px;">
                 ${dayLessons.map(l => {
                   const status = getLessonStatus(l);
-                  const color = l.isGoogle ? '#4285f4' : (status === 'completed' ? 'var(--success)' : status === 'waiting' ? 'var(--warning)' : 'var(--accent)');
+                  const isMatchedGCal = l.isGoogle && l.refId;
+                  const color = l.isGoogle 
+                    ? (isMatchedGCal ? 'var(--accent2)' : '#4285f4') 
+                    : (status === 'completed' ? 'var(--success)' : status === 'waiting' ? 'var(--warning)' : 'var(--accent)');
+                  const displayTitle = l.refName ? `${l.refName}${l.title ? ' - ' + l.title : ''}` : l.title;
                   
                   return `
                     <div class="cal-lesson-card" 
@@ -196,8 +200,9 @@ function renderMonthView(state, year, month, lessons = []) {
                          data-id="${l.id}" 
                          data-is-google="${l.isGoogle ? 'true' : 'false'}"
                          data-start-time="${l.startTime}"
-                         style="font-size:10px; padding:2px 4px; border-radius:4px; background:${color}15; border-left:2px solid ${color}; color:var(--text-primary); cursor:${l.isGoogle ? 'pointer' : 'grab'}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                      <strong>${l.startTime}</strong> ${l.title}
+                         title="${escHtml(displayTitle)}"
+                         style="font-size:10px; padding:2px 4px; border-radius:4px; background:${color}15; border-left:2px solid ${color}; color:var(--text-primary); cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                      <strong>${l.startTime}</strong> ${escHtml(displayTitle)}
                     </div>
                   `;
                 }).join('')}
@@ -212,7 +217,7 @@ function renderMonthView(state, year, month, lessons = []) {
 }
 
 function renderWeekView(state, weekStart, lessons = []) {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDateStr();
   const hours = Array.from({ length: 17 }, (_, i) => i + 7); // 07:00 to 23:00
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
@@ -221,7 +226,7 @@ function renderWeekView(state, weekStart, lessons = []) {
       <div style="display:grid; grid-template-columns:80px repeat(7, 1fr); background:var(--bg-secondary); border-bottom:1px solid var(--border); sticky-top:0; z-index:10;">
         <div style="padding:15px; border-right:1px solid var(--border); font-size:11px; color:var(--text-muted); display:flex; align-items:center; justify-content:center;">Saat</div>
         ${days.map(d => {
-          const ds = d.toISOString().split('T')[0];
+          const ds = getLocalDateStr(d);
           const isToday = ds === today;
           return `
             <div style="padding:12px; text-align:center; border-right:1px solid var(--border); position:relative; ${isToday ? 'background:var(--accent-glow);' : ''}">
@@ -239,27 +244,32 @@ function renderWeekView(state, weekStart, lessons = []) {
             <div style="padding:10px; border-right:1px solid var(--border); font-size:12px; font-weight:600; color:var(--text-muted); display:flex; align-items:flex-start; justify-content:center;">
               ${String(h).padStart(2, '0')}:00
             </div>
-            ${days.map(d => {
-              const ds = d.toISOString().split('T')[0];
+              ${days.map(d => {
+                const ds = getLocalDateStr(d);
               const dayHourLessons = lessons.filter(l => l.date === ds && parseInt(l.startTime) === h);
               return `
                 <div class="cal-drop-zone" data-date="${ds}" data-hour="${h}" style="border-right:1px solid var(--border-light); position:relative; transition:background 0.2s;">
                   ${dayHourLessons.map(l => {
                     const status = getLessonStatus(l);
-                    const color = l.isGoogle ? '#4285f4' : (status === 'completed' ? 'var(--success)' : status === 'waiting' ? 'var(--warning)' : 'var(--accent)');
+                    const isMatchedGCal = l.isGoogle && l.refId;
+                    const color = l.isGoogle 
+                      ? (isMatchedGCal ? 'var(--accent2)' : '#4285f4') 
+                      : (status === 'completed' ? 'var(--success)' : status === 'waiting' ? 'var(--warning)' : 'var(--accent)');
+                    const displayTitle = l.refName ? `${l.refName}${l.title ? ' - ' + l.title : ''}` : l.title;
+
                     return `
                       <div class="cal-lesson-card" 
                            ${!l.isGoogle ? 'draggable="true"' : ''}
                            data-id="${l.id}"
                            data-is-google="${l.isGoogle ? 'true' : 'false'}"
                            data-start-time="${l.startTime}"
-                           style="position:absolute; left:4px; right:4px; top:4px; bottom:4px; z-index:5; background:${color}15; border-left:4px solid ${color}; border-radius:6px; padding:8px; cursor:${l.isGoogle ? 'pointer' : 'grab'}; box-shadow:var(--shadow-sm); overflow:hidden;">
+                           style="position:absolute; left:4px; right:4px; top:4px; bottom:4px; z-index:5; background:${color}15; border-left:4px solid ${color}; border-radius:6px; padding:8px; cursor:pointer; box-shadow:var(--shadow-sm); overflow:hidden;">
                         <div style="font-size:10px; font-weight:700; color:${color}; margin-bottom:2px; display:flex; justify-content:space-between;">
                           <span>${l.startTime} - ${l.endTime}</span>
                           ${!l.isGoogle ? icon('dragHandle', 12) : ''}
                         </div>
                         <div style="font-size:12px; font-weight:700; color:var(--text-primary); margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                          ${l.title}
+                          ${escHtml(displayTitle)}
                         </div>
                         <div style="font-size:10px; color:var(--text-muted); display:flex; gap:4px; align-items:center;">
                           ${icon('book', 10)} ${l.isGoogle ? 'Google Takvim' : (l.subject.charAt(0).toUpperCase() + l.subject.slice(1))}
@@ -334,7 +344,8 @@ function initCalendarEvents(el, navigate) {
   el.querySelectorAll('.cal-lesson-card').forEach(card => {
     card.addEventListener('click', (e) => {
       e.stopPropagation();
-      // Potentially open detail modal here
+      const id = card.dataset.id;
+      import('./modals/LessonEvalModal.js').then(m => m.openLessonEvalModal(id, navigate));
     });
   });
 

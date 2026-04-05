@@ -1,7 +1,7 @@
 // ═════════════════════════════════════════════════
 // COURSES PAGE - Curriculum Management
 // ═════════════════════════════════════════════════
-import { getState, addMaterial, deleteMaterial, addUnit, updateUnit, deleteUnit, addTopic, updateTopic, deleteTopic } from '../store/store.js';
+import { getState, addMaterial, deleteMaterial, addUnit, updateUnit, deleteUnit, addTopic, updateTopic, deleteTopic, reorderTopics } from '../store/store.js';
 import { icon } from '../components/icons.js';
 import { SUBJECTS, ALL_GRADES, CONTENT_TYPES, SUBJECT_GRADES, getSubjectsForBranches } from '../data/curriculum.js';
 import { escHtml, getYoutubeVideoId, isYoutubeUrl, getGoogleDrivePreviewUrl, isGoogleDriveUrl } from '../utils/helpers.js';
@@ -95,7 +95,7 @@ function renderCurriculumContent(state, grade) {
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid var(--bg-hover);">
               <div style="width:12px;height:12px;border-radius:4px;background:var(--primary);flex-shrink:0;"></div>
               <h3 style="font-size:16px;font-weight:700;flex:1;display:flex;align-items:center;gap:8px; color:var(--text);">
-                ${escHtml(unit.name)}
+                ${icon('book', 18)} ${escHtml(unit.name)}
                 <div style="display:flex; opacity: 0.6; transition: opacity 0.2s;">
                   <button class="btn btn-ghost btn-sm" data-edit-unit="${unit.id}" data-subject="${subject}" data-grade="${grade}" style="padding:4px;" title="Üniteyi Düzenle">${icon('edit', 14)}</button>
                   <button class="btn btn-ghost btn-sm" data-delete-unit="${unit.id}" data-subject="${subject}" data-grade="${grade}" style="padding:4px;color:var(--danger);" title="Üniteyi Sil">${icon('trash', 14)}</button>
@@ -104,16 +104,24 @@ function renderCurriculumContent(state, grade) {
               <button class="btn btn-secondary btn-sm" data-add-topic="${unit.id}" data-subject="${subject}" data-grade="${grade}">${icon('plus', 12)} Konu Ekle</button>
             </div>
 
-            <!-- Topics List -->
-            <div style="padding-left: 22px; display:flex; flex-direction:column; gap: 16px;">
+            <div class="topic-list" style="padding-left: 22px; display:flex; flex-direction:column; gap: 16px;">
               ${unit.topics.length === 0 ? '<em style="color:var(--text-muted);font-size:13px;">Bu ünitede henüz konu yok.</em>' : ''}
-              ${unit.topics.map(topic => {
+              ${unit.topics.map((topic, index) => {
                 const topicMaterials = allMaterials.filter(m => m.unitId === unit.id && m.topicId === topic.id);
                 return `
-                  <div style="border-left: 2px solid var(--border); padding-left: 16px;">
+                  <div class="topic-item" draggable="true" 
+                       data-index="${index}" 
+                       data-topic-id="${topic.id}" 
+                       data-unit-id="${unit.id}" 
+                       data-subject="${subject}" 
+                       data-grade="${grade}"
+                       style="border-left: 2px solid var(--border); padding-left: 16px;">
                     <div style="display:flex;align-items:center;gap:8px; margin-bottom: 8px;">
-                      <h4 style="font-size:14px; font-weight:600; color:var(--text); margin:0; display:flex; align-items:center; gap:6px;">
-                        ${escHtml(topic.name)}
+                      <div class="topic-drag-handle" title="Sıralamak için sürükleyin">
+                        ${icon('dragHandle', 14)}
+                      </div>
+                      <h4 style="font-size:14px; font-weight:600; color:var(--text); margin:0; display:flex; align-items:center; gap:6px; flex:1;">
+                        ${icon('zap', 14)} ${escHtml(topic.name)}
                         <button class="btn btn-ghost btn-sm" data-edit-topic="${topic.id}" data-unit-id="${unit.id}" data-subject="${subject}" data-grade="${grade}" style="padding:2px;" title="Konuyu Düzenle">${icon('edit', 12)}</button>
                         <button class="btn btn-ghost btn-sm" data-delete-topic="${topic.id}" data-unit-id="${unit.id}" data-subject="${subject}" data-grade="${grade}" style="padding:2px;color:var(--danger);" title="Konuyu Sil">${icon('trash', 12)}</button>
                       </h4>
@@ -654,6 +662,66 @@ function initCurriculumButtons(el, refresh, navigate) {
       const grade = btn.dataset.grade;
       const unitId = btn.dataset.addUnitMaterial;
       openAddMaterialModal(subject, grade, unitId, null, navigate, () => refresh());
+    });
+  });
+
+  initTopicDragAndDrop(el, refresh);
+}
+
+function initTopicDragAndDrop(el, refresh) {
+  let draggedItem = null;
+  let oldIndex = null;
+  let unitId = null;
+  let subject = null;
+  let grade = null;
+
+  el.querySelectorAll('.topic-item').forEach(item => {
+    item.addEventListener('dragstart', (e) => {
+      draggedItem = item;
+      oldIndex = parseInt(item.dataset.index);
+      unitId = item.dataset.unitId;
+      subject = item.dataset.subject;
+      grade = item.dataset.grade;
+      
+      item.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      // To allow dragging even if the handle is the target
+      e.dataTransfer.setData('text/plain', item.dataset.topicId);
+    });
+
+    item.addEventListener('dragend', () => {
+      item.classList.remove('dragging');
+      el.querySelectorAll('.topic-item').forEach(i => i.classList.remove('topic-drop-target'));
+    });
+
+    item.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      if (item === draggedItem) return;
+      
+      // Ensure we are in the same unit
+      if (item.dataset.unitId !== unitId) return;
+
+      e.dataTransfer.dropEffect = 'move';
+      item.classList.add('topic-drop-target');
+    });
+
+    item.addEventListener('dragleave', () => {
+      item.classList.remove('topic-drop-target');
+    });
+
+    item.addEventListener('drop', (e) => {
+      e.preventDefault();
+      item.classList.remove('topic-drop-target');
+
+      if (item === draggedItem) return;
+      if (item.dataset.unitId !== unitId) return;
+
+      const newIndex = parseInt(item.dataset.index);
+      
+      if (oldIndex !== null && newIndex !== null) {
+        reorderTopics(subject, grade, unitId, oldIndex, newIndex);
+        refresh();
+      }
     });
   });
 }
