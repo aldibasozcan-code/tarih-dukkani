@@ -207,7 +207,7 @@ export function renderSettings(navigate) {
             </div>
             <div style="display:flex;justify-content:space-between;">
               <span>Versiyon</span>
-              <span class="badge badge-info">v1.0.0</span>
+              <span class="badge badge-info">v1.1.0</span>
             </div>
             <div style="display:flex;justify-content:space-between;">
               <span>Kullanıcı</span>
