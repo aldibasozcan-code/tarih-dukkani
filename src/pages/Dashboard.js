@@ -116,9 +116,6 @@ export async function renderDashboard(navigate) {
           <h2 style="font-size:42px;">${getGreeting()}, ${state.profile.name.split(' ')[0]}!</h2>
           <p style="font-size:18px; opacity:0.9; margin-top:8px;">
             Bugün ajandanızda ${todayLessons.length} ders ve etkinlik planlanmış görünüyor.
-            <span style="font-size:12px; background:rgba(255,255,255,0.2); padding: 2px 8px; border-radius:4px; margin-left:8px; vertical-align:middle;">
-              ${gcalStatus === 'connected' ? `${icon('check', 10)} Google ile Senkronize` : `${icon('clock', 10)} Sadece Yerel`}
-            </span>
           </p>
           
           <div class="quick-actions" style="margin-top:32px;">

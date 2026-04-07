@@ -85,8 +85,8 @@ export async function renderCalendar(navigate) {
               const srcParams = ids.map(id => `src=${encodeURIComponent(id)}`).join('&');
               const tzone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Istanbul';
               calView.innerHTML = `
-                <div class="card" style="padding:0; overflow:hidden; min-height:calc(100vh - 250px);">
-                  <iframe src="https://calendar.google.com/calendar/embed?${srcParams}&ctz=${tzone}&showTitle=0&showPrint=0&showTabs=1&showCalendars=0&showTz=0" style="border: 0; width: 100%; height: 100%;" frameborder="0" scrolling="no"></iframe>
+                <div class="card" style="padding:0; overflow:hidden; height:calc(100vh - 200px);">
+                  <iframe src="https://calendar.google.com/calendar/embed?${srcParams}&ctz=${tzone}&showTitle=0&showPrint=0&showTabs=1&showCalendars=0&showTz=0" style="border: 0; width: 100%; height: 100%;" frameborder="0"></iframe>
                 </div>
               `;
             }
