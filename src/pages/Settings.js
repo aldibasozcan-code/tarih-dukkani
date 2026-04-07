@@ -128,7 +128,13 @@ export function renderSettings(navigate) {
               Birden fazla takvim eklemek için ID'leri virgül (,) ile ayırarak yazın. İlk sıradaki takvime yeni dersler otomatik eklenir.
             </p>
           </div>
-          <button class="btn btn-primary" id="btn-save-calendar">${icon('check', 14)} Takvim Ayarlarını Kaydet</button>
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <button class="btn btn-primary" id="btn-save-calendar">${icon('check', 14)} Takvim Ayarlarını Kaydet</button>
+            <button class="btn btn-secondary" id="btn-sync-legacy" style="background:rgba(66, 133, 244, 0.1); border-color:rgba(66, 133, 244, 0.2); color:#1a73e8;">
+              ${icon('upload', 14)} Mevcut Dersleri Google'a Aktar
+            </button>
+            <p style="font-size:10px; color:var(--text-muted); text-align:center;">* Henüz Google'a aktarılmamış eski dersleri toplu olarak yükler.</p>
+          </div>
         </div>
 
         <!-- Data Management -->
@@ -295,6 +301,33 @@ export function renderSettings(navigate) {
           btn.innerHTML = `${icon('check', 14)} Takvim Ayarlarını Kaydet`;
           btn.style.background = '';
         }, 2000);
+      });
+
+      el.querySelector('#btn-sync-legacy')?.addEventListener('click', async () => {
+        const btn = el.querySelector('#btn-sync-legacy');
+        const originalHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<div class="spinner-sm"></div> Aktarılıyor...';
+        
+        const { syncLegacyLessons } = await import('../store/store.js');
+        const res = await syncLegacyLessons();
+        
+        if (res.success) {
+          btn.innerHTML = `${icon('check', 14)} ${res.count} Ders Aktarıldı`;
+          btn.style.background = 'var(--success)';
+          btn.style.color = 'white';
+        } else {
+          btn.innerHTML = `${icon('alertCircle', 14)} Hata: ${res.error}`;
+          btn.style.background = 'var(--danger)';
+          btn.style.color = 'white';
+        }
+        
+        setTimeout(() => {
+          btn.innerHTML = originalHtml;
+          btn.disabled = false;
+          btn.style.background = '';
+          btn.style.color = '';
+        }, 3000);
       });
 
       el.querySelector('#btn-sync-meb')?.addEventListener('click', async () => {

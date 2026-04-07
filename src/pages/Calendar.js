@@ -8,54 +8,19 @@ import { getMonthDays, addDays, getLessonStatusInfo, getLocalDateStr, escHtml } 
 
 export async function renderCalendar(navigate) {
   const state = getState();
-  const calId = state?.settings?.calendarId;
-  const isInternalForced = localStorage.getItem('_cal_internal') === '1';
-
-  if (calId && !isInternalForced) {
-    // ... Google Iframe view ...
-    return {
-      html: `
-        <div class="fade-in" style="height: 100%; display: flex; flex-direction: column;">
-          <div class="page-header" style="flex-shrink: 0;">
-            <div>
-              <h2>Takvim</h2>
-              <p>Bağlı Google Takvimi Görüntüleniyor</p>
-            </div>
-            <div style="display:flex;gap:8px;align-items:center;">
-              <button class="btn btn-secondary" id="btn-switch-internal">${icon('calendar', 14)} Yerel Takvime Geç</button>
-              <button class="btn btn-primary" id="btn-add-lesson">${icon('plus', 14)} Ders Ekle</button>
-            </div>
-          </div>
-          <div class="card" style="flex: 1; padding: 0; overflow: hidden; display: flex; min-height: calc(100vh - 200px);">
-            ${(() => {
-              const ids = calId.split(',').map(id => id.trim()).filter(id => id);
-              const srcParams = ids.map(id => `src=${encodeURIComponent(id)}`).join('&');
-              const tzone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Istanbul';
-              return `<iframe src="https://calendar.google.com/calendar/embed?${srcParams}&ctz=${tzone}&showTitle=0&showPrint=0&showTabs=1&showCalendars=0&showTz=0" style="border: 0; width: 100%; height: 100%;" frameborder="0" scrolling="no"></iframe>`;
-            })()}
-          </div>
-        </div>
-      `,
-      init: (el, nav) => {
-        el.querySelector('#btn-switch-internal')?.addEventListener('click', () => {
-          localStorage.setItem('_cal_internal', '1');
-          nav('calendar', true);
-        });
-        el.querySelector('#btn-add-lesson')?.addEventListener('click', () => {
-          import('./modals/AddLessonModal.js').then(m => m.openAddLessonModal(() => nav('calendar', true)));
-        });
-      }
-    };
-  }
-
   const now = new Date();
   let viewYear = now.getFullYear();
   let viewMonth = now.getMonth();
-  let viewSelection = 'week'; 
+  let viewSelection = localStorage.getItem('_cal_view') || 'week';
+  let monday = _getMonday(now);
+  let lessons = [];
 
-  // Fetch initial data
-  const monday = _getMonday(now);
-  const initialLessons = await getWeekLessons(monday);
+  if (viewSelection === 'month') {
+    const days = getMonthDays(viewYear, viewMonth);
+    lessons = await getLessonsInRange(days[0].date, days[days.length - 1].date);
+  } else if (viewSelection === 'week') {
+    lessons = await getWeekLessons(monday);
+  }
 
   const html = `
     <div class="fade-in">
@@ -66,20 +31,25 @@ export async function renderCalendar(navigate) {
         </div>
         <div style="display:flex;gap:8px;align-items:center;">
           <div class="tabs">
-            <button class="tab-btn" data-view="month">Ay</button>
-            <button class="tab-btn active" data-view="week">Hafta</button>
+            <button class="tab-btn ${viewSelection === 'month' ? 'active' : ''}" data-view="month">Ay</button>
+            <button class="tab-btn ${viewSelection === 'week' ? 'active' : ''}" data-view="week">Hafta</button>
+            <button class="tab-btn ${viewSelection === 'google' ? 'active' : ''}" data-view="google">Google Takvim</button>
           </div>
           <button class="btn btn-secondary" id="cal-prev">${icon('chevronLeft', 14)}</button>
           <span id="cal-title" style="font-weight:700;min-width:140px;text-align:center;">Haftalık Görünüm</span>
           <button class="btn btn-secondary" id="cal-next">${icon('chevronRight', 14)}</button>
           <button class="btn btn-ghost btn-sm" id="cal-today">Bugün</button>
-          ${calId ? `<button class="btn btn-secondary btn-sm" id="btn-switch-google">${icon('calendar', 14)} Google'a Dön</button>` : ''}
           <button class="btn btn-primary" id="btn-add-lesson">${icon('plus', 14)} Ders Ekle</button>
         </div>
       </div>
 
       <div id="calendar-view">
-        ${renderWeekView(getState(), monday, initialLessons)}
+        ${viewSelection === 'month' 
+          ? renderMonthView(getState(), viewYear, viewMonth, lessons) 
+          : viewSelection === 'google'
+            ? '<div style="display:flex;justify-content:center;padding:100px;"><div class="spinner"></div></div>'
+            : renderWeekView(getState(), monday, lessons)
+        }
       </div>
     </div>
   `;
@@ -93,25 +63,66 @@ export async function renderCalendar(navigate) {
       async function refresh() {
         const calView = el.querySelector('#calendar-view');
         const title = el.querySelector('#cal-title');
+        const prevBtn = el.querySelector('#cal-prev');
+        const nextBtn = el.querySelector('#cal-next');
+        const todayBtn = el.querySelector('#cal-today');
         
         calView.innerHTML = `<div style="display:flex;justify-content:center;padding:100px;"><div class="spinner"></div></div>`;
-        
-        if (_view === 'month') {
-          const days = getMonthDays(_year, _month);
-          const start = days[0].date;
-          const end = days[days.length-1].date;
-          const lessons = await getLessonsInRange(start, end);
-          
-          calView.innerHTML = renderMonthView(getState(), _year, _month, lessons);
-          title.textContent = `${MONTHS_TR[_month]} ${_year}`;
-        } else {
-          const lessons = await getWeekLessons(_weekStart);
-          calView.innerHTML = renderWeekView(getState(), _weekStart, lessons);
-          const weekEnd = addDays(_weekStart, 6);
-          title.textContent = `${_weekStart.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })} – ${weekEnd.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+        localStorage.setItem('_cal_view', _view);
+
+        try {
+          if (_view === 'google') {
+            prevBtn.style.display = 'none';
+            nextBtn.style.display = 'none';
+            todayBtn.style.display = 'none';
+            title.textContent = 'Google Takvim (Full)';
+            
+            const calId = getState()?.settings?.calendarId;
+            if (!calId) {
+              calView.innerHTML = `<div class="empty-state">${icon('alertCircle', 40)}<p>Google Takvim ID tanımlanmamış. Ayarlar'dan ekleyebilirsiniz.</p></div>`;
+            } else {
+              const ids = calId.split(',').map(id => id.trim()).filter(id => id);
+              const srcParams = ids.map(id => `src=${encodeURIComponent(id)}`).join('&');
+              const tzone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Istanbul';
+              calView.innerHTML = `
+                <div class="card" style="padding:0; overflow:hidden; min-height:calc(100vh - 250px);">
+                  <iframe src="https://calendar.google.com/calendar/embed?${srcParams}&ctz=${tzone}&showTitle=0&showPrint=0&showTabs=1&showCalendars=0&showTz=0" style="border: 0; width: 100%; height: 100%;" frameborder="0" scrolling="no"></iframe>
+                </div>
+              `;
+            }
+            return;
+          }
+
+          prevBtn.style.display = 'flex';
+          nextBtn.style.display = 'flex';
+          todayBtn.style.display = 'inline-flex';
+
+          if (_view === 'month') {
+            const days = getMonthDays(_year, _month);
+            const start = days[0].date;
+            const end = days[days.length-1].date;
+            const lessons = await getLessonsInRange(start, end);
+            
+            calView.innerHTML = renderMonthView(getState(), _year, _month, lessons);
+            title.textContent = `${MONTHS_TR[_month]} ${_year}`;
+          } else {
+            const lessons = await getWeekLessons(_weekStart);
+            calView.innerHTML = renderWeekView(getState(), _weekStart, lessons);
+            const weekEnd = addDays(_weekStart, 6);
+            title.textContent = `${_weekStart.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })} – ${weekEnd.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+          }
+          initCalendarEvents(el, nav);
+          initCalendarDragDrop(el, nav);
+        } catch (err) {
+          console.error("Calendar refresh error:", err);
+          calView.innerHTML = `
+            <div class="empty-state">
+              ${icon('alertCircle', 40)}
+              <p>Takvim yüklenirken bir hata oluştu.</p>
+              <button class="btn btn-secondary btn-sm" onclick="location.reload()">Sayfayı Yenile</button>
+            </div>
+          `;
         }
-        initCalendarEvents(el, nav);
-        initCalendarDragDrop(el, nav);
       }
 
       el.querySelectorAll('[data-view]').forEach(btn => {
@@ -230,7 +241,7 @@ function renderWeekView(state, weekStart, lessons = []) {
           const isToday = ds === today;
           return `
             <div style="padding:12px; text-align:center; border-right:1px solid var(--border); position:relative; ${isToday ? 'background:var(--accent-glow);' : ''}">
-              <div style="font-size:11px; font-weight:700; color:${isToday ? 'var(--accent)' : 'var(--text-muted)'}; text-transform:uppercase; letter-spacing:0.5px;">${DAYS_SHORT[(d.getDay() + 6) % 7]}</div>
+              <div style="font-size:11px; font-weight:700; color:${isToday ? 'var(--accent)' : 'var(--text-muted)'}; text-transform:uppercase; letter-spacing:0.5px;">${DAYS_SHORT[d.getDay()]}</div>
               <div style="font-size:18px; font-weight:800; color:${isToday ? 'var(--accent)' : 'var(--text-primary)'};">${d.getDate()}</div>
               ${isToday ? `<div style="position:absolute; bottom:0; left:15%; right:15%; height:3px; background:var(--accent); border-radius:3px 3px 0 0;"></div>` : ''}
             </div>

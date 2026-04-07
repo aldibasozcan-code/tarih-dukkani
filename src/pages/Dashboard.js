@@ -74,7 +74,9 @@ export async function renderDashboard(navigate) {
     return l.date?.startsWith(`${y}-${String(m + 1).padStart(2, '0')}`) && l.status === 'completed';
   }).length;
 
-  const hasGCalToken = !!localStorage.getItem('_gcal_token');
+  const gcalStatus = state.gcalStatus || (localStorage.getItem('_gcal_token') ? 'connected' : 'none');
+  const isGCalExpired = gcalStatus === 'expired';
+  const isGCalDisconnected = gcalStatus === 'none';
 
   const html = `
     <div class="fade-in">
@@ -88,13 +90,20 @@ export async function renderDashboard(navigate) {
         </div>
       ` : ''}
 
-      ${!hasGCalToken ? `
-        <div class="pending-alert fade-in-up" style="background:rgba(66, 133, 244, 0.1); border-color:rgba(66, 133, 244, 0.3); color:#1a73e8;">
-           <div style="display:flex;align-items:center;gap:12px;">
-             ${icon('calendar', 18)}
-             <span style="font-size:13px;">Google Takvim randevularını burada görmek için oturumunuzu tazeleyin.</span>
+      ${(isGCalExpired || isGCalDisconnected) ? `
+        <div class="pending-alert fade-in-up" style="background:rgba(66, 133, 244, 0.05); border:1px solid rgba(66, 133, 244, 0.2); color:#1a73e8; padding: 10px 16px; border-radius: 12px; display:flex; align-items:center; justify-content:space-between; margin-bottom: 24px;">
+           <div style="display:flex;align-items:center;gap:10px;">
+             <div style="background:#4285f4; color:white; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center;">
+               ${icon('calendar', 14)}
+             </div>
+             <div>
+               <div style="font-weight:700; font-size:14px;">Google Takvim ${isGCalExpired ? 'Oturumu Kapandı' : 'Bağlı Değil'}</div>
+               <div style="font-size:12px; opacity:0.8;">Derslerinizi her yerden takip etmek için ${isGCalExpired ? 'tazeleyin' : 'bağlanın'}.</div>
+             </div>
            </div>
-           <button class="btn btn-sm" id="btn-reconnect-gcal" style="background:#4285f4; color:white;">Bağlan</button>
+           <button class="btn btn-sm" id="btn-reconnect-gcal" style="background:#4285f4; color:white; border-radius:8px; padding: 6px 16px; font-weight:700;">
+             ${isGCalExpired ? 'Tazele' : 'Bağlan'}
+           </button>
         </div>
       ` : ''}
 
@@ -105,7 +114,12 @@ export async function renderDashboard(navigate) {
             <span style="background:rgba(255,255,255,0.2); padding:6px 12px; border-radius:20px; font-size:12px; font-weight:700;">${dateStr.toUpperCase()}</span>
           </div>
           <h2 style="font-size:42px;">${getGreeting()}, ${state.profile.name.split(' ')[0]}!</h2>
-          <p style="font-size:18px; opacity:0.9; margin-top:8px;">Bugün ajandanızda ${todayLessons.length} ders ve etkinlik planlanmış görünüyor.</p>
+          <p style="font-size:18px; opacity:0.9; margin-top:8px;">
+            Bugün ajandanızda ${todayLessons.length} ders ve etkinlik planlanmış görünüyor.
+            <span style="font-size:12px; background:rgba(255,255,255,0.2); padding: 2px 8px; border-radius:4px; margin-left:8px; vertical-align:middle;">
+              ${gcalStatus === 'connected' ? `${icon('check', 10)} Google ile Senkronize` : `${icon('clock', 10)} Sadece Yerel`}
+            </span>
+          </p>
           
           <div class="quick-actions" style="margin-top:32px;">
             <button class="btn btn-primary glass" id="btn-add-lesson" style="background:white; color:var(--brand-green); font-weight:800; padding:12px 24px;">

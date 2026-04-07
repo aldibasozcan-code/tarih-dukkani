@@ -93,6 +93,8 @@ function createDefaultState() {
     transactions: [],
     // Cache for Google Calendar events
     googleEvents: [],
+    // gcalStatus: 'none', 'connected', 'expired', 'error'
+    gcalStatus: localStorage.getItem('_gcal_token') ? 'connected' : 'none',
   };
 }
 
@@ -115,23 +117,18 @@ export async function initStore() {
     // 1. Instantly load local cache if available
     const local = loadLocal();
     if (local) {
-      _state = local;
-      // Migration: Inject curriculum if missing in old local state
-      if (!_state.curriculum) {
-        _state.curriculum = JSON.parse(JSON.stringify(DEFAULT_CURRICULUM));
-      }
+      _state = { ...createDefaultState(), ...local };
     } else {
       _state = createDefaultState();
-      if (!_state.lessons) _state.lessons = [];
-      if (!_state.transactions) _state.transactions = [];
-      if (!_state.materials) _state.materials = {};
-      // Ensure curriculum exists even if createDefaultState somehow missed it
-      if (!_state.curriculum) _state.curriculum = JSON.parse(JSON.stringify(DEFAULT_CURRICULUM));
-      
-      if (_state.lessons.length === 0) {
-        _generateGroupLessons();
-        _generateStudentLessons();
-      }
+    }
+    
+    if (!_state.curriculum) {
+      _state.curriculum = JSON.parse(JSON.stringify(DEFAULT_CURRICULUM));
+    }
+    
+    if (_state.lessons.length === 0) {
+      _generateGroupLessons();
+      _generateStudentLessons();
     }
 
     // 2. Fetch latest actual from Firebase (await)
@@ -465,19 +462,16 @@ async function addEventToGoogleCalendar(lesson) {
   const calId = rawCalId.split(',')[0].trim() || 'primary';
   const encodedCalId = encodeURIComponent(calId);
 
-  // Doğrudan yetki yoksa (veya süresi dolduysa) Google Takvim Ekleme sayfasını yeni sekmede aç.
   if (!token) {
-    const url = generateGoogleCalendarUrl(lesson);
-    window.open(url, '_blank');
-    return;
+    return { success: false, error: 'no_token' };
   }
 
   const start = new Date(`${lesson.date}T${lesson.startTime}:00`);
   const end = new Date(`${lesson.date}T${lesson.endTime}:00`);
 
   const event = {
-    summary: `${lesson.title} - Tarih Dükkanı`,
-    description: lesson.notes ? `Ders Notları:\n${lesson.notes}` : 'Tarih Dükkanı üzerinden otomatik oluşturuldu.',
+    summary: `${lesson.title} - Bitig.app`,
+    description: lesson.notes ? `Ders Notları:\n${lesson.notes}` : 'Bitig.app üzerinden otomatik oluşturuldu.',
     start: {
       dateTime: start.toISOString(),
       timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Istanbul'
@@ -503,20 +497,35 @@ async function addEventToGoogleCalendar(lesson) {
       return { success: true, googleId: data.id };
     }
 
-    if (res.status === 401 || res.status === 403 || res.status === 404) {
-      console.warn("Google Takvim Yetki Hatası veya Takvim Bulunamadı. Otomatik sekme açılıyor.");
-      const url = generateGoogleCalendarUrl(lesson);
-      window.open(url, '_blank');
-    } else {
-      console.error("Google Calendar API Error:", await res.text());
+    if (res.status === 401) {
+      setState({ gcalStatus: 'expired' });
+      return { success: false, error: 'expired' };
     }
-    return { success: false };
+    
+    return { success: false, error: 'api_error' };
   } catch (err) {
     console.error("Google Calendar Fetch Error:", err);
-    const url = generateGoogleCalendarUrl(lesson);
-    window.open(url, '_blank');
-    return { success: false };
+    return { success: false, error: 'network_error' };
   }
+}
+
+export async function syncLegacyLessons() {
+  const state = getState();
+  const token = localStorage.getItem('_gcal_token');
+  if (!token) return { success: false, error: 'no_token' };
+
+  const unsynced = state.lessons.filter(l => !l.googleId && l.status !== 'passive');
+  if (unsynced.length === 0) return { success: true, count: 0 };
+
+  let count = 0;
+  for (const lesson of unsynced) {
+    const res = await addEventToGoogleCalendar(lesson);
+    if (res.success) {
+      updateLesson(lesson.id, { googleId: res.googleId });
+      count++;
+    }
+  }
+  return { success: true, count };
 }
 
 export function checkLessonConflict(date, startTime, endTime, excludeId = null) {
@@ -555,22 +564,18 @@ export function checkLessonConflict(date, startTime, endTime, excludeId = null) 
   return null;
 }
 
-export function addLesson(data) {
+export async function addLesson(data) {
   const id = generateId();
-  const { syncToGoogle, ...lessonData } = data;
-  const lesson = { id, ...lessonData, status: 'upcoming', homework: null };
+  const lesson = { id, ...data, status: 'upcoming', homework: null };
   setState(s => ({ lessons: [...s.lessons, lesson] }));
   
-  // Arkaplanda Google Takvim'e Senkronize Et
-  if (syncToGoogle !== false) {
-    addEventToGoogleCalendar(lesson).then(res => {
-      if (res && res.success && res.googleId) {
-        updateLesson(id, { googleId: res.googleId });
-      }
-    });
+  // Google Takvim'e Senkronize Et (Zorunlu)
+  const res = await addEventToGoogleCalendar(lesson);
+  if (res && res.success && res.googleId) {
+    updateLesson(id, { googleId: res.googleId });
   }
   
-  return lesson;
+  return { ...lesson, ...res };
 }
 
 export function completeLesson(lessonId, extraOpts = {}) {
@@ -965,9 +970,15 @@ async function fetchGoogleEvents(startDate, endDate) {
       
       if (res.status === 401) {
         localStorage.removeItem('_gcal_token');
+        setState({ gcalStatus: 'expired' });
         return [];
       }
-      if (!res.ok) continue;
+      if (!res.ok) {
+        setState({ gcalStatus: 'error' });
+        continue;
+      }
+      
+      setState({ gcalStatus: 'connected' });
 
       const data = await res.json();
       const events = (data.items || []).map(item => {
@@ -1065,18 +1076,28 @@ export async function getTodayLessons() {
   // Cache for evaluate modal
   if (googleEvents.length > 0) {
     setState(s => {
-      const existingIds = new Set(s.googleEvents.map(e => e.id));
+      const existing = s.googleEvents || [];
+      const existingIds = new Set(existing.map(e => e.id));
       const newUnique = googleEvents.filter(e => !existingIds.has(e.id));
-      return { googleEvents: [...s.googleEvents, ...newUnique] };
+      return { googleEvents: [...existing, ...newUnique] };
     });
   }
 
+  // De-duplicate Google events
+  const seenGIds = new Set();
+  const uniqueGoogle = googleEvents.filter(e => {
+    if (!e.googleId) return true;
+    if (seenGIds.has(e.googleId)) return false;
+    seenGIds.add(e.googleId);
+    return true;
+  });
+
   const localLessons = state.lessons.filter(l => l.date === today && l.status !== 'passive');
   
-  const googleIds = new Set(googleEvents.map(e => e.googleId).filter(Boolean));
+  const googleIds = new Set(uniqueGoogle.map(e => e.googleId).filter(Boolean));
   const uniqueLocal = localLessons.filter(l => !l.googleId || !googleIds.has(l.googleId));
   
-  return [...uniqueLocal, ...googleEvents].sort((a, b) => a.startTime.localeCompare(b.startTime));
+  return [...uniqueLocal, ...uniqueGoogle].sort((a, b) => a.startTime.localeCompare(b.startTime));
 }
 
 export async function getWeekLessons(weekStart) {
@@ -1098,9 +1119,10 @@ export async function getWeekLessons(weekStart) {
   // Cache for evaluate modal
   if (googleEvents.length > 0) {
     setState(s => {
-      const existingIds = new Set(s.googleEvents.map(e => e.id));
+      const existing = s.googleEvents || [];
+      const existingIds = new Set(existing.map(e => e.id));
       const newUnique = googleEvents.filter(e => !existingIds.has(e.id));
-      return { googleEvents: [...s.googleEvents, ...newUnique] };
+      return { googleEvents: [...existing, ...newUnique] };
     });
   }
 
