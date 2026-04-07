@@ -57,8 +57,9 @@ export async function renderCalendar(navigate) {
   return {
     html,
     init: (el, nav) => {
-      let _year = viewYear, _month = viewMonth, _view = 'week';
+      let _year = viewYear, _month = viewMonth, _view = viewSelection;
       let _weekStart = monday;
+      let _isFirst = true;
 
       async function refresh() {
         const calView = el.querySelector('#calendar-view');
@@ -67,7 +68,10 @@ export async function renderCalendar(navigate) {
         const nextBtn = el.querySelector('#cal-next');
         const todayBtn = el.querySelector('#cal-today');
         
-        calView.innerHTML = `<div style="display:flex;justify-content:center;padding:100px;"><div class="spinner"></div></div>`;
+        if (!_isFirst || _view === 'google') {
+          calView.innerHTML = `<div style="display:flex;justify-content:center;padding:100px;"><div class="spinner"></div></div>`;
+        }
+        _isFirst = false;
         localStorage.setItem('_cal_view', _view);
 
         try {
@@ -164,6 +168,9 @@ export async function renderCalendar(navigate) {
 
       initCalendarDragDrop(el, nav);
       initCalendarEvents(el, nav);
+      
+      // Auto-refresh to sync title and load gcal if needed
+      refresh();
     }
   };
 }
