@@ -109,33 +109,6 @@ export function renderSettings(navigate) {
           </div>
         </div>
 
-        <!-- Google Calendar Integration -->
-        <div class="card">
-          <h3 style="font-size:15px;font-weight:700;margin-bottom:16px;">Google Takvim Bağlantısı</h3>
-          <div style="background:rgba(5,150,105,0.08);border:1px solid rgba(5,150,105,0.3);border-radius:10px;padding:16px;margin-bottom:16px;">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-              ${icon('calendar', 16)}
-              <span style="font-weight:600;color:var(--brand-green);">Bağımsız Takvim (Iframe)</span>
-            </div>
-            <p style="font-size:13px;color:var(--text-muted);">
-              Takvim sayfasında kendi Google Takviminizi doğrudan görmek için Takvim ID'nizi buraya yazın. Google Takvim ayarlarından takviminizi <strong>Herkesin erişimine açık</strong> yapmayı unutmayın.
-            </p>
-          </div>
-          <div class="form-group">
-            <label>Google Takvim ID(leri)</label>
-            <input type="text" id="g-cal-id" value="${state.settings.calendarId || ''}" placeholder="Örn: mail1@gmail.com, mail2@gmail.com">
-            <p style="font-size:11px;color:var(--text-muted);margin-top:4px;">
-              Birden fazla takvim eklemek için ID'leri virgül (,) ile ayırarak yazın. İlk sıradaki takvime yeni dersler otomatik eklenir.
-            </p>
-          </div>
-          <div style="display:flex; flex-direction:column; gap:10px;">
-            <button class="btn btn-primary" id="btn-save-calendar">${icon('check', 14)} Takvim Ayarlarını Kaydet</button>
-            <button class="btn btn-secondary" id="btn-sync-legacy" style="background:rgba(66, 133, 244, 0.1); border-color:rgba(66, 133, 244, 0.2); color:#1a73e8;">
-              ${icon('upload', 14)} Mevcut Dersleri Google'a Aktar
-            </button>
-            <p style="font-size:10px; color:var(--text-muted); text-align:center;">* Henüz Google'a aktarılmamış eski dersleri toplu olarak yükler.</p>
-          </div>
-        </div>
 
         <!-- Data Management -->
         <div class="card">
@@ -290,45 +263,7 @@ export function renderSettings(navigate) {
         }, 2000);
       });
 
-      el.querySelector('#btn-save-calendar')?.addEventListener('click', () => {
-        updateSettings({
-          calendarId: el.querySelector('#g-cal-id').value.trim(),
-        });
-        const btn = el.querySelector('#btn-save-calendar');
-        btn.innerHTML = `${icon('check', 14)} Kaydedildi!`;
-        btn.style.background = 'var(--success)';
-        setTimeout(() => {
-          btn.innerHTML = `${icon('check', 14)} Takvim Ayarlarını Kaydet`;
-          btn.style.background = '';
-        }, 2000);
-      });
 
-      el.querySelector('#btn-sync-legacy')?.addEventListener('click', async () => {
-        const btn = el.querySelector('#btn-sync-legacy');
-        const originalHtml = btn.innerHTML;
-        btn.disabled = true;
-        btn.innerHTML = '<div class="spinner-sm"></div> Aktarılıyor...';
-        
-        const { syncLegacyLessons } = await import('../store/store.js');
-        const res = await syncLegacyLessons();
-        
-        if (res.success) {
-          btn.innerHTML = `${icon('check', 14)} ${res.count} Ders Aktarıldı`;
-          btn.style.background = 'var(--success)';
-          btn.style.color = 'white';
-        } else {
-          btn.innerHTML = `${icon('alertCircle', 14)} Hata: ${res.error}`;
-          btn.style.background = 'var(--danger)';
-          btn.style.color = 'white';
-        }
-        
-        setTimeout(() => {
-          btn.innerHTML = originalHtml;
-          btn.disabled = false;
-          btn.style.background = '';
-          btn.style.color = '';
-        }, 3000);
-      });
 
       el.querySelector('#btn-sync-meb')?.addEventListener('click', async () => {
         if (confirm('MEB müfredatı varsayılan haline dönecektir. Kendinizin eklediği ünite isimleri vb. üzerine yazılabilir. Emin misiniz?')) {

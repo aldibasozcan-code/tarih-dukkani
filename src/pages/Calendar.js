@@ -1,7 +1,7 @@
 // ═════════════════════════════════════════════════
 // CALENDAR PAGE
 // ═════════════════════════════════════════════════
-import { getState, getLessonStatus, generateGoogleCalendarUrl, getWeekLessons, getLessonsInRange } from '../store/store.js';
+import { getState, getLessonStatus, getWeekLessons, getLessonsInRange } from '../store/store.js';
 import { icon } from '../components/icons.js';
 import { MONTHS_TR, DAYS_SHORT } from '../data/curriculum.js';
 import { getMonthDays, addDays, getLessonStatusInfo, getLocalDateStr, escHtml } from '../utils/helpers.js';
@@ -33,7 +33,6 @@ export async function renderCalendar(navigate) {
           <div class="tabs">
             <button class="tab-btn ${viewSelection === 'month' ? 'active' : ''}" data-view="month">Ay</button>
             <button class="tab-btn ${viewSelection === 'week' ? 'active' : ''}" data-view="week">Hafta</button>
-            <button class="tab-btn ${viewSelection === 'google' ? 'active' : ''}" data-view="google">Google Takvim</button>
           </div>
           <button class="btn btn-secondary" id="cal-prev">${icon('chevronLeft', 14)}</button>
           <span id="cal-title" style="font-weight:700;min-width:140px;text-align:center;">Haftalık Görünüm</span>
@@ -46,9 +45,7 @@ export async function renderCalendar(navigate) {
       <div id="calendar-view">
         ${viewSelection === 'month' 
           ? renderMonthView(getState(), viewYear, viewMonth, lessons) 
-          : viewSelection === 'google'
-            ? '<div style="display:flex;justify-content:center;padding:100px;"><div class="spinner"></div></div>'
-            : renderWeekView(getState(), monday, lessons)
+          : renderWeekView(getState(), monday, lessons)
         }
       </div>
     </div>
@@ -68,35 +65,7 @@ export async function renderCalendar(navigate) {
         const nextBtn = el.querySelector('#cal-next');
         const todayBtn = el.querySelector('#cal-today');
         
-        if (!_isFirst || _view === 'google') {
-          calView.innerHTML = `<div style="display:flex;justify-content:center;padding:100px;"><div class="spinner"></div></div>`;
-        }
-        _isFirst = false;
-        localStorage.setItem('_cal_view', _view);
-
         try {
-          if (_view === 'google') {
-            prevBtn.style.display = 'none';
-            nextBtn.style.display = 'none';
-            todayBtn.style.display = 'none';
-            title.textContent = 'Google Takvim (Full)';
-            
-            const calId = getState()?.settings?.calendarId;
-            if (!calId) {
-              calView.innerHTML = `<div class="empty-state">${icon('alertCircle', 40)}<p>Google Takvim ID tanımlanmamış. Ayarlar'dan ekleyebilirsiniz.</p></div>`;
-            } else {
-              const ids = calId.split(',').map(id => id.trim()).filter(id => id);
-              const srcParams = ids.map(id => `src=${encodeURIComponent(id)}`).join('&');
-              const tzone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Istanbul';
-              calView.innerHTML = `
-                <div class="card" style="padding:0; overflow:hidden; height:calc(100vh - 200px);">
-                  <iframe src="https://calendar.google.com/calendar/embed?${srcParams}&ctz=${tzone}&showTitle=0&showPrint=0&showTabs=1&showCalendars=0&showTz=0" style="border: 0; width: 100%; height: 100%;" frameborder="0"></iframe>
-                </div>
-              `;
-            }
-            return;
-          }
-
           prevBtn.style.display = 'flex';
           nextBtn.style.display = 'flex';
           todayBtn.style.display = 'inline-flex';
@@ -157,10 +126,6 @@ export async function renderCalendar(navigate) {
         refresh();
       });
 
-      el.querySelector('#btn-switch-google')?.addEventListener('click', () => {
-        localStorage.removeItem('_cal_internal');
-        nav('calendar', true);
-      });
 
       el.querySelector('#btn-add-lesson')?.addEventListener('click', () => {
         import('./modals/AddLessonModal.js').then(m => m.openAddLessonModal(() => nav('calendar', true)));
@@ -206,17 +171,14 @@ function renderMonthView(state, year, month, lessons = []) {
               <div style="display:flex; flex-direction:column; gap:2px; margin-top:4px;">
                 ${dayLessons.map(l => {
                   const status = getLessonStatus(l);
-                  const isMatchedGCal = l.isGoogle && l.refId;
-                  const color = l.isGoogle 
-                    ? (isMatchedGCal ? 'var(--accent2)' : '#4285f4') 
-                    : (status === 'completed' ? 'var(--success)' : status === 'waiting' ? 'var(--warning)' : 'var(--accent)');
+                  const color = status === 'completed' ? 'var(--success)' : status === 'waiting' ? 'var(--warning)' : 'var(--accent)';
                   const displayTitle = l.refName ? `${l.refName}${l.title ? ' - ' + l.title : ''}` : l.title;
                   
                   return `
                     <div class="cal-lesson-card" 
-                         ${!l.isGoogle ? 'draggable="true"' : ''} 
+                         draggable="true" 
                          data-id="${l.id}" 
-                         data-is-google="${l.isGoogle ? 'true' : 'false'}"
+                         data-is-google="false"
                          data-start-time="${l.startTime}"
                          title="${escHtml(displayTitle)}"
                          style="font-size:10px; padding:2px 4px; border-radius:4px; background:${color}15; border-left:2px solid ${color}; color:var(--text-primary); cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
@@ -269,28 +231,25 @@ function renderWeekView(state, weekStart, lessons = []) {
                 <div class="cal-drop-zone" data-date="${ds}" data-hour="${h}" style="border-right:1px solid var(--border-light); position:relative; transition:background 0.2s;">
                   ${dayHourLessons.map(l => {
                     const status = getLessonStatus(l);
-                    const isMatchedGCal = l.isGoogle && l.refId;
-                    const color = l.isGoogle 
-                      ? (isMatchedGCal ? 'var(--accent2)' : '#4285f4') 
-                      : (status === 'completed' ? 'var(--success)' : status === 'waiting' ? 'var(--warning)' : 'var(--accent)');
+                    const color = status === 'completed' ? 'var(--success)' : status === 'waiting' ? 'var(--warning)' : 'var(--accent)';
                     const displayTitle = l.refName ? `${l.refName}${l.title ? ' - ' + l.title : ''}` : l.title;
 
                     return `
                       <div class="cal-lesson-card" 
-                           ${!l.isGoogle ? 'draggable="true"' : ''}
+                           draggable="true"
                            data-id="${l.id}"
-                           data-is-google="${l.isGoogle ? 'true' : 'false'}"
+                           data-is-google="false"
                            data-start-time="${l.startTime}"
                            style="position:absolute; left:4px; right:4px; top:4px; bottom:4px; z-index:5; background:${color}15; border-left:4px solid ${color}; border-radius:6px; padding:8px; cursor:pointer; box-shadow:var(--shadow-sm); overflow:hidden;">
                         <div style="font-size:10px; font-weight:700; color:${color}; margin-bottom:2px; display:flex; justify-content:space-between;">
                           <span>${l.startTime} - ${l.endTime}</span>
-                          ${!l.isGoogle ? icon('dragHandle', 12) : ''}
+                          ${icon('dragHandle', 12)}
                         </div>
                         <div style="font-size:12px; font-weight:700; color:var(--text-primary); margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
                           ${escHtml(displayTitle)}
                         </div>
                         <div style="font-size:10px; color:var(--text-muted); display:flex; gap:4px; align-items:center;">
-                          ${icon('book', 10)} ${l.isGoogle ? 'Google Takvim' : (l.subject.charAt(0).toUpperCase() + l.subject.slice(1))}
+                          ${icon('book', 10)} ${l.subject.charAt(0).toUpperCase() + l.subject.slice(1)}
                         </div>
                       </div>
                     `;

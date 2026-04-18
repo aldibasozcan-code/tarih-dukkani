@@ -21,14 +21,9 @@ export const loginUser = async (email, password) => {
 // Google ile giriş
 export const loginWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
-    provider.addScope('https://www.googleapis.com/auth/calendar.events.readonly');
     
     try {
         const result = await signInWithPopup(auth, provider);
-        const credential = GoogleAuthProvider.credentialFromResult(result);
-        if (credential?.accessToken) {
-            localStorage.setItem('_gcal_token', credential.accessToken);
-        }
         return result;
     } catch (error) {
         if (error.code === 'auth/unauthorized-domain') {
@@ -42,7 +37,6 @@ export const loginWithGoogle = async () => {
 
 // Çıkış
 export const logoutUser = async () => {
-    localStorage.removeItem('_gcal_token'); // Temizle
     return await signOut(auth);
 };
 

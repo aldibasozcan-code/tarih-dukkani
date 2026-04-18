@@ -14,7 +14,7 @@ export function renderLiveClass(navigate) {
       <div class="page-header">
         <div>
           <h2>Canlı Sınıf</h2>
-          <p>Ders linkleri - Google Meet & Zoom</p>
+          <p>Ders linkleri - Jitsi Meet & Zoom</p>
         </div>
       </div>
 

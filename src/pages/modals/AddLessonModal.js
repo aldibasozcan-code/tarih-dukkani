@@ -10,7 +10,6 @@ import { icon } from '../../components/icons.js';
 export function openAddLessonModal(onSave, prefill = {}) {
   const state = getState();
   const today = new Date().toISOString().split('T')[0];
-  const hasGCal = !!localStorage.getItem('_gcal_token');
 
   openModal({
     title: 'Ders Ekle',
@@ -42,10 +41,6 @@ export function openAddLessonModal(onSave, prefill = {}) {
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label>Bitiş Saati</label>
-          <input type="time" id="l-end" value="${prefill.endTime || '15:00'}">
-        </div>
-        <div class="form-group">
           <label>Saatlik Ücret (₺)</label>
           <input type="number" id="l-fee" value="${prefill.fee || 500}" min="0" step="50">
         </div>
@@ -65,16 +60,16 @@ export function openAddLessonModal(onSave, prefill = {}) {
         <textarea id="l-notes" rows="2" placeholder="Ders notları..."></textarea>
       </div>
 
-      <div class="form-group" style="margin-top:10px;">
-        <div style="display:flex; align-items:center; gap:10px; font-size:14px; color:var(--text-secondary); background:rgba(66, 133, 244, 0.05); padding:12px; border-radius:8px; border:1px solid rgba(66, 133, 244, 0.1);">
-          ${icon('calendar', 18)}
-          <div style="flex:1;">
-            <div style="font-weight:700; color:var(--text-primary);">Google Takvim Senkronizasyonu</div>
-            <div style="font-size:12px;">Ders otomatik olarak Google Takviminize eklenecektir.</div>
-          </div>
-          ${hasGCal ? '<span class="badge badge-success">Bağlı</span>' : '<span class="badge badge-danger">Bağlı Değil</span>'}
-        </div>
+      <div class="form-group" style="background:rgba(5, 150, 105, 0.05); padding:16px; border-radius:12px; border:1px solid rgba(5, 150, 105, 0.1); margin-top:8px;">
+        <label class="checkbox-container" style="display:flex; align-items:center; gap:10px; cursor:pointer; margin:0; text-transform:none; font-weight:600; color:var(--brand-green);">
+          <input type="checkbox" id="l-recurring" style="width:18px; height:18px; cursor:pointer;">
+          <span>Haftalık Tekrarla (1 Ay / 4 Hafta boyunca ekle)</span>
+        </label>
+        <p style="font-size:11px; color:var(--text-muted); margin-top:8px; margin-left:28px;">
+          Seçilirse, bu ders bugünden itibaren haftalık olarak toplam 4 kez takvime işlenecektir.
+        </p>
       </div>
+
     `,
     footer: `
       <button class="btn btn-secondary" id="l-cancel">İptal</button>
@@ -205,7 +200,7 @@ export function openAddLessonModal(onSave, prefill = {}) {
   function checkConflictLive() {
     const date = document.getElementById('l-date').value;
     const start = document.getElementById('l-start').value;
-    const end = document.getElementById('l-end').value || addMins(start, 60);
+    const end = addMins(start, 60);
 
     if (!date || !start) return;
 
@@ -219,13 +214,6 @@ export function openAddLessonModal(onSave, prefill = {}) {
             <strong>Zaman Çakışması (Yerel):</strong> ${conflict.lesson.startTime} - ${conflict.lesson.endTime} saatleri arasında <strong>"${escHtml(conflict.lesson.title)}"</strong> dersi var.
           </div>
         `;
-      } else {
-        conflictAlert.innerHTML = `
-          <div style="margin-top:2px;">${icon('calendar', 20)}</div>
-          <div style="flex:1;">
-            <strong>Google Takvim Çakışması:</strong> ${conflict.event.startTime} - ${conflict.event.endTime} saatleri arasında <strong>"${escHtml(conflict.event.title)}"</strong> etkinliği var.
-          </div>
-        `;
       }
     } else {
       conflictAlert.style.display = 'none';
@@ -235,12 +223,7 @@ export function openAddLessonModal(onSave, prefill = {}) {
   unitSel.addEventListener('change', updateTopicOptions);
 
   document.getElementById('l-date')?.addEventListener('change', checkConflictLive);
-  document.getElementById('l-start')?.addEventListener('change', (e) => {
-    const endEl = document.getElementById('l-end');
-    if (endEl) endEl.value = addMins(e.target.value, 60);
-    checkConflictLive();
-  });
-  document.getElementById('l-end')?.addEventListener('change', checkConflictLive);
+  document.getElementById('l-start')?.addEventListener('change', checkConflictLive);
 
   document.getElementById('l-cancel')?.addEventListener('click', closeModal);
   document.getElementById('l-save')?.addEventListener('click', async () => {
@@ -249,23 +232,15 @@ export function openAddLessonModal(onSave, prefill = {}) {
     const type = typeSel.value;
     const date = document.getElementById('l-date').value;
     const start = document.getElementById('l-start').value;
-    const end = document.getElementById('l-end').value || addMins(start, 60);
+    const end = addMins(start, 60);
 
     if (!refId || !date || !start) { alert('Öğrenci/grup, tarih ve başlangıç saati zorunludur.'); return; }
 
-    const state = getState();
-    const hasGCal = !!localStorage.getItem('_gcal_token');
-    
-    if (!hasGCal) {
-      if (!confirm('Google Takvim bağlantınız yok. Ders sadece yerel olarak kaydedilecek ve otomatik senkronizasyon çalışmayacaktır. Devam etmek istiyor musunuz?')) {
-        return;
-      }
-    }
 
     // Final Conflict Check
     const conflict = checkLessonConflict(date, start, end);
     if (conflict) {
-      alert(`Seçilen saatte bir çakışma var: ${conflict.type === 'internal' ? conflict.lesson.title : conflict.event.title}`);
+      alert(`Seçilen saatte bir çakışma var: ${conflict.lesson.title}`);
       return;
     }
     
@@ -281,7 +256,8 @@ export function openAddLessonModal(onSave, prefill = {}) {
     saveBtn.disabled = true;
     saveBtn.innerHTML = '<div class="spinner-sm"></div> Kaydediliyor...';
 
-    const result = await addLesson({
+    const isRecurring = document.getElementById('l-recurring').checked;
+    const lessonData = {
       type,
       refId,
       title: refEntity?.name || '',
@@ -295,10 +271,23 @@ export function openAddLessonModal(onSave, prefill = {}) {
       grade: refEntity?.grade || '',
       notes: document.getElementById('l-notes').value.trim(),
       fee: parseFloat(feeInput.value) || 0
-    });
+    };
 
-    if (result.success === false && result.error === 'expired') {
-      alert('Google oturumunuzun süresi dolmuş. Lütfen Ayarlar sayfasından oturumu tazeleyin.');
+    if (isRecurring) {
+      // Create 4 lessons (current + 3 more weeks)
+      for (let i = 0; i < 4; i++) {
+        const d = new Date(date + 'T00:00:00');
+        d.setDate(d.getDate() + (i * 7));
+        const currentDateStr = d.toISOString().split('T')[0];
+        
+        // Final Conflict Check for each recurring date
+        const conflict = checkLessonConflict(currentDateStr, start, end);
+        if (!conflict) {
+          await addLesson({ ...lessonData, date: currentDateStr });
+        }
+      }
+    } else {
+      await addLesson(lessonData);
     }
 
     closeModal();

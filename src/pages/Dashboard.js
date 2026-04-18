@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════
 // DASHBOARD PAGE
 // ═══════════════════════════════════════════════════
-import { getState, getTodayLessons, getPendingLessons, getMonthlyStats, getLessonStatus, completeLesson, postponeLesson, addNextWeekLesson, generateGoogleCalendarUrl } from '../store/store.js';
+import { getState, getTodayLessons, getPendingLessons, getMonthlyStats, getLessonStatus, completeLesson, postponeLesson, addNextWeekLesson } from '../store/store.js';
 import { icon } from '../components/icons.js';
 import { formatCurrency, formatDate, formatDateShort, formatTime, getLessonStatusInfo, getAvatarColor, getInitials, getLocalDateStr, escHtml } from '../utils/helpers.js';
 import { openModal } from '../components/modal.js';
@@ -74,9 +74,6 @@ export async function renderDashboard(navigate) {
     return l.date?.startsWith(`${y}-${String(m + 1).padStart(2, '0')}`) && l.status === 'completed';
   }).length;
 
-  const gcalStatus = state.gcalStatus || (localStorage.getItem('_gcal_token') ? 'connected' : 'none');
-  const isGCalExpired = gcalStatus === 'expired';
-  const isGCalDisconnected = gcalStatus === 'none';
 
   const html = `
     <div class="fade-in">
@@ -90,22 +87,6 @@ export async function renderDashboard(navigate) {
         </div>
       ` : ''}
 
-      ${(isGCalExpired || isGCalDisconnected) ? `
-        <div class="pending-alert fade-in-up" style="background:rgba(66, 133, 244, 0.05); border:1px solid rgba(66, 133, 244, 0.2); color:#1a73e8; padding: 10px 16px; border-radius: 12px; display:flex; align-items:center; justify-content:space-between; margin-bottom: 24px;">
-           <div style="display:flex;align-items:center;gap:10px;">
-             <div style="background:#4285f4; color:white; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center;">
-               ${icon('calendar', 14)}
-             </div>
-             <div>
-               <div style="font-weight:700; font-size:14px;">Google Takvim ${isGCalExpired ? 'Oturumu Kapandı' : 'Bağlı Değil'}</div>
-               <div style="font-size:12px; opacity:0.8;">Derslerinizi her yerden takip etmek için ${isGCalExpired ? 'tazeleyin' : 'bağlanın'}.</div>
-             </div>
-           </div>
-           <button class="btn btn-sm" id="btn-reconnect-gcal" style="background:#4285f4; color:white; border-radius:8px; padding: 6px 16px; font-weight:700;">
-             ${isGCalExpired ? 'Tazele' : 'Bağlan'}
-           </button>
-        </div>
-      ` : ''}
 
       <!-- Premium Welcome Banner -->
       <div class="welcome-banner-modern fade-in-up stagger-1" style="margin-bottom:32px;">
@@ -195,16 +176,11 @@ export async function renderDashboard(navigate) {
               const status = getLessonStatus(lesson);
               const si = getLessonStatusInfo(status);
               
-              const isMatchedGCal = lesson.isGoogle && lesson.refId;
-              const borderColor = lesson.isGoogle 
-                ? (isMatchedGCal ? 'var(--accent2)' : '#4285f4') 
-                : (si.badgeClass.includes('success') ? 'var(--success)' : si.badgeClass.includes('warning') ? 'var(--warning)' : 'var(--border)');
+              const borderColor = si.badgeClass.includes('success') ? 'var(--success)' : si.badgeClass.includes('warning') ? 'var(--warning)' : 'var(--border)';
               
-              const badgeLabel = lesson.isGoogle 
-                ? (isMatchedGCal ? 'Google Takvim' : 'G. Takvim') 
-                : si.label;
+              const badgeLabel = si.label;
                 
-              const badgeClass = lesson.isGoogle ? 'badge-info' : si.badgeClass;
+              const badgeClass = si.badgeClass;
               const displayTitle = lesson.refName ? `${lesson.refName} ${lesson.title ? ' - ' + lesson.title : ''}` : lesson.title;
 
               return `
@@ -219,21 +195,15 @@ export async function renderDashboard(navigate) {
                       <div style="font-weight:700;font-size:15px;color:var(--text-primary);">${escHtml(displayTitle)}</div>
                       <div style="display:flex; align-items:center; gap:4px; font-size:12px; color:var(--text-muted); margin-top:4px;">
                         ${icon('clock', 12)} ${lesson.startTime} – ${lesson.endTime}
-                        ${lesson.isGoogle ? `<span style="margin-left:8px; color:#4285f4; font-weight:700;">${icon('externalLink', 10)} GCal</span>` : ''}
                       </div>
                     </div>
                     <div style="text-align:right;">
-                      <span class="badge ${badgeClass}" style="border-radius:20px; font-size:10px; ${lesson.isGoogle && !isMatchedGCal ? 'background:#4285f4; color:white;' : ''}">${badgeLabel}</span>
-                      <div style="margin-top:8px; display:flex; gap:6px; justify-content:flex-end;">
-                        ${(status === 'waiting' || status === 'ongoing') ? `
-                          <button class="btn btn-success btn-sm btn-icon" data-complete-lesson="${lesson.id}" title="Tamamla">${icon('check', 14)}</button>
-                        ` : ''}
-                        ${lesson.isGoogle ? `
-                          <a href="${lesson.link}" target="_blank" class="btn btn-secondary btn-sm btn-icon" title="Takvimde Gör">${icon('externalLink', 14)}</a>
-                        ` : `
-                          <a href="${generateGoogleCalendarUrl(lesson)}" target="_blank" class="btn btn-secondary btn-sm btn-icon" title="Takvime Ekle">${icon('externalLink', 14)}</a>
-                        `}
-                      </div>
+                      <span class="badge ${badgeClass}" style="border-radius:20px; font-size:10px;">${badgeLabel}</span>
+                        <div style="margin-top:8px; display:flex; gap:6px; justify-content:flex-end;">
+                          ${(status === 'waiting' || status === 'ongoing') ? `
+                            <button class="btn btn-success btn-sm btn-icon" data-complete-lesson="${lesson.id}" title="Tamamla">${icon('check', 14)}</button>
+                          ` : ''}
+                        </div>
                     </div>
                   </div>
                 </div>
@@ -368,12 +338,6 @@ function initDashboard(el, navigate) {
     import('./modals/SeasonReviewModal.js').then(m => m.openSeasonReviewModal());
   });
 
-  // Reconnect Google
-  el.querySelector('#btn-reconnect-gcal')?.addEventListener('click', async () => {
-    const { loginWithGoogle } = await import('../lib/auth.js');
-    await loginWithGoogle();
-    navigate('dashboard', true);
-  });
 }
 
 async function openPendingModal(navigate) {
@@ -412,7 +376,6 @@ function renderPendingLessons(pending, navigate) {
               <div style="font-weight:700;font-size:14px;color:var(--text-primary);">${escHtml(displayTitle)}</div>
               <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">
                 ${lesson.date} • ${lesson.startTime} - ${lesson.endTime}
-                ${lesson.isGoogle ? ` <span style="color:#4285f4; font-weight:700;">(Google)</span>` : ''}
               </div>
             </div>
             <button class="btn btn-success btn-sm" data-complete-lesson-modal="${lesson.id}">

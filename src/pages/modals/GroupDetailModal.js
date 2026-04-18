@@ -4,7 +4,7 @@
 import { getState, getFutureLessonsForRef } from '../../store/store.js';
 import { icon } from '../../components/icons.js';
 import { openModal, closeModal } from '../../components/modal.js';
-import { escHtml, getAvatarColor, getInitials, getGroupInitials, formatCurrency, formatDate } from '../../utils/helpers.js';
+import { escHtml, getAvatarColor, getInitials, getGroupInitials, formatCurrency, formatDate, formatDateShort } from '../../utils/helpers.js';
 import { SUBJECTS, getSubjectsForBranches, CONTENT_TYPES, DAYS_TR } from '../../data/curriculum.js';
 
 export function openGroupDetail(groupId, navigate) {
@@ -146,6 +146,13 @@ export function openGroupDetail(groupId, navigate) {
                       ${done ? icon('check', 11) : ''}
                     </button>
                     <span style="flex:1;font-size:12px;${done ? 'text-decoration:line-through;color:var(--text-muted);' : ''}">${escHtml(topic.name)}</span>
+                    <div style="display:flex;gap:4px;">
+                      ${topicMaterials.map(m => `
+                        <a href="${escHtml(m.link)}" target="_blank" class="badge badge-info" style="text-decoration:none;font-size:10px;">
+                          ${CONTENT_TYPES.find(ct => ct.id === m.contentType)?.icon || '📄'} ${m.title}
+                        </a>
+                      `).join('')}
+                    </div>
                   </div>
                 `;
               }).join('')}
