@@ -48,6 +48,7 @@ export function openGroupDetail(groupId, navigate) {
           <div style="display:flex;gap:10px;margin-top:4px;flex-wrap:wrap;align-items:center;">
             <span class="badge badge-purple">${group.grade}</span>
             <span class="badge badge-muted">${DAYS_TR[group.dayOfWeek]} ${group.time}</span>
+            <span class="badge badge-muted">${formatDateShort(group.startDate)} - ${formatDateShort(group.endDate)}</span>
             <span class="badge badge-info">${formatCurrency(group.rate)}/saat</span>
             <span class="badge ${group.status === 'passive' ? 'badge-danger' : 'badge-success'}">${group.status === 'passive' ? 'PASİF' : 'AKTİF'}</span>
             ${group.zoomLink ? `<a href="${escHtml(group.zoomLink)}" target="_blank" class="badge badge-success" style="text-decoration:none;">📹 Zoom</a>` : '<span class="badge badge-warning">Zoom bekleniyor</span>'}

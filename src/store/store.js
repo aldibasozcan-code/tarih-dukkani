@@ -348,27 +348,40 @@ export function addGroup(data) {
   const state = getState();
   const activeSubjects = getSubjectsForBranches(state.profile.branches || []);
 
-  const curriculum = activeSubjects.map(subj => ({
-    subject: subj,
-    grade: data.grade,
-    units: state.curriculum[subj]?.[data.grade] || []
-  })).filter(c => c.units.length > 0);
-
-  const group = { id, ...data, status: 'active', curriculum, completedTopics: [], zoomLink: data.zoomLink || '' };
-  setState(s => ({ groups: [...s.groups, group] }));
-  // Auto-generate lessons for 52 weeks
-  _generateGroupLessonsForGroup(group);
+  const group = { 
+    id, 
+    ...data, 
+    status: 'active', 
+    curriculum, 
+    completedTopics: [], 
+    zoomLink: data.zoomLink || '',
+    startDate: data.startDate || todayStr(),
+    endDate: data.endDate || getLocalDateStr(addDays(new Date(), 365)) // 1 year default
+  };
+  setState(s => ({ 
+    groups: [...s.groups, group],
+    lessons: [...s.lessons, ..._generateGroupLessonsForGroup(group)]
+  }));
   return group;
 }
 
 function _generateGroupLessonsForGroup(group) {
+  const start = new Date((group.startDate || todayStr()) + 'T00:00:00');
+  const end = new Date((group.endDate || todayStr()) + 'T23:59:59');
   const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // If we are generating new lessons, we only generate from TODAY or START, whichever is later
+  // to avoid overwriting past history unless explicitly asked (unlikely here)
+  const iterDate = start > today ? new Date(start) : new Date(today);
+  
+  // Align to the group's dayOfWeek
+  const dayDiff = (group.dayOfWeek - iterDate.getDay() + 7) % 7;
+  iterDate.setDate(iterDate.getDate() + dayDiff);
+
   const newLessons = [];
-  for (let w = 0; w < 52; w++) {
-    const d = new Date(today);
-    const dayDiff = ((group.dayOfWeek - d.getDay()) + 7) % 7 || 7;
-    d.setDate(d.getDate() + dayDiff + w * 7);
-    const dateStr = d.toISOString().split('T')[0];
+  while (iterDate <= end) {
+    const dateStr = getLocalDateStr(iterDate);
     newLessons.push({
       id: generateId(),
       type: 'group',
@@ -386,18 +399,28 @@ function _generateGroupLessonsForGroup(group) {
       notes: '',
       fee: group.rate,
     });
+    iterDate.setDate(iterDate.getDate() + 7);
   }
-  setState(s => ({ lessons: [...s.lessons, ...newLessons] }));
+  return newLessons;
 }
 
 export function updateGroup(id, data) {
   setState(s => {
-    let gradeChanged = false;
+    let groupToUpdate = s.groups.find(g => g.id === id);
+    if (!groupToUpdate) return s;
+
+    const nameChanged = data.name && data.name !== groupToUpdate.name;
+    const gradeChanged = data.grade && data.grade !== groupToUpdate.grade;
+    const scheduleChanged = (data.dayOfWeek !== undefined && data.dayOfWeek !== groupToUpdate.dayOfWeek) ||
+                            (data.time && data.time !== groupToUpdate.time) ||
+                            (data.duration !== undefined && data.duration !== groupToUpdate.duration) ||
+                            (data.startDate && data.startDate !== groupToUpdate.startDate) ||
+                            (data.endDate && data.endDate !== groupToUpdate.endDate);
+
     const groups = s.groups.map(g => {
       if (g.id === id) {
         let updated = { ...g, ...data };
-        if (data.grade && data.grade !== g.grade) {
-          gradeChanged = true;
+        if (gradeChanged) {
           const activeSubjects = getSubjectsForBranches(s.profile.branches || []);
           updated.curriculum = activeSubjects.map(subj => ({
             subject: subj,
@@ -411,9 +434,15 @@ export function updateGroup(id, data) {
     });
 
     let lessons = s.lessons;
+
+    // 1. Sync Name Change
+    if (nameChanged) {
+      lessons = lessons.map(l => (l.type === 'group' && l.refId === id) ? { ...l, title: data.name } : l);
+    }
+
+    // 2. Sync Grade/Subject Change (for upcoming only)
     if (gradeChanged) {
-      // Update grade/subject for upcoming group lessons
-      lessons = s.lessons.map(l => {
+      lessons = lessons.map(l => {
         if (l.type === 'group' && l.refId === id && l.status === 'upcoming') {
           return { 
             ...l, 
@@ -425,6 +454,20 @@ export function updateGroup(id, data) {
       });
     }
 
+    // 3. Handle Schedule/Range Changes (Reconcile upcoming lessons)
+    if (scheduleChanged) {
+      const updatedGroup = { ...groupToUpdate, ...data };
+      const todayShort = todayStr();
+      
+      // Remove all UPCOMING lessons that are after/on today (only if they aren't completed yet)
+      lessons = lessons.filter(l => !(l.type === 'group' && l.refId === id && l.status === 'upcoming' && l.date >= todayShort));
+      
+      // Regenerate upcoming lessons from TODAY onwards based on new schedule/range
+      const newUpcoming = _generateGroupLessonsForGroup(updatedGroup);
+      lessons = [...lessons, ...newUpcoming];
+    }
+
+    // 4. Handle Passive/Active status
     if (data.status) {
       lessons = lessons.map(l => {
         if (l.type === 'group' && l.refId === id) {

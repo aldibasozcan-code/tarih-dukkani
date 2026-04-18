@@ -4,7 +4,7 @@
 import { getState, addGroup, updateGroup } from '../../store/store.js';
 import { ALL_GRADES, DAYS_TR } from '../../data/curriculum.js';
 import { openModal, closeModal } from '../../components/modal.js';
-import { escHtml } from '../../utils/helpers.js';
+import { escHtml, todayStr, getLocalDateStr, addDays } from '../../utils/helpers.js';
 
 export function openAddGroupModal(onSave, editId = null) {
   const group = editId ? getState().groups.find(g => g.id === editId) : null;
@@ -58,11 +58,21 @@ export function openAddGroupModal(onSave, editId = null) {
           </select>
         </div>
       </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Başlangıç Tarihi *</label>
+          <input type="date" id="g-start" value="${group?.startDate || todayStr()}">
+        </div>
+        <div class="form-group">
+          <label>Bitiş Tarihi *</label>
+          <input type="date" id="g-end" value="${group?.endDate || getLocalDateStr(addDays(new Date(), 365))}">
+        </div>
+      </div>
       <div class="form-group">
         <label>Notlar</label>
         <textarea id="g-notes" rows="2">${escHtml(group?.notes || '')}</textarea>
       </div>
-      ${!group ? '<div style="padding:10px;background:rgba(124,106,255,0.08);border-radius:8px;font-size:12px;color:var(--accent2);">Grup eklenince seçilen gün ve saatte 52 hafta boyunca haftalık ders otomatik oluşturulacak.</div>' : ''}
+      ${!group ? '<div style="padding:10px;background:rgba(124,106,255,0.08);border-radius:8px;font-size:12px;color:var(--accent2);">Grup eklenince seçilen tarih aralığında ve saatte haftalık dersler otomatik oluşturulacak.</div>' : ''}
     `,
     footer: `
       <button class="btn btn-secondary" id="g-cancel">İptal</button>
@@ -86,6 +96,8 @@ export function openAddGroupModal(onSave, editId = null) {
       zoomLink: document.getElementById('g-zoom').value.trim(),
       notes: document.getElementById('g-notes').value.trim(),
       status: document.getElementById('g-status').value,
+      startDate: document.getElementById('g-start').value,
+      endDate: document.getElementById('g-end').value,
     };
 
     if (group) {
