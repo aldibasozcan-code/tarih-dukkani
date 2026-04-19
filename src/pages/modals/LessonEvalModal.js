@@ -4,7 +4,7 @@
 import { getState, completeLesson, postponeLesson, addNextWeekLesson, addNotification } from '../../store/store.js';
 import { icon } from '../../components/icons.js';
 import { openModal, closeModal, showConfirm } from '../../components/modal.js';
-import { escHtml } from '../../utils/helpers.js';
+import { escHtml, todayStr } from '../../utils/helpers.js';
 
 export function openLessonEvalModal(lessonId, navigate) {
   const state = getState();
@@ -39,17 +39,42 @@ export function openLessonEvalModal(lessonId, navigate) {
         <div style="font-size:13px;color:var(--text-muted);">Ücret: ₺${lesson.fee || ref?.rate || 0}</div>
       </div>
 
-      <div style="margin-bottom:20px;">
-        <p style="font-size:14px;font-weight:600;margin-bottom:12px;">Bu ders tamamlandı mı?</p>
-        <div style="display:flex;gap:10px;">
-          <button class="btn btn-success" id="btn-completed" style="flex:1;">
-            ${icon('checkCircle', 15)} Evet, Tamamlandı
-          </button>
-          <button class="btn btn-warning" id="btn-postpone" style="flex:1;">
-            ${icon('clock', 15)} Ertele
-          </button>
-        </div>
-      </div>
+      ${(() => {
+        const isDone = lesson.status === 'completed';
+        const isFuture = lesson.date > todayStr();
+        
+        if (isDone) {
+          return `
+            <div style="background:rgba(46,213,115,0.1); border:1px solid var(--success); border-radius:12px; padding:16px; display:flex; align-items:center; gap:12px; color:var(--success);">
+              ${icon('checkCircle', 20)}
+              <div style="font-size:14px; font-weight:600;">Bu ders daha önce onaylandı olarak işaretlendi.</div>
+            </div>
+          `;
+        }
+        
+        if (isFuture) {
+          return `
+            <div style="background:rgba(255,159,67,0.08); border:1px solid var(--warning); border-radius:12px; padding:16px; display:flex; align-items:center; gap:12px; color:var(--warning);">
+              ${icon('alertCircle', 20)}
+              <div style="font-size:14px; font-weight:600;">Tarihi henüz gelmemiş dersleri tamamlandı olarak işaretleyemezsiniz.</div>
+            </div>
+          `;
+        }
+
+        return `
+          <div style="margin-bottom:20px;">
+            <p style="font-size:14px;font-weight:600;margin-bottom:12px;">Bu ders tamamlandı mı?</p>
+            <div style="display:flex;gap:10px;">
+              <button class="btn btn-success" id="btn-completed" style="flex:1;">
+                ${icon('checkCircle', 15)} Evet, Tamamlandı
+              </button>
+              <button class="btn btn-warning" id="btn-postpone" style="flex:1;">
+                ${icon('clock', 15)} Ertele
+              </button>
+            </div>
+          </div>
+        `;
+      })()}
 
       <div id="completion-form" style="display:none;">
         <hr class="divider">

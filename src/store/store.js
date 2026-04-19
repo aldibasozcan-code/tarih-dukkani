@@ -540,6 +540,12 @@ export function completeLesson(lessonId, extraOpts = {}) {
     return;
   }
 
+  // Prevent completing future lessons
+  if (lesson.date > todayStr()) {
+    console.warn("Cannot complete future lessons.");
+    return;
+  }
+
   const updates = {};
   if (isNewLesson) {
     updates.lessons = [...state.lessons, { ...lesson, ...extraOpts }];
