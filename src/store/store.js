@@ -297,7 +297,13 @@ export function addStudent(data) {
   })).filter(c => c.units.length > 0);
 
   const student = { id, ...data, status: 'active', curriculum, completedTopics: [], homework: [] };
-  setState(s => ({ students: [...s.students, student] }));
+  const { lessons, transactions } = _generateRecurringLessons(student, 'student');
+
+  setState(s => ({
+    students: [...s.students, student],
+    lessons: [...s.lessons, ...lessons],
+    transactions: [...s.transactions, ...transactions]
+  }));
   return student;
 }
 
@@ -381,53 +387,76 @@ export function addGroup(data) {
     completedTopics: [], 
     zoomLink: data.zoomLink || '',
     startDate: data.startDate || todayStr(),
-    endDate: data.endDate || getLocalDateStr(addDays(new Date(), 365)) // 1 year default
+    endDate: data.endDate || getLocalDateStr(addDays(new Date(), 240))
   };
+
+  const { lessons, transactions } = _generateRecurringLessons(group, 'group');
 
   setState(s => ({ 
     groups: [...s.groups, group],
-    lessons: [...s.lessons, ..._generateGroupLessonsForGroup(group)]
+    lessons: [...s.lessons, ...lessons],
+    transactions: [...s.transactions, ...transactions]
   }));
   return group;
 }
 
-function _generateGroupLessonsForGroup(group) {
-  const start = new Date((group.startDate || todayStr()) + 'T00:00:00');
-  const end = new Date((group.endDate || todayStr()) + 'T23:59:59');
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+function _generateRecurringLessons(entity, type) {
+  if (entity.dayOfWeek === null || entity.dayOfWeek === undefined) return { lessons: [], transactions: [] };
 
-  // If we are generating new lessons, we only generate from TODAY or START, whichever is later
-  // to avoid overwriting past history unless explicitly asked (unlikely here)
-  const iterDate = start > today ? new Date(start) : new Date(today);
+  const start = new Date((entity.startDate || todayStr()) + 'T00:00:00');
+  const end = new Date((entity.endDate || todayStr()) + 'T23:59:59');
+  const today = todayStr();
+
+  const iterDate = new Date(start);
   
-  // Align to the group's dayOfWeek
-  const dayDiff = (group.dayOfWeek - iterDate.getDay() + 7) % 7;
+  // Align to the entity's dayOfWeek
+  const dayDiff = (entity.dayOfWeek - iterDate.getDay() + 7) % 7;
   iterDate.setDate(iterDate.getDate() + dayDiff);
 
   const newLessons = [];
+  const newTransactions = [];
+
   while (iterDate <= end) {
     const dateStr = getLocalDateStr(iterDate);
+    const isPast = dateStr < today;
+    const lessonId = generateId();
+
     newLessons.push({
-      id: generateId(),
-      type: 'group',
-      refId: group.id,
-      title: group.name,
+      id: lessonId,
+      type: type,
+      refId: entity.id,
+      title: entity.name,
       date: dateStr,
-      startTime: group.time,
-      endTime: _addMinutes(group.time, group.duration || 60),
-      status: 'upcoming',
-      subject: _getSubjectForGrade(group.grade, getState().profile.branches || []),
-      grade: group.grade,
+      startTime: entity.time || '14:00',
+      endTime: _addMinutes(entity.time || '14:00', entity.duration || 60),
+      status: isPast ? 'completed' : 'upcoming',
+      subject: _getSubjectForGrade(entity.grade, getState().profile.branches || []),
+      grade: entity.grade,
       unitId: null,
       topicId: null,
       homework: null,
-      notes: '',
-      fee: group.rate,
+      notes: isPast ? 'Geçmiş ders kaydı (Otomatik oluşturuldu)' : '',
+      fee: entity.rate || 0,
+      lessonFormat: entity.lessonFormat || (type === 'student' ? 'meet' : 'zoom'),
+      lessonLink: entity.lessonLink || entity.meetLink || entity.zoomLink || '',
     });
+
+    if (isPast && (entity.rate || 0) > 0) {
+      newTransactions.push({
+        id: generateId(),
+        type: 'income',
+        amount: entity.rate,
+        description: `${entity.name} - ${dateStr} Dersi (Geçmiş Kayıt)`,
+        date: dateStr,
+        refId: entity.id,
+        refType: type,
+        lessonId: lessonId
+      });
+    }
+
     iterDate.setDate(iterDate.getDate() + 7);
   }
-  return newLessons;
+  return { lessons: newLessons, transactions: newTransactions };
 }
 
 export function updateGroup(id, data) {
@@ -1102,6 +1131,32 @@ async function importData(data) {
   if (!docRef) return;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   await setDoc(docRef, data);
+  window.location.reload();
+}
+
+export async function importStudentsAndGroups(data) {
+  if (!docRef) return;
+  const state = getState();
+  const newState = {
+    ...state,
+    students: data.students || state.students,
+    groups: data.groups || state.groups
+  };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
+  await setDoc(docRef, newState);
+  window.location.reload();
+}
+
+export async function importCurriculum(data) {
+  if (!docRef) return;
+  const state = getState();
+  const newState = {
+    ...state,
+    curriculum: data.curriculum || state.curriculum,
+    materials: data.materials || state.materials
+  };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
+  await setDoc(docRef, newState);
   window.location.reload();
 }
 

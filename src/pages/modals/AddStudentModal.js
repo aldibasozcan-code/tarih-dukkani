@@ -4,7 +4,7 @@
 import { getState, addStudent, updateStudent, syncStudentCurriculum } from '../../store/store.js';
 import { ALL_GRADES } from '../../data/curriculum.js';
 import { openModal, closeModal } from '../../components/modal.js';
-import { escHtml } from '../../utils/helpers.js';
+import { escHtml, todayStr, getLocalDateStr, addDays } from '../../utils/helpers.js';
 
 export function openAddStudentModal(onSave, editId = null) {
   const student = editId ? getState().students.find(s => s.id === editId) : null;
@@ -43,6 +43,31 @@ export function openAddStudentModal(onSave, editId = null) {
           <input type="email" id="s-pemail" value="${escHtml(student?.parentEmail || '')}" placeholder="veli@mail.com">
         </div>
       </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Ders Günü</label>
+          <select id="s-day">
+            <option value="">Seçiniz (Opsiyonel)</option>
+            ${[0,1,2,3,4,5,6].map(i => `<option value="${i}" ${student?.dayOfWeek === i ? 'selected' : ''}>${['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'][i]}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Ders Saati</label>
+          <input type="time" id="s-time" value="${student?.time || '14:00'}">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Başlangıç Tarihi</label>
+          <input type="date" id="s-start" value="${student?.startDate || todayStr()}">
+        </div>
+        <div class="form-group">
+          <label>Bitiş Tarihi</label>
+          <input type="date" id="s-end" value="${student?.endDate || getLocalDateStr(addDays(new Date(), 240))}">
+        </div>
+      </div>
+
       <div class="form-row">
         <div class="form-group">
           <label>Saatlik Ücret (₺)</label>
@@ -124,6 +149,11 @@ export function openAddStudentModal(onSave, editId = null) {
       meetLink: formatSel.value === 'meet' ? linkInp.value.trim() : '', // Compatibility
       notes: document.getElementById('s-notes').value.trim(),
       status: document.getElementById('s-status').value,
+      dayOfWeek: document.getElementById('s-day').value !== "" ? parseInt(document.getElementById('s-day').value) : null,
+      time: document.getElementById('s-time').value,
+      startDate: document.getElementById('s-start').value,
+      endDate: document.getElementById('s-end').value,
+      duration: 60 // Default for students
     };
 
     if (student) {

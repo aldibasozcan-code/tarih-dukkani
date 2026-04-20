@@ -20,7 +20,12 @@ export function renderCourses(navigate) {
           <h2>Müfredat Yönetimi</h2>
           <p>Sınıflara göre ünite ve konu içeriklerini yönetin</p>
         </div>
-        <button class="btn btn-primary" id="btn-add-material">${icon('plus', 14)} İçerik Ekle</button>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-secondary" id="btn-export-curr">${icon('download', 14)} Dışa Aktar</button>
+          <button class="btn btn-secondary" id="btn-import-curr">${icon('upload', 14)} İçe Aktar</button>
+          <input type="file" id="import-curr-file" accept=".json" style="display:none;">
+          <button class="btn btn-primary" id="btn-add-material">${icon('plus', 14)} İçerik Ekle</button>
+        </div>
       </div>
 
       <!-- Grade Tabs -->
@@ -257,6 +262,44 @@ function initCourses(el, navigate) {
     const currentState = getState();
     const activeSubjectIds = getSubjectsForBranches(currentState.profile.branches || []);
     openAddMaterialModal(activeSubjectIds[0], window._activeGrade, null, null, navigate, () => refresh());
+  });
+
+  el.querySelector('#btn-export-curr')?.addEventListener('click', () => {
+    const state = getState();
+    const data = JSON.stringify({ 
+      curriculum: state.curriculum, 
+      materials: state.materials 
+    }, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `bitig-mufredat-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  el.querySelector('#btn-import-curr')?.addEventListener('click', () => {
+    el.querySelector('#import-curr-file').click();
+  });
+
+  el.querySelector('#import-curr-file')?.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        const { importCurriculum } = await import('../store/store.js');
+        await importCurriculum(data);
+        alert('Müfredat başarıyla içe aktarıldı.');
+        refresh();
+      } catch (err) {
+        console.error(err);
+        alert('Geçersiz dosya. Yalnızca geçerli müfredat yedeği kabul edilir.');
+      }
+    };
+    reader.readAsText(file);
   });
 
   refresh();

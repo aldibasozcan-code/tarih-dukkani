@@ -113,22 +113,34 @@ export function renderSettings(navigate) {
         <!-- Data Management -->
         <div class="card">
           <h3 style="font-size:15px;font-weight:700;margin-bottom:16px;">Veri Yönetimi</h3>
-          <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">Tüm veriler tarayıcı belleğinde (localStorage) tutulmaktadır.</p>
-          <div style="display:flex;flex-direction:column;gap:10px;">
-            <button class="btn btn-primary" id="btn-sync-meb">
-              ${icon('refresh', 14)} MEB Müfredatını Yenile (Değişiklikleri Ezer)
-            </button>
-            <button class="btn btn-secondary" id="btn-export">
-              ${icon('download', 14)} Veriyi Dışa Aktar (JSON)
-            </button>
-            <div>
-              <input type="file" id="import-file" accept=".json" style="display:none;">
-              <button class="btn btn-secondary" id="btn-import">
-                ${icon('upload', 14)} Veriyi İçe Aktar
+          
+          <div style="margin-bottom:20px; padding:12px; background:var(--bg-secondary); border-radius:12px; border:1px solid var(--border);">
+            <div style="font-size:12px; font-weight:700; margin-bottom:8px; color:var(--brand-green);">ÖĞRENCİ & GRUP YÖNETİMİ</div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-secondary btn-sm" id="btn-export-students" style="flex:1;">
+                ${icon('download', 14)} Dışa Aktar
+              </button>
+              <button class="btn btn-secondary btn-sm" id="btn-import-students" style="flex:1;">
+                ${icon('upload', 14)} İçe Aktar
               </button>
             </div>
-            <button class="btn btn-danger" id="btn-reset">
-              ${icon('trash', 14)} Sadece Verileri Sıfırla
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <button class="btn btn-primary" id="btn-sync-meb">
+              ${icon('refresh', 14)} MEB Müfredatını Yenile (Varsayılan)
+            </button>
+            <button class="btn btn-secondary" id="btn-export-all">
+              ${icon('download', 14)} Tüm Verileri Yedekle (JSON)
+            </button>
+            <button class="btn btn-secondary" id="btn-import-all">
+              ${icon('upload', 14)} Tüm Verileri Geri Yükle
+            </button>
+            <input type="file" id="import-file-all" accept=".json" style="display:none;">
+            <input type="file" id="import-file-students" accept=".json" style="display:none;">
+            
+            <button class="btn btn-danger" id="btn-reset" style="margin-top:8px;">
+              ${icon('trash', 14)} Sistem Verilerini Sıfırla
             </button>
           </div>
         </div>
@@ -284,34 +296,66 @@ export function renderSettings(navigate) {
         }
       });
 
-      el.querySelector('#btn-export')?.addEventListener('click', () => {
+      el.querySelector('#btn-export-all')?.addEventListener('click', () => {
         const data = JSON.stringify(getState(), null, 2);
         const blob = new Blob([data], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `bitig-${new Date().toISOString().split('T')[0]}.json`;
+        a.download = `bitig-full-backup-${new Date().toISOString().split('T')[0]}.json`;
         a.click();
         URL.revokeObjectURL(url);
       });
 
-      el.querySelector('#btn-import')?.addEventListener('click', () => {
-        el.querySelector('#import-file').click();
+      el.querySelector('#btn-export-students')?.addEventListener('click', () => {
+        const state = getState();
+        const data = JSON.stringify({ 
+          students: state.students, 
+          groups: state.groups 
+        }, null, 2);
+        const blob = new Blob([data], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `bitig-students-groups-${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
       });
 
-      el.querySelector('#import-file')?.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = async (ev) => {
-          try {
-            const data = JSON.parse(ev.target.result);
-            const { importData } = await import('../store/store.js');
-            await importData(data);
-          } catch { alert('Geçersiz dosya. Yalnızca geçerli .json yedeği kabul edilir.'); }
-        };
-        reader.readAsText(file);
+      el.querySelector('#btn-import-all')?.addEventListener('click', () => {
+        el.querySelector('#import-file-all').click();
       });
+
+      el.querySelector('#btn-import-students')?.addEventListener('click', () => {
+        el.querySelector('#import-file-students').click();
+      });
+
+      const handleImport = (inputEl, type) => {
+        inputEl?.addEventListener('change', (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = async (ev) => {
+            try {
+              const data = JSON.parse(ev.target.result);
+              const { importData, importStudentsAndGroups } = await import('../store/store.js');
+              if (type === 'all') {
+                await importData(data);
+              } else {
+                await importStudentsAndGroups(data);
+              }
+              alert('İçe aktarma başarılı.');
+            } catch (err) { 
+              console.error(err);
+              alert('Geçersiz dosya. Yalnızca geçerli .json yedeği kabul edilir.'); 
+            }
+          };
+          reader.readAsText(file);
+        });
+      };
+
+      handleImport(el.querySelector('#import-file-all'), 'all');
+      handleImport(el.querySelector('#import-file-students'), 'students');
 
       el.querySelector('#btn-reset')?.addEventListener('click', async () => {
         if (confirm('Sadece SİZE AİT olan tüm verileriniz sıfırlanacak! Emin misiniz?')) {
