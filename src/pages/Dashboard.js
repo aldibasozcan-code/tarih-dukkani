@@ -316,6 +316,15 @@ function initDashboard(el, navigate) {
     import('./modals/AddLessonModal.js').then(m => m.openAddLessonModal(() => navigate('dashboard')));
   });
 
+  // Lesson Card Click
+  el.querySelectorAll('[data-lesson-id]').forEach(card => {
+    card.addEventListener('click', () => {
+      const lessonId = card.dataset.lessonId;
+      openLessonEvalModal(lessonId, navigate);
+    });
+    card.style.cursor = 'pointer';
+  });
+
   // Complete lesson buttons
   el.querySelectorAll('[data-complete-lesson]').forEach(btn => {
     btn.addEventListener('click', (e) => {

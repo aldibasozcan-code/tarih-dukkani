@@ -87,13 +87,18 @@ export function openGroupDetail(groupId, navigate) {
               if (futureLessons.length === 0) return '<p style="font-size:12px;color:var(--text-muted);padding:10px;text-align:center;">Ders yok</p>';
               
               return futureLessons.map(l => `
-                <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+                <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04); cursor:pointer;" class="list-item-hover" data-lesson-id="${l.id}">
                   <div style="width:36px;height:36px;border-radius:8px;background:var(--accent-glow);display:flex;align-items:center;justify-content:center;color:var(--accent);font-weight:700;font-size:10px;text-align:center;line-height:1.2;flex-shrink:0;">
                     ${formatDate(l.date).split(' ').slice(0, 2).join('<br>')}
                   </div>
                   <div style="flex:1;">
                     <div style="font-size:12px;font-weight:700;">${l.startTime} – ${l.endTime}</div>
                     <div style="font-size:10px;color:var(--text-muted);">${formatDate(l.date).split(' ').slice(2).join(' ')}</div>
+                  </div>
+                  <div style="text-align:right;">
+                    <span class="badge ${l.status === 'scheduled' ? 'badge-info' : 'badge-warning'}" style="font-size:9px;">
+                      ${l.status === 'scheduled' ? 'Bekliyor' : l.status.toUpperCase()}
+                    </span>
                   </div>
                 </div>
               `).join('');
@@ -239,6 +244,15 @@ export function openGroupDetail(groupId, navigate) {
         import('../../store/store.js').then(m => {
           m.confirmTransaction(txId);
           openGroupDetail(group.id, navigate);
+        });
+      });
+    });
+
+    document.querySelectorAll('[data-lesson-id]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const lessonId = btn.dataset.lessonId;
+        import('./LessonEvalModal.js').then(m => {
+          m.openLessonEvalModal(lessonId, navigate);
         });
       });
     });

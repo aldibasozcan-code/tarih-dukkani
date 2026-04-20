@@ -3,7 +3,7 @@
 // ═════════════════════════════════════════════════
 import { getState, addTransaction, deleteTransaction } from '../store/store.js';
 import { icon } from '../components/icons.js';
-import { formatCurrency, formatDate, escHtml } from '../utils/helpers.js';
+import { formatCurrency, formatDate, escHtml, todayStr, getLocalDateStr } from '../utils/helpers.js';
 import { openModal, closeModal, showConfirm } from '../components/modal.js';
 
 export function renderFinance(navigate) {
@@ -176,11 +176,11 @@ function calcStats(state, period, filters = {}) {
 
   // Apply basic period filters
   const now = new Date();
-  let from, to = now.toISOString().split('T')[0];
+  let from, to = todayStr();
   if (period === 'day') { from = to; }
   else if (period === 'week') {
     const d = new Date(now); d.setDate(d.getDate() - d.getDay() + 1);
-    from = d.toISOString().split('T')[0];
+    from = getLocalDateStr(d);
   }
   else if (period === 'month') {
     from = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
@@ -345,7 +345,7 @@ function openAddTransactionModal(navigate) {
       </div>
       <div class="form-group">
         <label>Tarih</label>
-        <input type="date" id="tx-date" value="${new Date().toISOString().split('T')[0]}">
+        <input type="date" id="tx-date" value="${todayStr()}">
       </div>
     `,
     footer: `

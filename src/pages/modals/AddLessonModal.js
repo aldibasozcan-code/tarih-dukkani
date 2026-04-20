@@ -4,12 +4,14 @@
 import { getState, addLesson, checkLessonConflict } from '../../store/store.js';
 import { SUBJECTS, getSubjectsForBranches } from '../../data/curriculum.js';
 import { openModal, closeModal } from '../../components/modal.js';
-import { escHtml } from '../../utils/helpers.js';
+import { escHtml, todayStr, getLocalDateStr } from '../../utils/helpers.js';
 import { icon } from '../../components/icons.js';
 
 export function openAddLessonModal(onSave, prefill = {}) {
   const state = getState();
-  const today = new Date().toISOString().split('T')[0];
+  const today = todayStr();
+  const date = prefill.date || today;
+  const startTime = prefill.startTime || '14:00';
 
   openModal({
     title: 'Ders Ekle',
@@ -32,11 +34,11 @@ export function openAddLessonModal(onSave, prefill = {}) {
       <div class="form-row">
         <div class="form-group">
           <label>Tarih *</label>
-          <input type="date" id="l-date" value="${prefill.date || today}">
+          <input type="date" id="l-date" value="${date}">
         </div>
         <div class="form-group">
           <label>Başlangıç *</label>
-          <input type="time" id="l-start" value="${prefill.startTime || '14:00'}">
+          <input type="time" id="l-start" value="${startTime}">
         </div>
       </div>
       <div class="form-row">
@@ -318,7 +320,7 @@ export function openAddLessonModal(onSave, prefill = {}) {
       for (let i = 0; i < 4; i++) {
         const d = new Date(date + 'T00:00:00');
         d.setDate(d.getDate() + (i * 7));
-        const currentDateStr = d.toISOString().split('T')[0];
+        const currentDateStr = getLocalDateStr(d);
         
         // Final Conflict Check for each recurring date
         const conflict = checkLessonConflict(currentDateStr, start, end);

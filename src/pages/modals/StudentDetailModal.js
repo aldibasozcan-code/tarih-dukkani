@@ -47,6 +47,15 @@ export function openStudentDetail(studentId, navigate) {
       });
     });
 
+    document.querySelectorAll('[data-lesson-id]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const lessonId = btn.dataset.lessonId;
+        import('./LessonEvalModal.js').then(m => {
+          m.openLessonEvalModal(lessonId, navigate);
+        });
+      });
+    });
+
     document.querySelectorAll('[data-confirm-transaction]').forEach(btn => {
       btn.addEventListener('click', () => {
         const txId = btn.dataset.confirmTransaction;
@@ -154,7 +163,7 @@ function buildDetailBody(student, subjects, state, activeSubjects) {
           return `
             <div style="max-height: 200px; overflow-y: auto; padding-right: 4px;">
               ${futureLessons.map(l => `
-                <div style="display:flex;align-items:center;gap:12px;padding:10px;border-bottom:1px solid rgba(0,0,0,0.05);transition:background 0.2s;border-radius:8px;" class="list-item-hover">
+                <div style="display:flex;align-items:center;gap:12px;padding:10px;border-bottom:1px solid rgba(0,0,0,0.05);transition:background 0.2s;border-radius:8px; cursor:pointer;" class="list-item-hover" data-lesson-id="${l.id}">
                   <div style="width:40px;height:40px;border-radius:10px;background:var(--accent-glow);display:flex;align-items:center;justify-content:center;color:var(--accent);font-weight:700;font-size:11px;text-align:center;line-height:1.2;flex-shrink:0;">
                     ${formatDate(l.date).split(' ').slice(0, 2).join('<br>')}
                   </div>
@@ -164,7 +173,7 @@ function buildDetailBody(student, subjects, state, activeSubjects) {
                   </div>
                   <div style="text-align:right;">
                     <span class="badge ${l.status === 'scheduled' ? 'badge-info' : 'badge-warning'}" style="font-size:10px;">
-                      ${l.status === 'scheduled' ? 'Planlandı' : l.status.toUpperCase()}
+                      ${l.status === 'scheduled' ? 'Bekliyor' : l.status.toUpperCase()}
                     </span>
                   </div>
                 </div>

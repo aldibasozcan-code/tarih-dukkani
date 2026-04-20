@@ -48,11 +48,9 @@ export function openLessonEvalModal(lessonId, navigate) {
             <button class="btn btn-icon" id="btn-edit-lesson" title="Düzenle" style="background:var(--bg-secondary); padding:8px; border-radius:8px;">
               ${icon('edit', 16)}
             </button>
-            ${lesson.status !== 'completed' ? `
-              <button class="btn btn-icon" id="btn-delete-lesson" title="Dersi Sil" style="background:rgba(220,38,38,0.1); color:var(--danger); padding:8px; border-radius:8px;">
-                ${icon('trash', 16)}
-              </button>
-            ` : ''}
+            <button class="btn btn-icon" id="btn-delete-lesson" title="Dersi Sil" style="background:rgba(220,38,38,0.1); color:var(--danger); padding:8px; border-radius:8px;">
+              ${icon('trash', 16)}
+            </button>
           </div>
         </div>
       </div>
@@ -168,9 +166,12 @@ export function openLessonEvalModal(lessonId, navigate) {
   });
 
   document.getElementById('btn-delete-lesson')?.addEventListener('click', () => {
+    const isCompleted = lesson.status === 'completed';
     showConfirm({
-      title: 'Dersi Sil',
-      message: 'Bu dersi takvimden kalıcı olarak silmek istediğinize emin misiniz?',
+      title: isCompleted ? 'Tamamlanmış Dersi Sil' : 'Dersi Sil',
+      message: isCompleted 
+        ? 'Bu ders <strong>tamamlanmış</strong> olarak işaretlenmiş. Silmeniz durumunda bu derse ait <strong>muhasebe kaydı da silinecektir</strong>. Emin misiniz?'
+        : 'Bu dersi takvimden kalıcı olarak silmek istediğinize emin misiniz?',
       confirmText: 'Evet, Sil',
       confirmClass: 'btn-danger',
       onConfirm: () => {

@@ -702,7 +702,7 @@ export function addNextWeekLesson(lesson) {
     type: lesson.type,
     refId: lesson.refId,
     title: lesson.title,
-    date: d.toISOString().split('T')[0],
+    date: getLocalDateStr(d),
     startTime: lesson.startTime,
     endTime: lesson.endTime,
     subject: lesson.subject,
