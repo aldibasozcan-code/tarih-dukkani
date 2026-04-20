@@ -1,19 +1,17 @@
 // ═════════════════════════════════════════════════
 // LESSON EVALUATION MODAL
 // ═════════════════════════════════════════════════
-import { getState, completeLesson, postponeLesson, addNextWeekLesson, addNotification } from '../../store/store.js';
+import { getState, completeLesson, postponeLesson, addNextWeekLesson, addNotification, deleteLesson } from '../../store/store.js';
 import { icon } from '../../components/icons.js';
 import { openModal, closeModal, showConfirm } from '../../components/modal.js';
 import { escHtml, todayStr } from '../../utils/helpers.js';
+import { openEditLessonModal } from './EditLessonModal.js';
 
 export function openLessonEvalModal(lessonId, navigate) {
   const state = getState();
   let lesson = state.lessons.find(l => l.id === lessonId);
   
-  // If not found in internal, check googleEvents cache
-  if (!lesson) {
-    lesson = state.googleEvents.find(e => e.id === lessonId);
-  }
+  
   
   if (!lesson) {
     console.error("Lesson not found:", lessonId);
@@ -33,10 +31,30 @@ export function openLessonEvalModal(lessonId, navigate) {
     title: 'Ders Değerlendirme',
     size: 'lg',
     body: `
-      <div style="background:rgba(99,202,183,0.08);border:1px solid rgba(99,202,183,0.2);border-radius:12px;padding:16px;margin-bottom:20px;">
-        <div style="font-size:15px;font-weight:700;">${escHtml(lesson.title)}</div>
-        <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">${lesson.date} • ${lesson.startTime} – ${lesson.endTime}</div>
-        <div style="font-size:13px;color:var(--text-muted);">Ücret: ₺${lesson.fee || ref?.rate || 0}</div>
+      <div style="background:rgba(99,202,183,0.08);border:1px solid rgba(99,202,183,0.2);border-radius:12px;padding:16px;margin-bottom:20px; position:relative;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div>
+            <div style="font-size:15px;font-weight:700;">${escHtml(lesson.title)}</div>
+            <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">${lesson.date} • ${lesson.startTime} – ${lesson.endTime}</div>
+            <div style="font-size:13px;color:var(--text-muted);display:flex;align-items:center;gap:6px;margin-top:4px;">
+              ${lesson.lessonFormat === 'face' 
+                ? `${icon('mapPin', 14)} <strong>Yüzyüze:</strong> ${escHtml(lesson.lessonLink || 'Konum belirtilmedi')}`
+                : `${icon('video', 14)} <strong>Online (${lesson.lessonFormat === 'zoom' ? 'Zoom' : 'Meet'}):</strong> ${lesson.lessonLink ? `<a href="${lesson.lessonLink}" target="_blank" style="color:var(--accent-light);">${escHtml(lesson.lessonLink)}</a>` : 'Link yok'}`
+              }
+            </div>
+            <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">Ücret: ₺${lesson.fee || ref?.rate || 0}</div>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-icon" id="btn-edit-lesson" title="Düzenle" style="background:var(--bg-secondary); padding:8px; border-radius:8px;">
+              ${icon('edit', 16)}
+            </button>
+            ${lesson.status !== 'completed' ? `
+              <button class="btn btn-icon" id="btn-delete-lesson" title="Dersi Sil" style="background:rgba(220,38,38,0.1); color:var(--danger); padding:8px; border-radius:8px;">
+                ${icon('trash', 16)}
+              </button>
+            ` : ''}
+          </div>
+        </div>
       </div>
 
       ${(() => {
@@ -140,6 +158,27 @@ export function openLessonEvalModal(lessonId, navigate) {
   document.getElementById('btn-postpone')?.addEventListener('click', () => {
     document.getElementById('postpone-form').style.display = '';
     document.getElementById('completion-form').style.display = 'none';
+  });
+
+  document.getElementById('btn-edit-lesson')?.addEventListener('click', () => {
+    closeModal();
+    openEditLessonModal(lessonId, () => {
+      if (navigate) navigate(window.location.hash.replace('#','') || 'calendar');
+    });
+  });
+
+  document.getElementById('btn-delete-lesson')?.addEventListener('click', () => {
+    showConfirm({
+      title: 'Dersi Sil',
+      message: 'Bu dersi takvimden kalıcı olarak silmek istediğinize emin misiniz?',
+      confirmText: 'Evet, Sil',
+      confirmClass: 'btn-danger',
+      onConfirm: () => {
+        deleteLesson(lessonId);
+        closeModal();
+        if (navigate) navigate(window.location.hash.replace('#','') || 'calendar');
+      }
+    });
   });
 
   document.getElementById('btn-eval-cancel')?.addEventListener('click', closeModal);

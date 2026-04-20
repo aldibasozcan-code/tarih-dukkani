@@ -42,43 +42,45 @@ export async function renderPublicBlog(navigate) {
     }
 
     return posts.map((post, i) => `
-      <div class="blog-card stagger-${i}" data-id="${post.id}" style="background:rgba(255, 255, 255, 0.75); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.5); border-radius:24px; overflow:hidden; transition:all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1); display:flex; flex-direction:column; box-shadow:var(--shadow-md); cursor:pointer;" onmouseover="this.style.transform='translateY(-12px) scale(1.02)'; this.style.boxShadow='0 20px 40px rgba(0,0,0,0.08)'; this.style.background='rgba(255,255,255,0.95)'" onmouseout="this.style.transform='translateY(0) scale(1)'; this.style.boxShadow='var(--shadow-md)'; this.style.background='rgba(255, 255, 255, 0.75)'">
-        <div class="blog-image" style="background:linear-gradient(45deg, var(--brand-green-soft), #d1fae5); height:220px; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden;">
+      <div class="premium-card fade-in-up" data-id="${post.id}" style="animation-delay: ${i * 0.1}s; display:flex; flex-direction:column; overflow:hidden;">
+        <div class="blog-image" style="background:linear-gradient(135deg, var(--brand-green), #065f46); height:240px; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden;">
             <!-- Abstract background pattern for blog image -->
-           <div style="position:absolute; inset:0; opacity:0.1; background-image: radial-gradient(var(--brand-green) 1px, transparent 1px); background-size: 20px 20px;"></div>
-           <div style="background:white; color:var(--brand-green); width:72px; height:72px; border-radius:18px; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:32px; box-shadow:var(--shadow-lg); z-index:1; border:2px solid rgba(255,255,255,0.8);">${post.title[0]}</div>
-           <div style="position:absolute; top:20px; right:20px; background:rgba(255,255,255,0.9); backdrop-filter:blur(4px); padding:8px 14px; border-radius:12px; font-size:12px; font-weight:800; color:var(--brand-green); display:flex; align-items:center; gap:8px; box-shadow:var(--shadow-sm); z-index:1;">
-             ${icon('clock', 14)} 4-5 dk
+           <div style="position:absolute; inset:0; opacity:0.15; background-image: url('https://www.transparenttextures.com/patterns/cubes.png');"></div>
+           <div style="background:rgba(255,255,255,0.2); backdrop-filter:blur(8px); color:white; width:80px; height:80px; border-radius:24px; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:36px; z-index:1; border:1px solid rgba(255,255,255,0.3); text-shadow: 0 4px 10px rgba(0,0,0,0.2);">${post.title[0]}</div>
+           
+           <div style="position:absolute; bottom:0; left:0; right:0; height:80px; background:linear-gradient(to top, rgba(0,0,0,0.4), transparent); z-index:1;"></div>
+           
+           <div style="position:absolute; top:20px; right:20px; background:rgba(255,255,255,0.95); padding:8px 16px; border-radius:100px; font-size:11px; font-weight:800; color:var(--brand-green); display:flex; align-items:center; gap:8px; box-shadow:var(--shadow-md); z-index:2;">
+             ${icon('clock', 14)} 5 dk okuma
+           </div>
+           
+           <div style="position:absolute; bottom:20px; left:20px; z-index:2; display:flex; gap:8px;">
+              <span style="background:var(--brand-green); color:white; padding:4px 12px; border-radius:100px; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; border:1px solid rgba(255,255,255,0.2);">${post.category}</span>
            </div>
         </div>
-        <div class="blog-content" style="padding:36px; flex:1; display:flex; flex-direction:column;">
-           <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:20px;">
-             <span class="badge" style="background:var(--brand-green-soft); color:var(--brand-green); border-radius:8px; padding:6px 14px; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; font-weight:800;">${post.category}</span>
-             ${post.grade ? `<span style="background:white; border:1px solid var(--border); color:var(--text-secondary); padding:6px 14px; border-radius:8px; font-size:11px; font-weight:800; text-transform:uppercase;">${post.grade}</span>` : ''}
-           </div>
-           
-           <h3 style="font-size:24px; font-weight:900; margin-bottom:16px; line-height:1.3; color:var(--text-primary); letter-spacing:-0.5px;">${post.title}</h3>
-           <p style="font-size:15px; color:var(--text-secondary); line-height:1.7; margin-bottom:28px; flex:1; text-align: justify; opacity:0.9;">${post.summary || post.content.substring(0, 160) + '...'}</p>
+        <div class="blog-content" style="padding:32px; flex:1; display:flex; flex-direction:column;">
+           <h3 style="font-size:22px; font-weight:900; margin-bottom:14px; line-height:1.4; color:var(--text-primary); letter-spacing:-0.5px;">${post.title}</h3>
+           <p style="font-size:15px; color:var(--text-secondary); line-height:1.6; margin-bottom:24px; flex:1; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">${post.summary || post.content.substring(0, 150) + '...'}</p>
            
            ${post.tags && post.tags.length > 0 ? `
-             <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:24px;">
-               ${post.tags.map(t => `<span class="tag-link" data-tag="${t}" style="font-size:11px; color:var(--brand-green); font-weight:700; background:white; border:1px solid var(--brand-green-soft); padding:4px 10px; border-radius:8px; transition:all 0.2s;">#${t}</span>`).join('')}
+             <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:24px;">
+               ${post.tags.slice(0, 3).map(t => `<span class="tag-link" data-tag="${t}" style="font-size:10px; color:var(--text-secondary); font-weight:700; background:var(--bg-secondary); border:1px solid var(--border); padding:4px 10px; border-radius:100px; transition:all 0.2s;">#${t}</span>`).join('')}
              </div>
            ` : ''}
-
-           <div style="border-top:1px solid var(--border); padding-top:24px; display:flex; align-items:center; justify-content:space-between; margin-top:auto;">
-              <div style="display:flex; align-items:center; gap:14px;">
-                 <div style="width:44px; height:44px; background:var(--brand-green); color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:16px; box-shadow:0 4px 10px rgba(0,69,38,0.2);">${post.authorName ? post.authorName[0] : 'Ö'}</div>
+ 
+           <div style="border-top:1px solid var(--border); padding-top:20px; display:flex; align-items:center; justify-content:space-between;">
+              <div style="display:flex; align-items:center; gap:12px;">
+                 <div style="width:40px; height:40px; background:linear-gradient(135deg, var(--brand-green), var(--brand-green-light)); color:white; border-radius:14px; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:16px; box-shadow:0 4px 12px rgba(0,69,38,0.15);">${post.authorName ? post.authorName[0] : 'Ö'}</div>
                  <div>
-                   <div style="font-weight:900; color:var(--text-primary); font-size:14px;">${post.authorName || 'Öğretmen'}</div>
-                   <div style="font-size:12px; color:var(--text-muted); margin-top:2px; font-weight:600;">Eğitim Yazarı</div>
+                    <div style="font-weight:800; color:var(--text-primary); font-size:13px;">${post.authorName || 'Öğretmen'}</div>
+                    <div style="font-size:11px; color:var(--text-muted); font-weight:600;">Eğitim Yazarı</div>
                  </div>
               </div>
-              <div style="display:flex; align-items:center; gap:10px;">
-                 <button class="btn-share-post" data-title="${post.title}" data-id="${post.id}" style="background:white; border:1px solid var(--border); width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--text-secondary); cursor:pointer; transition:var(--transition);" onmouseover="this.style.background='var(--brand-green-soft)'; this.style.color='var(--brand-green)'; this.style.borderColor='var(--brand-green)'" onmouseout="this.style.background='white'; this.style.color='var(--text-secondary)'; this.style.borderColor='var(--border)'">
-                    ${icon('externalLink', 16)}
+              <div style="display:flex; align-items:center; gap:8px;">
+                 <button class="btn-share-post icon-btn" data-title="${post.title}" data-id="${post.id}" style="width:34px; height:34px; border-radius:10px;">
+                    ${icon('externalLink', 14)}
                  </button>
-                 <div style="color:var(--brand-green); background:var(--brand-green-soft); width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center;">${icon('chevronRight', 20)}</div>
+                 <div style="color:white; background:var(--brand-green); width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 10px rgba(0,69,38,0.2);">${icon('chevronRight', 18)}</div>
               </div>
            </div>
         </div>
@@ -88,25 +90,31 @@ export async function renderPublicBlog(navigate) {
 
   const html = `
     <div class="fade-in">
-      <header class="blog-header" style="background:linear-gradient(to bottom, var(--brand-green) 0%, #005a32 100%); color:white; padding:160px 5% 100px; text-align:center;">
-        <h2 style="font-size:48px; font-weight:900; margin-bottom:16px; letter-spacing:-1px;">Eğitim Bloğu</h2>
-        <p style="color:rgba(255,255,255,0.85); max-width:800px; margin:0 auto; font-size:18px; line-height:1.6;">Akademik makaleler, yenilikçi pedagojik yaklaşımlar ve profesyonel incelemeler.</p>
+      <header class="blog-header" style="background:linear-gradient(to bottom, var(--brand-green) 0%, #002514 100%); color:white; padding:180px 5% 120px; text-align:center; position:relative; overflow:hidden;">
+        <!-- Floating orbs in header -->
+        <div class="blur-orb" style="top:-100px; left:-100px; width:400px; height:400px; background:rgba(5, 150, 105, 0.4);"></div>
+        <div class="blur-orb" style="bottom:-50px; right:10%; width:300px; height:300px; background:rgba(0, 69, 38, 0.6); animation-delay: -5s;"></div>
         
-        <div class="blog-filters" style="display:flex; justify-content:center; gap:10px; margin-top:40px; flex-wrap:wrap; max-width:1100px; margin-left:auto; margin-right:auto;">
-          ${blogCategories.map(c => `
-            <button class="blog-filter-btn ${currentFilter === c.id ? 'active' : ''}" data-filter="${c.id}" style="border-radius:100px; padding:10px 22px; font-weight:700; background:${currentFilter === c.id ? 'white' : 'rgba(255,255,255,0.1)'}; border:1px solid ${currentFilter === c.id ? 'white' : 'rgba(255,255,255,0.2)'}; color:${currentFilter === c.id ? 'var(--brand-green)' : 'white'}; cursor:pointer; display:flex; align-items:center; gap:8px; transition:all 0.3s ease;">
-              ${icon(c.icon, 16)}
-              ${c.label}
-            </button>
-          `).join('')}
-        </div>
-
-        <div class="tag-filters" style="display:flex; justify-content:center; gap:8px; margin-top:24px; flex-wrap:wrap; max-width:800px; margin-left:auto; margin-right:auto;">
-          <span style="font-size:13px; font-weight:700; color:rgba(255,255,255,0.7); align-self:center; margin-right:8px;">Etiketler:</span>
-          <button class="tag-filter-btn ${currentTag === 'all' ? 'active' : ''}" data-tag="all" style="font-size:11px; font-weight:700; padding:6px 14px; border-radius:100px; border:1px solid rgba(255,255,255,0.2); background:${currentTag === 'all' ? 'white' : 'rgba(255,255,255,0.1)'}; color:${currentTag === 'all' ? 'var(--brand-green)' : 'white'}; cursor:pointer;">#tümü</button>
-          ${blogTags.map(t => `
-            <button class="tag-filter-btn ${currentTag === t ? 'active' : ''}" data-tag="${t}" style="font-size:11px; font-weight:700; padding:6px 14px; border-radius:100px; border:1px solid rgba(255,255,255,0.2); background:${currentTag === t ? 'white' : 'rgba(255,255,255,0.1)'}; color:${currentTag === t ? 'var(--brand-green)' : 'white'}; cursor:pointer;">#${t}</button>
-          `).join('')}
+        <div style="position:relative; z-index:2;">
+          <h2 style="font-size:56px; font-weight:900; margin-bottom:20px; letter-spacing:-2px; line-height:1.1;">Eğitim Bloğu</h2>
+          <p style="color:rgba(255,255,255,0.8); max-width:700px; margin:0 auto; font-size:20px; line-height:1.6; font-weight:500;">Akademik derinlik, pedagojik yenilik ve profesyonel gelişim merkezi.</p>
+          
+          <div class="blog-filters" style="display:flex; justify-content:center; gap:12px; margin-top:48px; flex-wrap:wrap; max-width:1200px; margin-left:auto; margin-right:auto;">
+            ${blogCategories.map(c => `
+              <button class="blog-filter-btn ${currentFilter === c.id ? 'active' : ''}" data-filter="${c.id}" style="border-radius:100px; padding:12px 26px; font-weight:800; font-size:13px; background:${currentFilter === c.id ? 'white' : 'rgba(255,255,255,0.08)'}; border:1px solid ${currentFilter === c.id ? 'white' : 'rgba(255,255,255,0.15)'}; color:${currentFilter === c.id ? 'var(--brand-green)' : 'white'}; cursor:pointer; display:flex; align-items:center; gap:10px; transition:all 0.4s cubic-bezier(0.16, 1, 0.3, 1); backdrop-filter:blur(10px);">
+                ${icon(c.icon, 18)}
+                ${c.label}
+              </button>
+            `).join('')}
+          </div>
+  
+          <div class="tag-filters" style="display:flex; justify-content:center; gap:8px; margin-top:32px; flex-wrap:wrap; max-width:800px; margin-left:auto; margin-right:auto;">
+            <span style="font-size:12px; font-weight:800; color:rgba(255,255,255,0.5); align-self:center; margin-right:8px; text-transform:uppercase; letter-spacing:1px;">Popüler Etiketler:</span>
+            <button class="tag-filter-btn ${currentTag === 'all' ? 'active' : ''}" data-tag="all" style="font-size:11px; font-weight:700; padding:6px 16px; border-radius:100px; border:1px solid rgba(255,255,255,0.1); background:${currentTag === 'all' ? 'white' : 'rgba(255,255,255,0.05)'}; color:${currentTag === 'all' ? 'var(--brand-green)' : 'white'}; cursor:pointer; transition:var(--transition);">#tümü</button>
+            ${blogTags.map(t => `
+              <button class="tag-filter-btn ${currentTag === t ? 'active' : ''}" data-tag="${t}" style="font-size:11px; font-weight:700; padding:6px 16px; border-radius:100px; border:1px solid rgba(255,255,255,0.1); background:${currentTag === t ? 'white' : 'rgba(255,255,255,0.05)'}; color:${currentTag === t ? 'var(--brand-green)' : 'white'}; cursor:pointer; transition:var(--transition);">#${t}</button>
+            `).join('')}
+          </div>
         </div>
       </header>
 
@@ -165,7 +173,7 @@ export async function renderPublicBlog(navigate) {
       };
 
       const attachCardEvents = () => {
-        el.querySelectorAll('.blog-card').forEach(card => {
+        el.querySelectorAll('.premium-card').forEach(card => {
           card.onclick = (e) => {
             if (e.target.classList.contains('tag-link')) {
               e.stopPropagation();

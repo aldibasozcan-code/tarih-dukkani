@@ -134,7 +134,7 @@ export async function renderCalendar(navigate) {
       initCalendarDragDrop(el, nav);
       initCalendarEvents(el, nav);
       
-      // Auto-refresh to sync title and load gcal if needed
+      // Auto-refresh to sync title
       refresh();
     }
   };
@@ -179,7 +179,6 @@ function renderMonthView(state, year, month, lessons = []) {
                     <div class="cal-lesson-card" 
                          draggable="true" 
                          data-id="${l.id}" 
-                         data-is-google="false"
                          data-start-time="${l.startTime}"
                          title="${escHtml(displayTitle)}"
                          style="font-size:10px; padding:2px 4px; border-radius:4px; background:${isDone ? color : color + '15'}; border-left:2px solid ${color}; color:${isDone ? '#fff' : 'var(--text-primary)'}; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
@@ -229,20 +228,26 @@ function renderWeekView(state, weekStart, lessons = []) {
                 const ds = getLocalDateStr(d);
               const dayHourLessons = lessons.filter(l => l.date === ds && parseInt(l.startTime) === h);
               return `
-                <div class="cal-drop-zone" data-date="${ds}" data-hour="${h}" style="border-right:1px solid var(--border-light); position:relative; transition:background 0.2s;">
+                <div class="cal-drop-zone" data-date="${ds}" data-hour="${h}" style="border-right:1px solid var(--border-light); position:relative; transition:background 0.2s; overflow:visible;">
                   ${dayHourLessons.map(l => {
                     const status = getLessonStatus(l);
                     const isDone = l.status === 'completed';
                     const color = status === 'completed' ? 'var(--success)' : status === 'waiting' ? 'var(--warning)' : 'var(--accent)';
                     const displayTitle = l.refName ? `${l.refName}${l.title ? ' - ' + l.title : ''}` : l.title;
 
+                    // Calculate precise positioning within the 80px cell
+                    const [startH, startM] = l.startTime.split(':').map(Number);
+                    const [endH, endM] = l.endTime.split(':').map(Number);
+                    const duration = (endH * 60 + endM) - (startH * 60 + startM);
+                    const topOffset = (startM / 60) * 80;
+                    const heightVal = (duration / 60) * 80;
+
                     return `
                       <div class="cal-lesson-card" 
                            draggable="true"
                            data-id="${l.id}"
-                           data-is-google="false"
                            data-start-time="${l.startTime}"
-                           style="position:absolute; left:4px; right:4px; top:4px; bottom:4px; z-index:5; background:${isDone ? color : color + '15'}; border-left:4px solid ${color}; border-radius:6px; padding:8px; cursor:pointer; box-shadow:var(--shadow-sm); overflow:hidden;">
+                           style="position:absolute; left:4px; right:4px; top:${topOffset}px; height:${heightVal - 8}px; z-index:5; background:${isDone ? color : color + '15'}; border-left:4px solid ${color}; border-radius:6px; padding:8px; cursor:pointer; box-shadow:var(--shadow-sm); overflow:hidden;">
                         <div style="font-size:10px; font-weight:700; color:${isDone ? '#fff' : color}; margin-bottom:2px; display:flex; justify-content:space-between;">
                           <span>${l.startTime} - ${l.endTime}</span>
                           ${icon('dragHandle', 12)}
@@ -305,9 +310,12 @@ function initCalendarDragDrop(el, navigate) {
       const newDate = zone.dataset.date;
       const newHour = zone.dataset.hour;
       
-      // If hour is present (Week View), use it. Otherwise keep original time (Month View).
+      const originalMins = originalStartTime.split(':')[1] || '00';
+      
+      // If hour is present (Week View), use it and preserve original minutes.
+      // Otherwise keep original time (Month View).
       const newStartTime = newHour 
-        ? `${String(newHour).padStart(2, '0')}:00` 
+        ? `${String(newHour).padStart(2, '0')}:${originalMins}` 
         : originalStartTime;
 
       if (id && newDate && newStartTime) {

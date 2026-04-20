@@ -56,9 +56,19 @@ export function openAddStudentModal(onSave, editId = null) {
           </select>
         </div>
       </div>
-      <div class="form-group">
-        <label>Google Meet Linki</label>
-        <input type="url" id="s-meet" value="${escHtml(student?.meetLink || '')}" placeholder="https://meet.google.com/...">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Ders İşleme Biçimi</label>
+          <select id="s-format">
+            <option value="zoom" ${student?.lessonFormat === 'zoom' ? 'selected' : ''}>Online (Zoom)</option>
+            <option value="meet" ${student?.lessonFormat === 'meet' || (!student?.lessonFormat && student?.meetLink) ? 'selected' : ''}>Online (Google Meet)</option>
+            <option value="face" ${student?.lessonFormat === 'face' ? 'selected' : ''}>Yüzyüze</option>
+          </select>
+        </div>
+        <div class="form-group" id="s-link-group">
+          <label id="s-link-label">${(student?.lessonFormat === 'face') ? 'Ders Konumu' : 'Ders Linki'}</label>
+          <input type="text" id="s-link" value="${escHtml(student?.lessonLink || student?.meetLink || '')}" placeholder="${(student?.lessonFormat === 'face') ? 'Örn: Kadıköy Ofis' : 'https://...' }">
+        </div>
       </div>
       <div class="form-group">
         <label>Notlar</label>
@@ -80,6 +90,21 @@ export function openAddStudentModal(onSave, editId = null) {
     `,
   });
 
+  const formatSel = document.getElementById('s-format');
+  const linkLabel = document.getElementById('s-link-label');
+  const linkInp = document.getElementById('s-link');
+
+  formatSel?.addEventListener('change', () => {
+    const val = formatSel.value;
+    if (val === 'face') {
+      linkLabel.textContent = 'Ders Konumu';
+      linkInp.placeholder = 'Örn: Kadıköy Ofis';
+    } else {
+      linkLabel.textContent = 'Ders Linki';
+      linkInp.placeholder = 'https://...';
+    }
+  });
+
   document.getElementById('s-cancel')?.addEventListener('click', closeModal);
   document.getElementById('s-save')?.addEventListener('click', () => {
     const name = document.getElementById('s-name').value.trim();
@@ -94,7 +119,9 @@ export function openAddStudentModal(onSave, editId = null) {
       parentPhone: document.getElementById('s-pphone').value.trim(),
       parentEmail: document.getElementById('s-pemail').value.trim(),
       rate: parseFloat(document.getElementById('s-rate').value) || 500,
-      meetLink: document.getElementById('s-meet').value.trim(),
+      lessonFormat: formatSel.value,
+      lessonLink: linkInp.value.trim(),
+      meetLink: formatSel.value === 'meet' ? linkInp.value.trim() : '', // Compatibility
       notes: document.getElementById('s-notes').value.trim(),
       status: document.getElementById('s-status').value,
     };

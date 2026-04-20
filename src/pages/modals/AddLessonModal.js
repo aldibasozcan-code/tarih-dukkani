@@ -55,6 +55,20 @@ export function openAddLessonModal(onSave, prefill = {}) {
           <select id="l-topic"></select>
         </div>
       </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Ders İşleme Biçimi</label>
+          <select id="l-format">
+            <option value="zoom">Online (Zoom)</option>
+            <option value="meet">Online (Google Meet)</option>
+            <option value="face">Yüzyüze</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label id="l-link-label">Ders Linki</label>
+          <input type="text" id="l-link" placeholder="https://...">
+        </div>
+      </div>
       <div class="form-group">
         <label>Notlar</label>
         <textarea id="l-notes" rows="2" placeholder="Ders notları..."></textarea>
@@ -193,8 +207,32 @@ export function openAddLessonModal(onSave, prefill = {}) {
     // Auto-update fee
     const rate = entity?.rate || 500;
     feeInput.value = rate;
+
+    // Auto-update format and link
+    if (entity?.lessonFormat) {
+      document.getElementById('l-format').value = entity.lessonFormat;
+      document.getElementById('l-format').dispatchEvent(new Event('change'));
+    }
+    if (entity?.lessonLink || entity?.meetLink || entity?.zoomLink) {
+      document.getElementById('l-link').value = entity.lessonLink || entity.meetLink || entity.zoomLink || '';
+    }
     
     updateUnitOptions();
+  });
+
+  const formatSel = document.getElementById('l-format');
+  const linkLabel = document.getElementById('l-link-label');
+  const linkInp = document.getElementById('l-link');
+
+  formatSel?.addEventListener('change', () => {
+    const val = formatSel.value;
+    if (val === 'face') {
+      linkLabel.textContent = 'Ders Konumu';
+      linkInp.placeholder = 'Örn: Kadıköy Ofis';
+    } else {
+      linkLabel.textContent = 'Ders Linki';
+      linkInp.placeholder = 'https://...';
+    }
   });
 
   function checkConflictLive() {
@@ -269,6 +307,8 @@ export function openAddLessonModal(onSave, prefill = {}) {
       topicId: topicId || '',
       topicTitle: topicText,
       grade: refEntity?.grade || '',
+      lessonFormat: document.getElementById('l-format').value,
+      lessonLink: document.getElementById('l-link').value.trim(),
       notes: document.getElementById('l-notes').value.trim(),
       fee: parseFloat(feeInput.value) || 0
     };

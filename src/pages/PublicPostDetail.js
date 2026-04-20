@@ -21,46 +21,45 @@ export async function renderPublicPostDetail(postId, navigate) {
 
   const html = `
     <div class="fade-in post-detail-page">
-      <div class="post-hero" style="background:var(--brand-green); color:white; padding:180px 5% 120px; position:relative; overflow:hidden;">
-        <!-- Abstract Decorations -->
-        <div style="position:absolute; top:-100px; right:-100px; width:400px; height:400px; background:rgba(255,255,255,0.05); border-radius:50%;"></div>
-        <div style="position:absolute; bottom:-50px; left:10%; width:200px; height:200px; background:rgba(255,255,255,0.03); border-radius:50%;"></div>
+      <div class="post-hero" style="background:linear-gradient(to bottom, #004526 0%, #002514 100%); color:white; padding:200px 5% 150px; position:relative; overflow:hidden;">
+        <!-- Premium Decorations -->
+        <div class="blur-orb" style="top:-150px; right:-100px; width:500px; height:500px; background:rgba(5, 150, 105, 0.3);"></div>
+        <div class="blur-orb" style="bottom:-100px; left:5%; width:400px; height:400px; background:rgba(0, 69, 38, 0.6); animation-delay: -7s;"></div>
 
-        <div style="max-width:900px; margin:0 auto; position:relative; z-index:2;">
-           <button class="btn-back" style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:white; padding:8px 20px; border-radius:100px; font-weight:700; display:flex; align-items:center; gap:8px; margin-bottom:40px; cursor:pointer;" onclick="window.history.back()">
-             ${icon('chevronRight', 18, { style: 'transform:rotate(180deg)' })} Geri Dön
+        <div style="max-width:1000px; margin:0 auto; position:relative; z-index:2;">
+           <button class="btn-back" style="background:rgba(255,255,255,0.08); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.15); color:white; padding:10px 24px; border-radius:100px; font-weight:800; font-size:13px; display:flex; align-items:center; gap:10px; margin-bottom:48px; cursor:pointer; transition:var(--transition);" onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'" onclick="window.history.back()">
+              ${icon('chevronRight', 18, { style: 'transform:rotate(180deg)' })} Geri Dön
            </button>
            
-           <div style="display:flex; align-items:center; gap:12px; margin-bottom:24px;">
-              <span style="background:rgba(255,255,255,0.2); backdrop-filter:blur(10px); padding:6px 16px; border-radius:100px; font-size:14px; font-weight:700; text-transform:uppercase; letter-spacing:1px;">${post.category}</span>
-              <span style="color:rgba(255,255,255,0.7); font-size:14px;">${dateStr}</span>
+           <div style="display:flex; align-items:center; gap:16px; margin-bottom:32px;">
+              <span style="background:var(--brand-green-light); color:white; padding:8px 20px; border-radius:100px; font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:1.5px; border:1px solid rgba(255,255,255,0.2);">${post.category}</span>
+              <span style="color:rgba(255,255,255,0.5); font-size:14px; font-weight:600;">${dateStr}</span>
            </div>
-
-           <h1 style="font-size: clamp(32px, 5vw, 56px); font-weight:800; line-height:1.1; margin-bottom:32px; letter-spacing:-1px;">${post.title}</h1>
+ 
+           <h1 style="font-size: clamp(36px, 6vw, 64px); font-weight:900; line-height:1.1; margin-bottom:40px; letter-spacing:-2px; color:#ffffff;">${post.title}</h1>
            
-           <div style="display:flex; align-items:center; gap:16px;">
-              <div style="width:56px; height:56px; background:white; color:var(--brand-green); border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:20px; box-shadow:var(--shadow-md);">${post.authorName ? post.authorName[0] : 'Ö'}</div>
+           <div style="display:flex; align-items:center; gap:20px;">
+              <div style="width:64px; height:64px; background:linear-gradient(135deg, white, var(--brand-green-soft)); color:var(--brand-green); border-radius:20px; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:24px; box-shadow: 0 10px 20px rgba(0,0,0,0.2);">${post.authorName ? post.authorName[0] : 'Ö'}</div>
               <div>
-                <div style="font-weight:800; font-size:18px;">${post.authorName || 'Öğretmen'}</div>
-                <div style="color:rgba(255,255,255,0.7); font-size:14px;">${post.type === 'blog' ? 'Eğitim Yazarı' : 'Eğitmen'}</div>
+                <div style="font-weight:900; font-size:20px; color:#ffffff;">${post.authorName || 'Öğretmen'}</div>
+                <div style="color:rgba(255,255,255,0.6); font-size:14px; font-weight:600; text-transform:uppercase; letter-spacing:1px;">${post.type === 'blog' ? 'Eğitim Yazarı' : 'Eğitmen'}</div>
               </div>
            </div>
         </div>
       </div>
 
-      <div class="post-body-container" style="max-width:900px; margin:-60px auto 100px; padding:0 24px; position:relative; z-index:3;">
-        <div style="background:white; padding:60px; border-radius:var(--radius-xl); border:1px solid var(--border); box-shadow:var(--shadow-xl);">
-           <div class="post-content-rich" style="font-size:19px; line-height:1.8; color:var(--text-primary);">
-              ${(post.content || '').split('\n').map(p => p.trim() ? `<p style="margin-bottom:24px; text-align: justify;">${p}</p>` : '').join('') || '<p style="color:var(--text-muted); font-style:italic;">Bu yazı henüz içerik barındırmıyor.</p>'}
+      <div class="post-body-container" style="max-width:1000px; margin:-80px auto 100px; padding:0 32px; position:relative; z-index:3;">
+        <div class="premium-card fade-in-up" style="background:#ffffff; padding:80px; box-shadow:0 50px 100px -20px rgba(0,0,0,0.15);">
+           <div class="post-content-rich" style="font-size:20px; line-height:1.8; color:var(--text-primary); font-weight:400;">
+              ${(post.content || '').split('\n').map(p => p.trim() ? `<p style="margin-bottom:32px; text-align: justify; letter-spacing:0.1px;">${p}</p>` : '').join('') || '<p style="color:var(--text-muted); font-style:italic;">Bu yazı henüz içerik barındırmıyor.</p>'}
            </div>
-
-          <div style="margin-top:60px; padding:40px; border-radius:var(--radius-xl); background:var(--bg-secondary); border:1px solid var(--border);">
-            <h4 style="font-size:18px; font-weight:800; color:var(--brand-green); margin-bottom:20px; text-align:center;">Bu Yazıyı Paylaşın</h4>
-            <div style="display:flex; justify-content:center; gap:16px; flex-wrap:wrap;">
-              <button class="btn-share-action" data-type="whatsapp" style="flex:1; min-width:140px; display:flex; align-items:center; justify-content:center; gap:10px; background:#25D366; color:white; border:none; padding:12px 20px; border-radius:100px; font-weight:700; cursor:pointer; transition:all 0.2s;">${icon('whatsapp', 18)} WhatsApp</button>
-              <button class="btn-share-action" data-type="telegram" style="flex:1; min-width:140px; display:flex; align-items:center; justify-content:center; gap:10px; background:#0088cc; color:white; border:none; padding:12px 20px; border-radius:100px; font-weight:700; cursor:pointer; transition:all 0.2s;">${icon('telegram', 18)} Telegram</button>
-              <button class="btn-share-action" data-type="x" style="flex:1; min-width:140px; display:flex; align-items:center; justify-content:center; gap:10px; background:#000; color:white; border:none; padding:12px 20px; border-radius:100px; font-weight:700; cursor:pointer; transition:all 0.2s;">${icon('xSocial', 18)} X (Twitter)</button>
-              <button class="btn-share-action" data-type="copy" style="flex:1; min-width:140px; display:flex; align-items:center; justify-content:center; gap:10px; background:white; color:var(--text-primary); border:1px solid var(--border); padding:12px 20px; border-radius:100px; font-weight:700; cursor:pointer; transition:all 0.2s;">${icon('copy', 18)} Kopyala</button>
+ 
+          <div style="margin-top:80px; padding:48px; border-radius:32px; background:var(--bg-secondary); border:1px solid var(--border); text-align:center;">
+            <h4 style="font-size:22px; font-weight:900; color:var(--brand-green); margin-bottom:24px; letter-spacing:-0.5px;">Bu Akademik İçeriği Paylaşın</h4>
+            <div style="display:flex; justify-content:center; gap:12px; flex-wrap:wrap;">
+              <button class="btn-share-action" data-type="whatsapp" style="min-width:140px; display:flex; align-items:center; justify-content:center; gap:10px; background:#25D366; color:white; border:none; padding:14px 28px; border-radius:100px; font-weight:800; font-size:14px; cursor:pointer; transition:all 0.3s; box-shadow:0 10px 20px rgba(37, 211, 102, 0.2);"> ${icon('whatsapp', 18)} WhatsApp</button>
+              <button class="btn-share-action" data-type="telegram" style="min-width:140px; display:flex; align-items:center; justify-content:center; gap:10px; background:#0088cc; color:white; border:none; padding:14px 28px; border-radius:100px; font-weight:800; font-size:14px; cursor:pointer; transition:all 0.3s; box-shadow:0 10px 20px rgba(0, 136, 204, 0.2);"> ${icon('telegram', 18)} Telegram</button>
+              <button class="btn-share-action" data-type="copy" style="min-width:140px; display:flex; align-items:center; justify-content:center; gap:10px; background:white; color:var(--text-primary); border:2px solid var(--border); padding:14px 28px; border-radius:100px; font-weight:800; font-size:14px; cursor:pointer; transition:all 0.3s;"> ${icon('copy', 18)} Bağlantıyı Kopyala</button>
             </div>
           </div>
         </div>

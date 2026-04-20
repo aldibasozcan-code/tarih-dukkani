@@ -72,8 +72,6 @@ function createDefaultState() {
       logo: null,
       brandColor: '#004526',
       footerText: 'v1.0 • Bitig.app',
-      calendarId: '',
-      calendarApiKey: '',
       lastSeasonPromptYear: 0,
     },
     notifications: [
@@ -87,7 +85,7 @@ function createDefaultState() {
     students: [],
     // Groups
     groups: [],
-    // Lessons list: { id, type:'student'|'group', refId, title, date, startTime, endTime, status:'upcoming'|... , googleId }
+    // Lessons list: { id, type:'student'|'group', refId, title, date, startTime, endTime, status:'upcoming'|... }
     lessons: [],
     // Transactions: { id, type:'income'|'expense', amount, description, date, lessonId }
     transactions: [],
@@ -143,8 +141,32 @@ export async function initStore() {
       await setDoc(docRef, _state);
     }
     
-    // 4. Migration: Ensure all students/groups have a status
+    // 4. Migration: Cleanup Residual Google Data & Ensure status
     let migrationNeeded = false;
+    
+    // Purge googleEvents if it exists
+    if (_state.googleEvents) {
+      delete _state.googleEvents;
+      migrationNeeded = true;
+    }
+
+    // Permanently filter out any lessons that were synced from Google or are orphaned
+    const originalCount = _state.lessons.length;
+    const validStudentIds = new Set(_state.students.map(s => s.id));
+    const validGroupIds = new Set(_state.groups.map(g => g.id));
+    
+    _state.lessons = _state.lessons.filter(l => {
+      if (l.googleId) return false;
+      if (!l.refId) return false;
+      if (l.type === 'student' && !validStudentIds.has(l.refId)) return false;
+      if (l.type === 'group' && !validGroupIds.has(l.refId)) return false;
+      return true;
+    });
+
+    if (_state.lessons.length !== originalCount) {
+      migrationNeeded = true;
+    }
+
     _state.students = _state.students.map(s => {
       if (!s.status) { s.status = 'active'; migrationNeeded = true; }
       return s;
@@ -201,7 +223,7 @@ function _generateGroupLessons() {
       const d = new Date(today);
       const dayDiff = (group.dayOfWeek - d.getDay() + 7) % 7 || 7;
       d.setDate(d.getDate() + dayDiff + w * 7);
-      const dateStr = d.toISOString().split('T')[0];
+      const dateStr = getLocalDateStr(d);
       const lessonId = generateId();
       _state.lessons.push({
         id: lessonId,
@@ -237,6 +259,12 @@ function _addMinutes(timeStr, minutes) {
   const [h, m] = timeStr.split(':').map(Number);
   const total = h * 60 + m + minutes;
   return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+}
+
+function _getDuration(start, end) {
+  const [h1, m1] = start.split(':').map(Number);
+  const [h2, m2] = end.split(':').map(Number);
+  return (h2 * 60 + m2) - (h1 * 60 + m1);
 }
 
 function setState(updater) {
@@ -343,6 +371,7 @@ export function addGroup(data) {
   const id = generateId();
   const state = getState();
   const activeSubjects = getSubjectsForBranches(state.profile.branches || []);
+  const curriculum = activeSubjects.map(s => ({ subject: s, grade: data.grade }));
 
   const group = { 
     id, 
@@ -354,6 +383,7 @@ export function addGroup(data) {
     startDate: data.startDate || todayStr(),
     endDate: data.endDate || getLocalDateStr(addDays(new Date(), 365)) // 1 year default
   };
+
   setState(s => ({ 
     groups: [...s.groups, group],
     lessons: [...s.lessons, ..._generateGroupLessonsForGroup(group)]
@@ -600,22 +630,28 @@ export function completeLesson(lessonId, extraOpts = {}) {
   }
 }
 
+export function deleteLesson(id) {
+  setState(s => ({
+    lessons: s.lessons.filter(l => l.id !== id),
+    transactions: s.transactions.filter(t => t.lessonId !== id)
+  }));
+}
+
 export function updateLesson(id, data) {
   setState(s => ({
     lessons: s.lessons.map(l => l.id === id ? { ...l, ...data } : l)
   }));
 }
 
-export function updateLessonTime(id, date, startTime, duration = 60) {
+export function updateLessonTime(id, date, startTime) {
   setState(s => {
-    const lessons = s.lessons.map(l => {
-      if (l.id === id) {
-        const endTime = _addMinutes(startTime, duration || 60);
-        return { ...l, date, startTime, endTime };
-      }
-      return l;
-    });
-    return { lessons };
+    const lesson = s.lessons.find(l => l.id === id);
+    if (!lesson) return {};
+    const duration = _getDuration(lesson.startTime, lesson.endTime);
+    const endTime = _addMinutes(startTime, duration);
+    return {
+      lessons: s.lessons.map(l => l.id === id ? { ...l, date, startTime, endTime } : l)
+    };
   });
 }
 
@@ -917,7 +953,7 @@ export async function getTodayLessons() {
   const today = todayStr();
   
   return state.lessons
-    .filter(l => l.date === today && l.status !== 'passive')
+    .filter(l => String(l.date).trim() === String(today).trim() && l.status !== 'passive' && (l.type === 'student' || l.type === 'group') && l.refId)
     .sort((a, b) => a.startTime.localeCompare(b.startTime));
 }
 

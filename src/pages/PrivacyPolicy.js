@@ -20,28 +20,17 @@ export function renderPrivacyPolicy(navigate) {
             </section>
 
             <section style="margin-bottom: 40px;">
-              <h2 style="font-size: 20px; font-weight: 700; color: var(--brand-green); border-bottom: 2px solid var(--brand-green-soft); padding-bottom: 8px; margin-bottom: 16px;">2. Google API Verilerinin Kullanımı</h2>
-              <p>Uygulamamız, Google Takvim verilerinize erişmek için <strong>Google OAuth</strong> sistemini kullanır. Bu verilerin kullanımıyla ilgili temel kurallarımız şunlardır:</p>
-              <ul style="margin-top: 16px; padding-left: 20px;">
-                <li style="margin-bottom: 12px;"><strong>Erişim Kapsamı:</strong> Uygulama, sadece takvim etkinliklerinizi okumak için <code>calendar.events.readonly</code> kapsamını kullanır.</li>
-                <li style="margin-bottom: 12px;"><strong>Amaç:</strong> Takvim verileriniz, uygulama Dashboard'unda (Anasayfa) derslerinizi ve randevularınızı tek bir ekranda görmenizi sağlamak amacıyla kullanılır.</li>
-                <li style="margin-bottom: 12px;"><strong>Depolama:</strong> Google Takvim verileriniz sunucularımızda veya herhangi bir kalıcı veri tabanında <strong>asla saklanmaz</strong>. Veriler, tarayıcınız üzerinden doğrudan Google API'lerinden çekilir ve anlık olarak görüntülenir.</li>
-                <li style="margin-bottom: 12px;"><strong>Paylaşım:</strong> Google verileriniz üçüncü taraflarla paylaşılmaz, reklam amaçlı kullanılmaz ve profil oluşturma amacıyla analiz edilmez.</li>
-              </ul>
+              <h2 style="font-size: 20px; font-weight: 700; color: var(--brand-green); border-bottom: 2px solid var(--brand-green-soft); padding-bottom: 8px; margin-bottom: 16px;">2. Toplanan Bilgiler</h2>
+              <p>Uygulama işlevselliği için sadece kayıt sırasında verdiğiniz e-posta adresi ve belirlediğiniz profil ismi sistemimizde saklanır. Ders içerikleri, öğrenci listeleri, takvim kayıtlarınız ve notlarınız Firebase veri tabanında güvenli bir şekilde depolanır. Tüm verileriniz sadece sizin erişiminize açıktır.</p>
             </section>
 
             <section style="margin-bottom: 40px;">
-              <h2 style="font-size: 20px; font-weight: 700; color: var(--brand-green); border-bottom: 2px solid var(--brand-green-soft); padding-bottom: 8px; margin-bottom: 16px;">3. Toplanan Diğer Bilgiler</h2>
-              <p>Uygulama işlevselliği için sadece kayıt sırasında verdiğiniz e-posta adresi ve belirlediğiniz profil ismi sistemimizde saklanır. Ders içerikleri, öğrenci listeleri ve notlarınız Firebase veri tabanında güvenli bir şekilde depolanır.</p>
+              <h2 style="font-size: 20px; font-weight: 700; color: var(--brand-green); border-bottom: 2px solid var(--brand-green-soft); padding-bottom: 8px; margin-bottom: 16px;">3. Güvenlik</h2>
+              <p>Verileriniz endüstri standardı şifreleme yöntemleri ile korunmaktadır. Hesabınıza erişim Google Auth veya e-posta/şifre yöntemiyle güvenli bir şekilde sağlanır.</p>
             </section>
 
             <section style="margin-bottom: 40px;">
-              <h2 style="font-size: 20px; font-weight: 700; color: var(--brand-green); border-bottom: 2px solid var(--brand-green-soft); padding-bottom: 8px; margin-bottom: 16px;">4. Güvenlik</h2>
-              <p>Verileriniz endüstri standardı şifreleme yöntemleri ile korunmaktadır. Google erişim anahtarlarınız sadece tarayıcınızın yerel belleğinde (localStorage) tutulur ve siz çıkış yaptığınızda silinir.</p>
-            </section>
-
-            <section style="margin-bottom: 40px;">
-              <h2 style="font-size: 20px; font-weight: 700; color: var(--brand-green); border-bottom: 2px solid var(--brand-green-soft); padding-bottom: 8px; margin-bottom: 16px;">5. İletişim</h2>
+              <h2 style="font-size: 20px; font-weight: 700; color: var(--brand-green); border-bottom: 2px solid var(--brand-green-soft); padding-bottom: 8px; margin-bottom: 16px;">4. İletişim</h2>
               <p>Gizlilik politikamızla ilgili sorularınız için bizimle iletişime geçebilirsiniz: <strong>aldibasozcan@gmail.com</strong></p>
             </section>
           </div>

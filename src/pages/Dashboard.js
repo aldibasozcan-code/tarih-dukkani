@@ -96,17 +96,11 @@ export async function renderDashboard(navigate) {
           </div>
           <h2 style="font-size:42px;">${getGreeting()}, ${state.profile.name.split(' ')[0]}!</h2>
           <p style="font-size:18px; opacity:0.9; margin-top:8px;">
-            Bugün ajandanızda ${todayLessons.length} ders ve etkinlik planlanmış görünüyor.
+            Bugün yerel ajandanızda <strong style="color:white; text-decoration:underline;">${todayLessons.length} ders</strong> planlanmış görünüyor.
           </p>
-          
-          <div class="quick-actions" style="margin-top:32px;">
-            <button class="btn btn-primary glass" id="btn-add-lesson" style="background:white; color:var(--brand-green); font-weight:800; padding:12px 24px;">
-              ${icon('plus', 16)} Yeni Ders Planla
-            </button>
-          </div>
         </div>
         
-        <div class="banner-quote-container">
+        <div class="banner-quote-container" style="max-width: 450px;">
            <div style="font-size:11px; text-transform:uppercase; font-weight:800; letter-spacing:1px; margin-bottom:12px; opacity:0.7;">
              Günün İlhamı
            </div>
@@ -164,7 +158,10 @@ export async function renderDashboard(navigate) {
         <div class="card glass-card hover-lift" style="min-height:400px; border-top:none; border-bottom:4px solid var(--brand-green);">
           <div class="section-title">
             <h3 class="text-gradient">${icon('calendar', 18)} Ajanda: Bugün</h3>
-            <a data-nav="calendar" style="background:var(--brand-green-soft); color:var(--brand-green); padding:5px 12px; border-radius:20px; font-size:12px;">Tümü →</a>
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-primary btn-sm" id="btn-add-lesson" style="padding:4px 12px; font-size:12px; border-radius:20px;">${icon('plus', 12)} Yeni Ders</button>
+              <a data-nav="calendar" style="background:var(--brand-green-soft); color:var(--brand-green); padding:5px 12px; border-radius:20px; font-size:12px;">Tümü →</a>
+            </div>
           </div>
           <div style="margin-top:16px;">
             ${todayLessons.length === 0 ? `

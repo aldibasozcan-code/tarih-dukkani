@@ -57,71 +57,78 @@ export async function renderPublicForum(navigate) {
     return posts.map((post, i) => {
       const isNew = (Date.now() - post.createdAt) < (1000 * 60 * 60 * 24);
       return `
-      <div class="forum-card stagger-${i}" data-id="${post.id}" style="background:rgba(255, 255, 255, 0.7); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.5); border-top:4px solid var(--brand-green); border-radius:24px; padding:32px; box-shadow:var(--shadow-md); display:flex; flex-direction:column; transition:all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1); cursor:pointer; position:relative; overflow:hidden;" onmouseover="this.style.transform='translateY(-12px) scale(1.02)'; this.style.boxShadow='0 20px 40px rgba(0,0,0,0.08)'; this.style.background='rgba(255,255,255,0.95)'" onmouseout="this.style.transform='translateY(0) scale(1)'; this.style.boxShadow='var(--shadow-md)'; this.style.background='rgba(255, 255, 255, 0.7)'">
-        ${isNew ? `<div style="position:absolute; top:0; right:0; background:var(--danger); color:white; font-size:10px; font-weight:900; padding:6px 12px; border-bottom-left-radius:12px; text-transform:uppercase; z-index:2; letter-spacing:1px;">YENİ</div>` : ''}
+      <div class="premium-card fade-in-up" data-id="${post.id}" style="animation-delay: ${i * 0.1}s; padding:32px; display:flex; flex-direction:column; position:relative; overflow:hidden;">
+        ${isNew ? `<div style="position:absolute; top:0; right:0; background:var(--danger); color:white; font-size:10px; font-weight:900; padding:6px 12px; border-bottom-left-radius:12px; text-transform:uppercase; z-index:2; letter-spacing:1px; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.2);">YENİ</div>` : ''}
         
         <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:20px; align-items:center;">
-           <span style="font-size:11px; text-transform:uppercase; font-weight:800; letter-spacing:0.5px; background:var(--brand-green-soft); color:var(--brand-green); padding:6px 12px; border-radius:8px;">${post.grade || 'Genel'}</span>
-           <span style="font-size:11px; text-transform:uppercase; font-weight:800; letter-spacing:0.5px; background:white; color:var(--text-secondary); padding:6px 12px; border-radius:8px; border:1px solid var(--border);">${post.category}</span>
+           <span style="font-size:10px; text-transform:uppercase; font-weight:800; letter-spacing:0.5px; background:var(--brand-green-soft); color:var(--brand-green); padding:6px 12px; border-radius:100px; border:1px solid rgba(0,69,38,0.1);">${post.grade || 'Genel'}</span>
+           <span style="font-size:10px; text-transform:uppercase; font-weight:800; letter-spacing:0.5px; background:white; color:var(--text-secondary); padding:6px 12px; border-radius:100px; border:1px solid var(--border);">${post.category}</span>
         </div>
 
-        <h3 style="font-size:22px; font-weight:900; margin-bottom:16px; line-height:1.3; color:var(--text-primary); letter-spacing:-0.5px;">${post.title}</h3>
+        <h3 style="font-size:22px; font-weight:900; margin-bottom:14px; line-height:1.3; color:var(--text-primary); letter-spacing:-0.5px;">${post.title}</h3>
         
         ${post.topic ? `
-          <div style="font-size:14px; color:var(--brand-green); font-weight:700; margin-bottom:18px; display:flex; align-items:center; gap:8px; background:rgba(0,69,38,0.04); padding:8px 12px; border-radius:10px; align-self:flex-start;">
-            ${icon('book', 16)} ${post.topic}
+          <div style="font-size:12px; color:var(--brand-green); font-weight:800; margin-bottom:18px; display:flex; align-items:center; gap:8px; background:rgba(0,69,38,0.04); padding:6px 14px; border-radius:100px; align-self:flex-start; border:1px solid rgba(0,69,38,0.08);">
+            ${icon('book', 14)} ${post.topic}
           </div>
         ` : ''}
 
-        <p style="font-size:15px; color:var(--text-secondary); line-height:1.7; margin-bottom:28px; flex:1; text-align: justify; opacity:0.9;">${post.summary || post.content.substring(0,130) + '...'}</p>
+        <p style="font-size:15px; color:var(--text-secondary); line-height:1.6; margin-bottom:28px; flex:1; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; opacity:0.9;">${post.summary || post.content.substring(0,130) + '...'}</p>
         
         ${post.tags && post.tags.length > 0 ? `
-          <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:24px;">
-            ${post.tags.map(t => `<span class="tag-link" data-tag="${t}" style="font-size:11px; color:var(--brand-green); font-weight:700; background:white; border:1px solid var(--brand-green-soft); padding:4px 10px; border-radius:8px; transition:all 0.2s;">#${t}</span>`).join('')}
+          <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:24px;">
+            ${post.tags.slice(0, 4).map(t => `<span class="tag-link" data-tag="${t}" style="font-size:10px; color:var(--brand-green); font-weight:700; background:white; border:1px solid var(--brand-green-soft); padding:4px 12px; border-radius:100px; transition:all 0.2s;">#${t}</span>`).join('')}
           </div>
         ` : ''}
 
-        <div style="border-top:1px solid var(--border); padding-top:24px; display:flex; align-items:center; justify-content:space-between; margin-top:auto;">
+        <div style="border-top:1px solid var(--border); padding-top:20px; display:flex; align-items:center; justify-content:space-between;">
            <div style="display:flex; align-items:center; gap:12px;">
-             <div style="width:40px; height:40px; background:var(--brand-green); color:white; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:900; box-shadow:0 4px 10px rgba(0,69,38,0.2);">${post.authorName[0]}</div>
+             <div style="width:44px; height:44px; background:linear-gradient(135deg, var(--brand-green), #002514); color:white; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:900; box-shadow:0 4px 12px rgba(0,69,38,0.15);">${post.authorName[0]}</div>
              <div>
                <div style="font-size:14px; font-weight:800; color:var(--text-primary);">${post.authorName}</div>
-               <div style="font-size:12px; color:var(--text-muted);">${new Date(post.createdAt).toLocaleDateString('tr-TR')}</div>
+               <div style="font-size:11px; color:var(--text-muted); font-weight:600;">${new Date(post.createdAt).toLocaleDateString('tr-TR')}</div>
              </div>
            </div>
-           <div style="display:flex; align-items:center; gap:10px;">
-             <button class="btn-share-post" data-title="${post.title}" data-id="${post.id}" style="background:white; border:1px solid var(--border); width:36px; height:36px; border-radius:12px; display:flex; align-items:center; justify-content:center; color:var(--text-secondary); cursor:pointer; transition:var(--transition);" onmouseover="this.style.background='var(--brand-green-soft)'; this.style.color='var(--brand-green)'; this.style.borderColor='var(--brand-green)'" onmouseout="this.style.background='white'; this.style.color='var(--text-secondary)'; this.style.borderColor='var(--border)'">
-                ${icon('externalLink', 16)}
+           <div style="display:flex; align-items:center; gap:8px;">
+             <button class="btn-share-post icon-btn" data-title="${post.title}" data-id="${post.id}" style="width:36px; height:36px; border-radius:10px;">
+                ${icon('externalLink', 14)}
              </button>
-             <div style="color:var(--brand-green); background:var(--brand-green-soft); width:36px; height:36px; border-radius:12px; display:flex; align-items:center; justify-content:center;">${icon('chevronRight', 20)}</div>
+             <div style="color:white; background:var(--brand-green); width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; box-shadow: 0 4px 10px rgba(0,69,38,0.2);">${icon('chevronRight', 20)}</div>
            </div>
         </div>
       </div>
+
       `;
     }).join('');
   }
 
   const html = `
     <div class="fade-in">
-      <header class="forum-header" style="background:linear-gradient(to bottom, var(--bg-secondary) 0%, white 100%); border-bottom:1px solid var(--border); padding:80px 5%; text-align:center;">
-        <h2 style="font-size:42px; font-weight:900; color:var(--text-primary); margin-bottom:16px; letter-spacing:-1px;">Öğretmen Forumu</h2>
-        <p style="color:var(--text-secondary); max-width:700px; margin:0 auto; font-size:18px; line-height:1.6;">Branşdaşlarınızla materyal paylaşın, güncel müfredata uygun içeriklere ulaşın.</p>
+      <header class="forum-header" style="background:linear-gradient(to bottom, #f0fdf4 0%, white 100%); border-bottom:1px solid var(--border); padding:100px 5% 80px; text-align:center; position:relative; overflow:hidden;">
+        <!-- Subtle floating orbs for forum -->
+        <div class="blur-orb" style="top:-50px; right:-50px; width:300px; height:300px; background:rgba(5, 150, 105, 0.08);"></div>
+        <div class="blur-orb" style="bottom:20%; left:5%; width:250px; height:250px; background:rgba(0, 69, 38, 0.05); animation-delay: -3s;"></div>
         
-        <div class="forum-filters" style="display:flex; justify-content:center; gap:10px; margin-top:40px; flex-wrap:wrap; max-width:1000px; margin-left:auto; margin-right:auto;">
-          ${gradeGroups.map(g => `
-            <button class="filter-btn ${currentFilter === g.id ? 'active' : ''}" data-filter="${g.id}" style="border-radius:12px; padding:12px 20px; font-weight:700; background:${currentFilter === g.id ? 'var(--brand-green)' : 'white'}; border:1px solid ${currentFilter === g.id ? 'var(--brand-green)' : 'var(--border)'}; color:${currentFilter === g.id ? 'white' : 'var(--text-primary)'}; cursor:pointer; display:flex; align-items:center; gap:8px; transition:all 0.2s ease; box-shadow:var(--shadow-sm);">
-              ${g.icon ? icon(g.icon, 16) : ''}
-              ${g.label}
-            </button>
-          `).join('')}
-        </div>
-
-        <div class="tag-filters" style="display:flex; justify-content:center; gap:8px; margin-top:20px; flex-wrap:wrap; max-width:800px; margin-left:auto; margin-right:auto;">
-          <span style="font-size:12px; font-weight:700; color:var(--text-muted); align-self:center; margin-right:8px;">Etiketler:</span>
-          <button class="tag-filter-btn ${currentTag === 'all' ? 'active' : ''}" data-tag="all" style="font-size:11px; font-weight:700; padding:6px 12px; border-radius:100px; border:1px solid var(--border); background:${currentTag === 'all' ? 'var(--brand-green)' : 'white'}; color:${currentTag === 'all' ? 'white' : 'var(--text-secondary)'}; cursor:pointer;">#tümü</button>
-          ${forumTags.map(t => `
-            <button class="tag-filter-btn ${currentTag === t ? 'active' : ''}" data-tag="${t}" style="font-size:11px; font-weight:700; padding:6px 12px; border-radius:100px; border:1px solid var(--border); background:${currentTag === t ? 'var(--brand-green)' : 'white'}; color:${currentTag === t ? 'white' : 'var(--text-secondary)'}; cursor:pointer;">#${t}</button>
-          `).join('')}
+        <div style="position:relative; z-index:2;">
+          <h2 style="font-size:48px; font-weight:900; color:var(--brand-green); margin-bottom:16px; letter-spacing:-2px; line-height:1.1;">Öğretmen Forumu</h2>
+          <p style="color:var(--text-secondary); max-width:700px; margin:0 auto; font-size:18px; line-height:1.6; font-weight:500;">Branşdaşlarınızla materyal paylaşın, güncel müfredata uygun içeriklere ulaşın ve deneyimlerinizi aktarın.</p>
+          
+          <div class="forum-filters" style="display:flex; justify-content:center; gap:12px; margin-top:48px; flex-wrap:wrap; max-width:1100px; margin-left:auto; margin-right:auto;">
+            ${gradeGroups.map(g => `
+              <button class="filter-btn ${currentFilter === g.id ? 'active' : ''}" data-filter="${g.id}" style="border-radius:100px; padding:12px 24px; font-weight:800; font-size:13px; background:${currentFilter === g.id ? 'var(--brand-green)' : 'white'}; border:1px solid ${currentFilter === g.id ? 'var(--brand-green)' : 'var(--border)'}; color:${currentFilter === g.id ? 'white' : 'var(--text-primary)'}; cursor:pointer; display:flex; align-items:center; gap:10px; transition:all 0.4s cubic-bezier(0.16, 1, 0.3, 1); box-shadow:var(--shadow-sm);">
+                ${g.icon ? icon(g.icon, 18) : ''}
+                ${g.label}
+              </button>
+            `).join('')}
+          </div>
+  
+          <div class="tag-filters" style="display:flex; justify-content:center; gap:8px; margin-top:24px; flex-wrap:wrap; max-width:800px; margin-left:auto; margin-right:auto;">
+            <span style="font-size:12px; font-weight:800; color:var(--text-muted); align-self:center; margin-right:8px; text-transform:uppercase; letter-spacing:1px;">Materyal Etiketleri:</span>
+            <button class="tag-filter-btn ${currentTag === 'all' ? 'active' : ''}" data-tag="all" style="font-size:11px; font-weight:700; padding:6px 16px; border-radius:100px; border:1px solid var(--border); background:${currentTag === 'all' ? 'var(--brand-green)' : 'white'}; color:${currentTag === 'all' ? 'white' : 'var(--text-secondary)'}; cursor:pointer; transition:var(--transition);">#tümü</button>
+            ${forumTags.map(t => `
+              <button class="tag-filter-btn ${currentTag === t ? 'active' : ''}" data-tag="${t}" style="font-size:11px; font-weight:700; padding:6px 16px; border-radius:100px; border:1px solid var(--border); background:${currentTag === t ? 'var(--brand-green)' : 'white'}; color:${currentTag === t ? 'white' : 'var(--text-secondary)'}; cursor:pointer; transition:var(--transition);">#${t}</button>
+            `).join('')}
+          </div>
         </div>
       </header>
 
@@ -177,7 +184,7 @@ export async function renderPublicForum(navigate) {
       };
 
       const attachCardEvents = () => {
-        el.querySelectorAll('.forum-card').forEach(card => {
+        el.querySelectorAll('.premium-card').forEach(card => {
           card.onclick = (e) => {
             if (e.target.classList.contains('tag-link')) {
               e.stopPropagation();
