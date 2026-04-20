@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════
 // DASHBOARD PAGE
 // ═══════════════════════════════════════════════════
-import { getState, getTodayLessons, getPendingLessons, getMonthlyStats, getLessonStatus, completeLesson, postponeLesson, addNextWeekLesson } from '../store/store.js';
+import { getState, subscribe, getTodayLessons, getPendingLessons, getMonthlyStats, getLessonStatus, completeLesson, postponeLesson, addNextWeekLesson } from '../store/store.js';
 import { icon } from '../components/icons.js';
 import { formatCurrency, formatDate, formatDateShort, formatTime, getLessonStatusInfo, getAvatarColor, getInitials, getLocalDateStr, escHtml } from '../utils/helpers.js';
 import { openModal } from '../components/modal.js';
@@ -95,9 +95,12 @@ export async function renderDashboard(navigate) {
             <span style="background:rgba(255,255,255,0.2); padding:6px 12px; border-radius:20px; font-size:12px; font-weight:700;">${dateStr.toUpperCase()}</span>
           </div>
           <h2 style="font-size:42px;">${getGreeting()}, ${state.profile.name.split(' ')[0]}!</h2>
-          <p style="font-size:18px; opacity:0.9; margin-top:8px;">
-            Bugün yerel ajandanızda <strong style="color:white; text-decoration:underline;">${todayLessons.length} ders</strong> planlanmış görünüyor.
+          <p style="font-size:18px; opacity:0.9; margin-top:8px;" id="dashboard-lesson-count">
+            Bugün ajandanızda <strong style="color:white;">${todayLessons.length} ders</strong> planlanmış, <strong style="color:white;">${todayLessons.filter(l => l.status !== 'completed').length} ders</strong> kalmış görünüyor.
           </p>
+          <button class="btn btn-primary" id="btn-add-lesson-banner" style="margin-top:24px; background:white; color:var(--brand-green); border:none; font-weight:700; padding:12px 24px; border-radius:12px; display:flex; align-items:center; gap:8px; box-shadow: 0 10px 20px rgba(0,0,0,0.15);">
+            ${icon('plus', 18)} Yeni Ders Ekle
+          </button>
         </div>
         
         <div class="banner-quote-container" style="max-width: 450px;">
@@ -111,7 +114,7 @@ export async function renderDashboard(navigate) {
       </div>
 
       <!-- Bento Grid KPIs -->
-      <div class="grid grid-4 fade-in-up stagger-2" style="margin-bottom:32px;">
+      <div class="grid grid-5 fade-in-up stagger-2" style="margin-bottom:32px;">
         <div class="kpi-card hover-lift">
           <div class="kpi-icon" style="background:rgba(16,185,129,0.1); color:var(--success);">
             ${icon('trendUp', 24)}
@@ -129,6 +132,16 @@ export async function renderDashboard(navigate) {
           <div>
             <div class="kpi-value">${state.students.filter(s => (s.status || 'active') === 'active').length}</div>
             <div class="kpi-label">Aktif Öğrenci</div>
+          </div>
+        </div>
+
+        <div class="kpi-card hover-lift">
+          <div class="kpi-icon" style="background:rgba(124,106,255,0.1); color:var(--accent2 || '#7c3aed');">
+            ${icon('groups', 24)}
+          </div>
+          <div>
+            <div class="kpi-value">${state.groups.filter(g => (g.status || 'active') === 'active').length}</div>
+            <div class="kpi-label">Aktif Grup</div>
           </div>
         </div>
 
@@ -159,8 +172,7 @@ export async function renderDashboard(navigate) {
           <div class="section-title">
             <h3 class="text-gradient">${icon('calendar', 18)} Ajanda: Bugün</h3>
             <div style="display:flex; gap:8px;">
-              <button class="btn btn-primary btn-sm" id="btn-add-lesson" style="padding:4px 12px; font-size:12px; border-radius:20px;">${icon('plus', 12)} Yeni Ders</button>
-              <a data-nav="calendar" style="background:var(--brand-green-soft); color:var(--brand-green); padding:5px 12px; border-radius:20px; font-size:12px;">Tümü →</a>
+              <a data-nav="calendar" style="background:var(--brand-green-soft); color:var(--brand-green); padding:5px 12px; border-radius:20px; font-size:12px; cursor:pointer;">Tümü →</a>
             </div>
           </div>
           <div style="margin-top:16px;">
@@ -211,7 +223,7 @@ export async function renderDashboard(navigate) {
 
         <!-- Middle: Revenue and Stats -->
         <div style="display:flex; flex-direction:column; gap:16px;">
-          <div class="card glass-card hover-lift" style="border-top:none; border-bottom:4px solid var(--brand-green-light);">
+          <div class="card glass-card hover-lift" id="performance-card" style="border-top:none; border-bottom:4px solid var(--brand-green-light); cursor:pointer;">
             <div class="section-title">
               <h3 class="text-gradient">${icon('trendUp', 18)} Haftalık Performans</h3>
             </div>
@@ -311,9 +323,25 @@ function initDashboard(el, navigate) {
     openPendingModal(navigate);
   });
 
-  // Add lesson
-  el.querySelector('#btn-add-lesson')?.addEventListener('click', () => {
+  // Add lesson (Banner)
+  el.querySelector('#btn-add-lesson-banner')?.addEventListener('click', () => {
     import('./modals/AddLessonModal.js').then(m => m.openAddLessonModal(() => navigate('dashboard')));
+  });
+
+  // State subscription for live updates
+  const unsubscribe = subscribe(async () => {
+    if (document.getElementById('app')._currentPage !== 'dashboard') {
+      unsubscribe();
+      return;
+    }
+    
+    const todayLessons = await getTodayLessons();
+    const remainingCount = todayLessons.filter(l => l.status !== 'completed').length;
+    
+    const countEl = el.querySelector('#dashboard-lesson-count');
+    if (countEl) {
+      countEl.innerHTML = `Bugün ajandanızda <strong style="color:white;">${todayLessons.length} ders</strong> planlanmış, <strong style="color:white;">${remainingCount} ders</strong> kalmış görünüyor.`;
+    }
   });
 
   // Lesson Card Click
@@ -337,6 +365,11 @@ function initDashboard(el, navigate) {
   // Nav links
   el.querySelectorAll('[data-nav]').forEach(el2 => {
     el2.addEventListener('click', () => navigate(el2.dataset.nav));
+  });
+
+  // Performance card click
+  el.querySelector('#performance-card')?.addEventListener('click', () => {
+    import('./modals/WeeklyPerformanceModal.js').then(m => m.openWeeklyPerformanceModal());
   });
 
   // Season Review

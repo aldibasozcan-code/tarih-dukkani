@@ -198,7 +198,7 @@ function renderMonthView(state, year, month, lessons = []) {
 
 function renderWeekView(state, weekStart, lessons = []) {
   const today = getLocalDateStr();
-  const hours = Array.from({ length: 17 }, (_, i) => i + 7); // 07:00 to 23:00
+  const hours = Array.from({ length: 15 }, (_, i) => i + 9); // 09:00 to 23:00
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
   return `
