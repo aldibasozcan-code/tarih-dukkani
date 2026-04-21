@@ -238,9 +238,35 @@ async function init() {
         }
 
         // State change subscription
-        subscribe((newState) => {
+        const { getPendingLessons, getLessonStatus } = await import('./store/store.js');
+        const initialPending = await getPendingLessons();
+        const notifiedLessons = new Set(initialPending.map(l => l.id));
+
+        subscribe(async (newState) => {
           if (currentLayout === 'dashboard') {
-            const { refreshTopbar } = import('./components/Layout.js').then(m => m.refreshTopbar(newState));
+            const { refreshTopbar } = await import('./components/Layout.js');
+            refreshTopbar(newState);
+          }
+
+          // Lesson Status Monitor (Toasts)
+          const pending = newState.lessons.filter(l => {
+            if (l.status === 'passive' || l.status === 'completed' || l.status === 'postponed') return false;
+            return getLessonStatus(l) === 'waiting';
+          });
+
+          if (pending.length > 0) {
+            const { showToast } = await import('./components/Toast.js');
+            pending.forEach(l => {
+              if (!notifiedLessons.has(l.id)) {
+                notifiedLessons.add(l.id);
+                showToast({
+                  title: 'Ders Tamamlandı',
+                  message: `${l.title} dersinin süresi doldu. Onaylamak için dokunun.`,
+                  type: 'warning',
+                  duration: 8000
+                });
+              }
+            });
           }
         });
       }

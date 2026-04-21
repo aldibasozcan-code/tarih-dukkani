@@ -336,11 +336,40 @@ function initDashboard(el, navigate) {
     }
     
     const todayLessons = await getTodayLessons();
+    const pendingLessons = await getPendingLessons();
     const remainingCount = todayLessons.filter(l => l.status !== 'completed').length;
     
     const countEl = el.querySelector('#dashboard-lesson-count');
     if (countEl) {
       countEl.innerHTML = `Bugün ajandanızda <strong style="color:white;">${todayLessons.length} ders</strong> planlanmış, <strong style="color:white;">${remainingCount} ders</strong> kalmış görünüyor.`;
+    }
+
+    // Dynamic Pending Alert
+    let alertContainer = el.querySelector('.pending-alert');
+    if (pendingLessons.length > 0) {
+      const alertHtml = `
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="status-pulse-ring" style="background:var(--warning);width:8px;height:8px;border-radius:50%;"></div>
+          <span class="pending-alert-text" style="font-weight:700;">${pendingLessons.length} ders onayınızı bekliyor!</span>
+        </div>
+        <button class="btn btn-warning btn-sm" id="show-pending-btn">Şimdi İncele</button>
+      `;
+      if (alertContainer) {
+        alertContainer.innerHTML = alertHtml;
+        alertContainer.style.display = 'flex';
+      } else {
+        // Prepend to the first card or at the top of fade-in div
+        const newAlert = document.createElement('div');
+        newAlert.className = 'pending-alert fade-in-up';
+        newAlert.innerHTML = alertHtml;
+        el.querySelector('.fade-in').prepend(newAlert);
+        alertContainer = newAlert;
+      }
+      alertContainer.querySelector('#show-pending-btn')?.addEventListener('click', () => {
+        openPendingModal(navigate);
+      });
+    } else if (alertContainer) {
+      alertContainer.style.display = 'none';
     }
   });
 

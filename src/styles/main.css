@@ -1915,3 +1915,98 @@ textarea { resize: vertical; min-height: 100px; }
 .topic-drop-target {
   border-top: 2px solid var(--brand-green);
 }
+
+/* ─── Toast Notifications ─── */
+#toast-container {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  min-width: 320px;
+  max-width: 450px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border);
+  border-left: 5px solid var(--brand-green);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.12);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  animation: toastSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  position: relative;
+  overflow: hidden;
+}
+
+.toast-success { border-left-color: var(--success); }
+.toast-warning { border-left-color: var(--warning); }
+.toast-danger { border-left-color: var(--danger); }
+.toast-info { border-left-color: var(--brand-green-light); }
+
+.toast-content {
+  flex: 1;
+}
+
+.toast-title {
+  font-weight: 800;
+  font-size: 14px;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.toast-message {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.toast-close {
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  transition: var(--transition);
+}
+
+.toast-close:hover {
+  background: var(--bg-secondary);
+  color: var(--danger);
+}
+
+@keyframes toastSlideIn {
+  from { transform: translateX(100%) translateY(0); opacity: 0; }
+  to { transform: translateX(0) translateY(0); opacity: 1; }
+}
+
+@keyframes toastFadeOut {
+  from { transform: scale(1); opacity: 1; }
+  to { transform: scale(0.9); opacity: 0; }
+}
+
+.toast.hiding {
+  animation: toastFadeOut 0.4s ease forwards;
+}
+
+.toast-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: rgba(0, 69, 38, 0.1);
+  width: 100%;
+}
+
+.toast-progress-bar {
+  height: 100%;
+  background: var(--brand-green);
+  width: 0%;
+}

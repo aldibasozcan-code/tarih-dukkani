@@ -1033,14 +1033,16 @@ export function getMonthlyStats() {
 // ─── Curriculum CRUD ───
 
 export function addUnit(subject, grade, name) {
+  const id = generateId();
   setState(s => {
     const curr = JSON.parse(JSON.stringify(s.curriculum));
     if (!curr[subject]) curr[subject] = {};
     if (!curr[subject][grade]) curr[subject][grade] = [];
     
-    curr[subject][grade].push({ id: generateId(), name, topics: [] });
+    curr[subject][grade].push({ id, name, topics: [] });
     return { curriculum: curr };
   });
+  return id;
 }
 
 export function updateUnit(subject, grade, unitId, name) {

@@ -92,87 +92,103 @@ function renderCurriculumContent(state, grade) {
         </div>
       `;
     } else {
-      html += units.map(unit => {
+      window._expandedUnits = window._expandedUnits || {};
+      
+      html += units.map((unit, uIndex) => {
+        const isExpanded = window._expandedUnits[unit.id] !== false; // Default to expanded if not set
         const unitMaterials = allMaterials.filter(m => m.unitId === unit.id && !m.topicId);
-
+        
         return `
-          <div class="card" style="margin-bottom:16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid var(--bg-hover);">
-              <div style="width:12px;height:12px;border-radius:4px;background:var(--primary);flex-shrink:0;"></div>
-              <h3 style="font-size:16px;font-weight:700;flex:1;display:flex;align-items:center;gap:8px; color:var(--text);">
+          <div class="unit-accordion ${isExpanded ? 'active' : ''}" data-unit-id="${unit.id}" style="margin-bottom: 16px; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: #fff; box-shadow: var(--shadow-sm);">
+            <!-- Unit Header -->
+            <div class="unit-header" data-toggle-unit="${unit.id}" style="padding: 16px 20px; background: ${isExpanded ? 'var(--brand-green-soft)' : '#fff'}; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: var(--transition);">
+              <div class="unit-icon" style="color: var(--brand-green); transform: rotate(${isExpanded ? '90deg' : '0deg'}); transition: transform 0.3s;">
+                ${icon('chevronRight', 20)}
+              </div>
+              <h3 style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0; flex: 1; display: flex; align-items: center; gap: 8px;">
                 ${icon('book', 18)} ${escHtml(unit.name)}
-                <div style="display:flex; opacity: 0.6; transition: opacity 0.2s;">
-                  <button class="btn btn-ghost btn-sm" data-edit-unit="${unit.id}" data-subject="${subject}" data-grade="${grade}" style="padding:4px;" title="Üniteyi Düzenle">${icon('edit', 14)}</button>
-                  <button class="btn btn-ghost btn-sm" data-delete-unit="${unit.id}" data-subject="${subject}" data-grade="${grade}" style="padding:4px;color:var(--danger);" title="Üniteyi Sil">${icon('trash', 14)}</button>
-                </div>
               </h3>
-              <button class="btn btn-secondary btn-sm" data-add-topic="${unit.id}" data-subject="${subject}" data-grade="${grade}">${icon('plus', 12)} Konu Ekle</button>
+              <div style="display: flex; gap: 8px;" onclick="event.stopPropagation()">
+                <button class="btn btn-ghost btn-sm btn-icon" data-edit-unit="${unit.id}" data-subject="${subject}" data-grade="${grade}" title="Üniteyi Düzenle">${icon('edit', 16)}</button>
+                <button class="btn btn-ghost btn-sm btn-icon" data-delete-unit="${unit.id}" data-subject="${subject}" data-grade="${grade}" style="color: var(--danger);" title="Üniteyi Sil">${icon('trash', 16)}</button>
+                <button class="btn btn-secondary btn-sm" data-add-topic="${unit.id}" data-subject="${subject}" data-grade="${grade}">
+                  ${icon('plus', 12)} Konu Ekle
+                </button>
+              </div>
             </div>
 
-            <div class="topic-list" style="padding-left: 22px; display:flex; flex-direction:column; gap: 16px;">
-              ${unit.topics.length === 0 ? '<em style="color:var(--text-muted);font-size:13px;">Bu ünitede henüz konu yok.</em>' : ''}
-              ${unit.topics.map((topic, index) => {
-                const topicMaterials = allMaterials.filter(m => m.unitId === unit.id && m.topicId === topic.id);
-                return `
-                  <div class="topic-item" draggable="true" 
-                       data-index="${index}" 
-                       data-topic-id="${topic.id}" 
-                       data-unit-id="${unit.id}" 
-                       data-subject="${subject}" 
-                       data-grade="${grade}"
-                       style="border-left: 2px solid var(--border); padding-left: 16px;">
-                    <div style="display:flex;align-items:center;gap:8px; margin-bottom: 8px;">
-                      <div class="topic-drag-handle" title="Sıralamak için sürükleyin">
-                        ${icon('dragHandle', 14)}
-                      </div>
-                      <h4 style="font-size:14px; font-weight:600; color:var(--text); margin:0; display:flex; align-items:center; gap:6px; flex:1;">
-                        ${icon('zap', 14)} ${escHtml(topic.name)}
-                        <button class="btn btn-ghost btn-sm" data-edit-topic="${topic.id}" data-unit-id="${unit.id}" data-subject="${subject}" data-grade="${grade}" style="padding:2px;" title="Konuyu Düzenle">${icon('edit', 12)}</button>
-                        <button class="btn btn-ghost btn-sm" data-delete-topic="${topic.id}" data-unit-id="${unit.id}" data-subject="${subject}" data-grade="${grade}" style="padding:2px;color:var(--danger);" title="Konuyu Sil">${icon('trash', 12)}</button>
-                      </h4>
-                    </div>
-                    
-                    <!-- Materials for this topic -->
-                    <div style="display:flex; flex-direction:column; gap:6px; padding-left: 8px;">
-                      ${topicMaterials.length === 0 ? '<span style="color:var(--text-muted); font-size:12px;">İçerik yok.</span>' : ''}
-                      ${topicMaterials.map(m => {
-                        const cType = CONTENT_TYPES.find(ct => ct.id === m.contentType);
-                        const isYoutube = isYoutubeUrl(m.link);
-                        const isDrive = isGoogleDriveUrl(m.link);
-                        const videoId = getYoutubeVideoId(m.link);
-                        const drivePreview = isDrive ? getGoogleDrivePreviewUrl(m.link) : null;
-                        
-                        let clickAttrs = 'target="_blank"';
-                        let classList = 'hover-underline';
-                        if (isYoutube) {
-                          clickAttrs = `data-video-id="${videoId}" data-video-title="${escHtml(m.title)}"`;
-                          classList += ' youtube-link';
-                        } else if (isDrive && drivePreview) {
-                          clickAttrs = `data-preview-url="${escHtml(drivePreview)}" data-preview-title="${escHtml(m.title)}"`;
-                          classList += ' drive-link';
-                        }
-
-                        return `
-                        <div style="display:flex; align-items:center; gap: 8px; font-size:13px;">
-                          <span style="font-size:14px;">${isYoutube ? '🎬' : (isDrive ? '📁' : (cType?.icon || '📄'))}</span>
-                          <a href="${escHtml(m.link)}" ${clickAttrs} class="${classList}" style="color:var(--primary); text-decoration:none; display:flex; align-items:center; gap:4px;">
-                            ${escHtml(m.title)}
-                          </a>
-                          <button class="btn btn-ghost btn-sm" data-delete-material="${m.id}" style="padding:0px 4px; color:var(--danger); opacity:0.6; margin-left:auto;" title="İçeriği Sil">${icon('x', 14)}</button>
-                        </div>
-                        `;
-                      }).join('')}
-                    </div>
+            <!-- Unit Content -->
+            <div class="unit-content" style="display: ${isExpanded ? 'block' : 'none'}; padding: 20px; border-top: 1px solid var(--border);">
+              <div class="topic-list" style="display:flex; flex-direction:column; gap: 16px;">
+                ${unit.topics.length === 0 ? `
+                  <div class="empty-state" style="padding: 20px; opacity: 0.5;">
+                    <p style="font-size: 13px;">Bu ünitede henüz konu bulunmuyor.</p>
                   </div>
-                `;
-              }).join('')}
-            </div>
+                ` : ''}
+                ${unit.topics.map((topic, index) => {
+                  const topicMaterials = allMaterials.filter(m => m.unitId === unit.id && m.topicId === topic.id);
+                  return `
+                    <div class="topic-item" draggable="true" 
+                         data-index="${index}" 
+                         data-topic-id="${topic.id}" 
+                         data-unit-id="${unit.id}" 
+                         data-subject="${subject}" 
+                         data-grade="${grade}"
+                         style="background: var(--bg-secondary); border-radius: 10px; padding: 12px 16px; border: 1px solid var(--border);">
+                      <div style="display:flex;align-items:center;gap:12px; margin-bottom: 8px;">
+                        <div class="topic-drag-handle" style="cursor: grab; color: var(--text-muted); opacity: 0.6;">
+                          ${icon('dragHandle', 16)}
+                        </div>
+                        <h4 style="font-size:14px; font-weight:700; color:var(--text-primary); margin:0; flex:1; display:flex; align-items:center; gap:8px;">
+                          <span style="color: var(--brand-green); font-weight: 800;">${index + 1}.</span>
+                          ${escHtml(topic.name)}
+                        </h4>
+                        <div style="display:flex; gap:4px;">
+                          <button class="btn btn-ghost btn-sm btn-icon" data-edit-topic="${topic.id}" data-unit-id="${unit.id}" data-subject="${subject}" data-grade="${grade}" title="Düzenle">${icon('edit', 12)}</button>
+                          <button class="btn btn-ghost btn-sm btn-icon" data-delete-topic="${topic.id}" data-unit-id="${unit.id}" data-subject="${subject}" data-grade="${grade}" style="color:var(--danger);" title="Sil">${icon('trash', 12)}</button>
+                        </div>
+                      </div>
+                      
+                      <div style="display:flex; flex-wrap: wrap; gap:8px; padding-left: 28px;">
+                        ${topicMaterials.map(m => {
+                          const cType = CONTENT_TYPES.find(ct => ct.id === m.contentType);
+                          const isYoutube = isYoutubeUrl(m.link);
+                          const isDrive = isGoogleDriveUrl(m.link);
+                          const videoId = getYoutubeVideoId(m.link);
+                          const drivePreview = isDrive ? getGoogleDrivePreviewUrl(m.link) : null;
+                          
+                          let clickAttrs = 'target="_blank"';
+                          if (isYoutube) clickAttrs = `data-video-id="${videoId}" data-video-title="${escHtml(m.title)}"`;
+                          else if (isDrive && drivePreview) clickAttrs = `data-preview-url="${escHtml(drivePreview)}" data-preview-title="${escHtml(m.title)}"`;
 
-            <!-- Unit Level Materials (Exams, etc.) -->
-            ${unitMaterials.length > 0 ? `
-              <div style="margin-top: 16px; padding-top: 16px; border-top: 1px dashed var(--border); padding-left: 22px;">
-                <h4 style="font-size:13px; font-weight:700; color:var(--text-muted); margin-bottom: 8px; text-transform: uppercase;">Ünite Değerlendirme / Genel Testler</h4>
-                <div style="display:flex; flex-direction:column; gap:6px; padding-left: 8px;">
+                          return `
+                          <div class="material-chip" style="display:flex; align-items:center; gap: 6px; padding: 6px 10px; background: #fff; border: 1px solid var(--border); border-radius: 6px; font-size:12px;">
+                            <span style="font-size:14px;">${isYoutube ? '🎬' : (isDrive ? '📁' : (cType?.icon || '📄'))}</span>
+                            <a href="${escHtml(m.link)}" ${clickAttrs} class="hover-underline ${isYoutube ? 'youtube-link' : (isDrive ? 'drive-link' : '')}" style="color:var(--text-primary); text-decoration:none; font-weight:500;">
+                              ${escHtml(m.title)}
+                            </a>
+                            <button class="btn btn-ghost btn-sm btn-icon" data-delete-material="${m.id}" style="width:20px;height:20px;color:var(--danger);opacity:0.5;" title="Sil">${icon('x', 12)}</button>
+                          </div>
+                          `;
+                        }).join('')}
+                        <button class="btn btn-ghost btn-sm" data-add-material-to-topic="${topic.id}" data-unit-id="${unit.id}" data-subject="${subject}" data-grade="${grade}" style="padding: 4px 10px; font-size: 11px; color: var(--text-muted); border: 1px dashed var(--border); border-radius: 6px;">
+                          ${icon('plus', 10)} İçerik Ekle
+                        </button>
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+
+              <!-- Unit Level Materials -->
+              <div style="margin-top: 24px; padding-top: 16px; border-top: 1px dashed var(--border);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                  <h4 style="font-size:12px; font-weight:800; color:var(--text-muted); text-transform: uppercase;">Ünite Testleri / Kaynaklar</h4>
+                  <button class="btn btn-ghost btn-sm" data-add-unit-material="${unit.id}" data-subject="${subject}" data-grade="${grade}">
+                    ${icon('plus', 12)} Ekle
+                  </button>
+                </div>
+                <div style="display:flex; flex-wrap: wrap; gap:8px;">
                   ${unitMaterials.map(m => {
                     const cType = CONTENT_TYPES.find(ct => ct.id === m.contentType);
                     const isYoutube = isYoutubeUrl(m.link);
@@ -181,38 +197,28 @@ function renderCurriculumContent(state, grade) {
                     const drivePreview = isDrive ? getGoogleDrivePreviewUrl(m.link) : null;
 
                     let clickAttrs = 'target="_blank"';
-                    let classList = 'hover-underline';
-                    if (isYoutube) {
-                      clickAttrs = `data-video-id="${videoId}" data-video-title="${escHtml(m.title)}"`;
-                      classList += ' youtube-link';
-                    } else if (isDrive && drivePreview) {
-                      clickAttrs = `data-preview-url="${escHtml(drivePreview)}" data-preview-title="${escHtml(m.title)}"`;
-                      classList += ' drive-link';
-                    }
+                    if (isYoutube) clickAttrs = `data-video-id="${videoId}" data-video-title="${escHtml(m.title)}"`;
+                    else if (isDrive && drivePreview) clickAttrs = `data-preview-url="${escHtml(drivePreview)}" data-preview-title="${escHtml(m.title)}"`;
 
                     return `
-                    <div style="display:flex; align-items:center; gap: 8px; font-size:13px; background: rgba(255,159,67,0.08); padding: 6px 10px; border-radius: 6px;">
-                      <span style="font-size:14px;">${isYoutube ? '🎬' : (isDrive ? '📁' : (cType?.icon || '📋'))}</span>
-                      <a href="${escHtml(m.link)}" ${clickAttrs} class="${classList}" style="color:var(--text); font-weight: 500; text-decoration:none; display:flex; align-items:center; gap:4px;">
+                    <div class="material-chip premium" style="display:flex; align-items:center; gap: 8px; padding: 8px 12px; background: var(--brand-green-soft); border: 1px solid rgba(0,69,38,0.1); border-radius: 8px; font-size:13px;">
+                      <span style="font-size:16px;">${isYoutube ? '🎬' : (isDrive ? '📁' : (cType?.icon || '📋'))}</span>
+                      <a href="${escHtml(m.link)}" ${clickAttrs} class="hover-underline ${isYoutube ? 'youtube-link' : (isDrive ? 'drive-link' : '')}" style="color:var(--brand-green); font-weight: 700; text-decoration:none;">
                         ${escHtml(m.title)}
                       </a>
-                      <button class="btn btn-ghost btn-sm" data-delete-material="${m.id}" style="padding:0px 4px; color:var(--danger); opacity:0.8; margin-left:auto;">${icon('x', 14)}</button>
+                      <button class="btn btn-ghost btn-sm btn-icon" data-delete-material="${m.id}" style="color:var(--danger); opacity:0.8;">${icon('x', 14)}</button>
                     </div>
                     `;
                   }).join('')}
                 </div>
               </div>
-            ` : ''}
-            
-            <div style="margin-top: 16px; text-align: center;">
-              <button class="btn btn-ghost btn-sm" data-add-unit-material="${unit.id}" data-subject="${subject}" data-grade="${grade}" style="color:var(--text-muted); font-size: 13px;">${icon('plus', 12)} Ünite Geneli Test/Deneme Ekle</button>
             </div>
           </div>
         `;
       }).join('');
       
       html += `
-        <div style="text-align:center; padding-top: 10px; margin-bottom: 24px;">
+        <div style="text-align:center; padding: 16px 0;">
           <button class="btn btn-secondary" data-add-unit="${subject}" data-grade="${grade}">${icon('plus', 14)} Yeni Ünite Ekle</button>
         </div>
       `;
@@ -611,17 +617,32 @@ function openCurriculumConfirmModal(title, text, onConfirm) {
 }
 
 function initCurriculumButtons(el, refresh, navigate) {
+  // Unit Toggle (Accordion)
+  el.querySelectorAll('[data-toggle-unit]').forEach(header => {
+    header.addEventListener('click', () => {
+      const uId = header.dataset.toggleUnit;
+      window._expandedUnits = window._expandedUnits || {};
+      window._expandedUnits[uId] = !window._expandedUnits[uId];
+      // Note: default was true if not set, so !undefined becomes true? 
+      // Actually window._expandedUnits[uId] !== false means default is true.
+      // Let's refine the toggle logic:
+      if (window._expandedUnits[uId] === undefined) {
+        window._expandedUnits[uId] = false; // Toggle to closed if it was open (default)
+      } else {
+        window._expandedUnits[uId] = !window._expandedUnits[uId];
+      }
+      refresh();
+    });
+  });
+
   // Add Unit
   el.querySelectorAll('[data-add-unit]').forEach(btn => {
     btn.addEventListener('click', () => {
       openCurriculumPromptModal('Yeni Ünite Ekle', 'Ünite Adı', '', (name) => {
-        // use btn.dataset.addUnit since it holds the subject id (data-add-unit="tarih")
-        addUnit(btn.dataset.addUnit, btn.dataset.grade, name);
+        const uId = addUnit(btn.dataset.addUnit, btn.dataset.grade, name);
+        window._expandedUnits = window._expandedUnits || {};
+        window._expandedUnits[uId] = true;
         refresh();
-        setTimeout(() => {
-          const scroller = document.querySelector('.page-content');
-          if (scroller) scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'smooth' });
-        }, 100);
       });
     });
   });
@@ -649,8 +670,10 @@ function initCurriculumButtons(el, refresh, navigate) {
     btn.addEventListener('click', () => {
       const subject = btn.dataset.subject;
       const grade = btn.dataset.grade;
+      const unitId = btn.dataset.deleteUnit;
       openCurriculumConfirmModal('Üniteyi Sil', 'Bu üniteyi ve içindeki tüm konuları silmek istediğinize emin misiniz?', () => {
-        deleteUnit(subject, grade, btn.dataset.deleteUnit);
+        deleteUnit(subject, grade, unitId);
+        if (window._expandedUnits) delete window._expandedUnits[unitId];
         refresh();
       });
     });
@@ -695,6 +718,17 @@ function initCurriculumButtons(el, refresh, navigate) {
         deleteTopic(subject, grade, btn.dataset.unitId, btn.dataset.deleteTopic);
         refresh();
       });
+    });
+  });
+
+  // Add Topic Material
+  el.querySelectorAll('[data-add-material-to-topic]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const subject = btn.dataset.subject;
+      const grade = btn.dataset.grade;
+      const unitId = btn.dataset.unitId;
+      const topicId = btn.dataset.addMaterialToTopic;
+      openAddMaterialModal(subject, grade, unitId, topicId, navigate, () => refresh());
     });
   });
 
