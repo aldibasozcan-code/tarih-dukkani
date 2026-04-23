@@ -129,11 +129,11 @@ export function escHtml(str) {
 
 export function getLessonStatusInfo(status) {
   const map = {
-    upcoming:  { label: 'Bekliyor', badgeClass: 'badge-muted', dotClass: 'status-upcoming' },
-    ongoing:   { label: 'Devam Ediyor', badgeClass: 'badge-success', dotClass: 'status-ongoing' },
+    upcoming:  { label: 'Bekliyor', badgeClass: 'badge-info', dotClass: 'status-upcoming' },
+    ongoing:   { label: 'Devam Ediyor', badgeClass: 'badge-purple', dotClass: 'status-ongoing' },
     waiting:   { label: 'Onay Bekliyor', badgeClass: 'badge-warning', dotClass: 'status-waiting' },
-    completed: { label: 'Tamamlandı', badgeClass: 'badge-info', dotClass: 'status-completed' },
-    postponed: { label: 'Ertelendi', badgeClass: 'badge-danger', dotClass: 'status-postponed' },
+    completed: { label: 'Tamamlandı', badgeClass: 'badge-success', dotClass: 'status-completed' },
+    postponed: { label: 'Ertelendi', badgeClass: 'badge-warning', dotClass: 'status-postponed' },
   };
   return map[status] || map.upcoming;
 }

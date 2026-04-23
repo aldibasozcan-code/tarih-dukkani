@@ -172,7 +172,10 @@ function renderMonthView(state, year, month, lessons = []) {
                 ${dayLessons.map(l => {
                   const status = getLessonStatus(l);
                   const isDone = l.status === 'completed';
-                  const color = status === 'completed' ? 'var(--success)' : status === 'waiting' ? 'var(--warning)' : 'var(--accent)';
+                  const color = status === 'completed' ? 'var(--success)' 
+                             : status === 'postponed' ? '#d97706' 
+                             : (status === 'upcoming' || status === 'ongoing') ? '#3b82f6' 
+                             : 'var(--warning)';
                   const displayTitle = l.refName ? `${l.refName}${l.title ? ' - ' + l.title : ''}` : l.title;
                   
                   return `
@@ -232,7 +235,10 @@ function renderWeekView(state, weekStart, lessons = []) {
                   ${dayHourLessons.map(l => {
                     const status = getLessonStatus(l);
                     const isDone = l.status === 'completed';
-                    const color = status === 'completed' ? 'var(--success)' : status === 'waiting' ? 'var(--warning)' : 'var(--accent)';
+                    const color = status === 'completed' ? 'var(--success)' 
+                               : status === 'postponed' ? '#d97706' 
+                               : (status === 'upcoming' || status === 'ongoing') ? '#3b82f6' 
+                               : 'var(--warning)';
                     const displayTitle = l.refName ? `${l.refName}${l.title ? ' - ' + l.title : ''}` : l.title;
 
                     // Calculate precise positioning within the 80px cell

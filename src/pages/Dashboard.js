@@ -96,7 +96,7 @@ export async function renderDashboard(navigate) {
           </div>
           <h2 style="font-size:42px;">${getGreeting()}, ${state.profile.name.split(' ')[0]}!</h2>
           <p style="font-size:18px; opacity:0.9; margin-top:8px;" id="dashboard-lesson-count">
-            Bugün ajandanızda <strong style="color:white;">${todayLessons.length} ders</strong> planlanmış, <strong style="color:white;">${todayLessons.filter(l => l.status !== 'completed').length} ders</strong> kalmış görünüyor.
+            Bugün ajandanızda <strong style="color:white;">${todayLessons.length} ders</strong> planlanmış, <strong style="color:white;">${todayLessons.filter(l => l.status === 'upcoming').length} ders</strong> kalmış görünüyor.
           </p>
           <button class="btn btn-primary" id="btn-add-lesson-banner" style="margin-top:24px; background:white; color:var(--brand-green); border:none; font-weight:700; padding:12px 24px; border-radius:12px; display:flex; align-items:center; gap:8px; box-shadow: 0 10px 20px rgba(0,0,0,0.15);">
             ${icon('plus', 18)} Yeni Ders Ekle
@@ -115,7 +115,7 @@ export async function renderDashboard(navigate) {
 
       <!-- Bento Grid KPIs -->
       <div class="grid grid-5 fade-in-up stagger-2" style="margin-bottom:32px;">
-        <div class="kpi-card hover-lift">
+        <div class="kpi-card hover-lift" id="kpi-income" style="cursor:pointer;">
           <div class="kpi-icon" style="background:rgba(16,185,129,0.1); color:var(--success);">
             ${icon('trendUp', 24)}
           </div>
@@ -125,7 +125,7 @@ export async function renderDashboard(navigate) {
           </div>
         </div>
         
-        <div class="kpi-card hover-lift">
+        <div class="kpi-card hover-lift" id="kpi-students" style="cursor:pointer;">
           <div class="kpi-icon" style="background:rgba(124,106,255,0.1); color:var(--accent2 || '#7c3aed');">
             ${icon('students', 24)}
           </div>
@@ -135,7 +135,7 @@ export async function renderDashboard(navigate) {
           </div>
         </div>
 
-        <div class="kpi-card hover-lift">
+        <div class="kpi-card hover-lift" id="kpi-groups" style="cursor:pointer;">
           <div class="kpi-icon" style="background:rgba(124,106,255,0.1); color:var(--accent2 || '#7c3aed');">
             ${icon('groups', 24)}
           </div>
@@ -145,7 +145,7 @@ export async function renderDashboard(navigate) {
           </div>
         </div>
 
-        <div class="kpi-card hover-lift">
+        <div class="kpi-card hover-lift" id="kpi-completed" style="cursor:pointer;">
           <div class="kpi-icon" style="background:rgba(245,158,11,0.1); color:var(--warning);">
             ${icon('checkCircle', 24)}
           </div>
@@ -155,7 +155,7 @@ export async function renderDashboard(navigate) {
           </div>
         </div>
 
-        <div class="kpi-card hover-lift" style="${pendingLessons.length > 0 ? 'border-left-color:var(--danger);' : ''}">
+        <div class="kpi-card hover-lift" id="kpi-pending" style="cursor:pointer; ${pendingLessons.length > 0 ? 'border-left-color:var(--danger);' : ''}">
           <div class="kpi-icon" style="background:rgba(239,68,68,0.1); color:var(--danger);">
             ${icon('clock', 24)}
           </div>
@@ -337,7 +337,7 @@ function initDashboard(el, navigate) {
     
     const todayLessons = await getTodayLessons();
     const pendingLessons = await getPendingLessons();
-    const remainingCount = todayLessons.filter(l => l.status !== 'completed').length;
+    const remainingCount = todayLessons.filter(l => l.status === 'upcoming').length;
     
     const countEl = el.querySelector('#dashboard-lesson-count');
     if (countEl) {
@@ -400,6 +400,18 @@ function initDashboard(el, navigate) {
   el.querySelector('#performance-card')?.addEventListener('click', () => {
     import('./modals/WeeklyPerformanceModal.js').then(m => m.openWeeklyPerformanceModal());
   });
+
+  // KPI Cards clicks
+  const openStats = (type) => import('./modals/DashboardStatsModal.js').then(m => m.openDashboardStatsModal(type));
+  
+  el.querySelector('#kpi-income')?.addEventListener('click', () => openStats('income'));
+  el.querySelector('#kpi-students')?.addEventListener('click', () => openStats('students'));
+  el.querySelector('#kpi-groups')?.addEventListener('click', () => openStats('groups'));
+  el.querySelector('#kpi-completed')?.addEventListener('click', () => openStats('completed'));
+  el.querySelector('#kpi-pending')?.addEventListener('click', () => openStats('pending'));
+
+  // Global helper for modal clicks if needed
+  window._openLessonEval = (id) => openLessonEvalModal(id, navigate);
 
   // Season Review
   el.querySelector('#show-season-review-btn')?.addEventListener('click', () => {
