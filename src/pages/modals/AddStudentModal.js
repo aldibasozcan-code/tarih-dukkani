@@ -55,6 +55,10 @@ export function openAddStudentModal(onSave, editId = null) {
           <label>Ders Saati</label>
           <input type="time" id="s-time" value="${student?.time || '14:00'}">
         </div>
+        <div class="form-group">
+          <label>Ders Süresi (Dakika)</label>
+          <input type="number" id="s-duration" value="${student?.duration || 60}" min="10" step="5">
+        </div>
       </div>
 
       <div class="form-row">
@@ -153,7 +157,7 @@ export function openAddStudentModal(onSave, editId = null) {
       time: document.getElementById('s-time').value,
       startDate: document.getElementById('s-start').value,
       endDate: document.getElementById('s-end').value,
-      duration: 60 // Default for students
+      duration: parseInt(document.getElementById('s-duration').value) || 60
     };
 
     if (student) {

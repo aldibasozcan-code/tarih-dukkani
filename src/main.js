@@ -163,6 +163,7 @@ async function navigate(page, force = false) {
           module = await import('./pages/Admin.js');
           result = await module.renderAdmin(navigate);
           break;
+
       }
     }
 

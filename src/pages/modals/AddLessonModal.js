@@ -40,6 +40,10 @@ export function openAddLessonModal(onSave, prefill = {}) {
           <label>Başlangıç *</label>
           <input type="time" id="l-start" value="${startTime}">
         </div>
+        <div class="form-group">
+          <label>Süre (Dakika) *</label>
+          <input type="number" id="l-duration" value="${prefill.duration || 60}" min="5" step="5">
+        </div>
       </div>
       <div class="form-row">
         <div class="form-group">
@@ -219,7 +223,13 @@ export function openAddLessonModal(onSave, prefill = {}) {
       document.getElementById('l-link').value = entity.lessonLink || entity.meetLink || entity.zoomLink || '';
     }
     
+    // Auto-update duration
+    if (entity?.duration) {
+      document.getElementById('l-duration').value = entity.duration;
+    }
+    
     updateUnitOptions();
+    checkConflictLive();
   });
 
   const formatSel = document.getElementById('l-format');
@@ -240,7 +250,8 @@ export function openAddLessonModal(onSave, prefill = {}) {
   function checkConflictLive() {
     const date = document.getElementById('l-date').value;
     const start = document.getElementById('l-start').value;
-    const end = addMins(start, 60);
+    const duration = parseInt(document.getElementById('l-duration').value) || 60;
+    const end = addMins(start, duration);
 
     if (!date || !start) return;
 
@@ -264,6 +275,7 @@ export function openAddLessonModal(onSave, prefill = {}) {
 
   document.getElementById('l-date')?.addEventListener('change', checkConflictLive);
   document.getElementById('l-start')?.addEventListener('change', checkConflictLive);
+  document.getElementById('l-duration')?.addEventListener('change', checkConflictLive);
 
   document.getElementById('l-cancel')?.addEventListener('click', closeModal);
   document.getElementById('l-save')?.addEventListener('click', async () => {
@@ -272,7 +284,8 @@ export function openAddLessonModal(onSave, prefill = {}) {
     const type = typeSel.value;
     const date = document.getElementById('l-date').value;
     const start = document.getElementById('l-start').value;
-    const end = addMins(start, 60);
+    const duration = parseInt(document.getElementById('l-duration').value) || 60;
+    const end = addMins(start, duration);
 
     if (!refId || !date || !start) { alert('Öğrenci/grup, tarih ve başlangıç saati zorunludur.'); return; }
 
