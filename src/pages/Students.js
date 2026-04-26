@@ -49,25 +49,28 @@ export function renderStudents(navigate) {
 }
 
 function renderStudentCards(students) {
-  return students.map(s => `
-    <div class="person-card" data-student-id="${s.id}">
-      <div class="person-avatar" style="background:${getAvatarColor(s.name)}">
-        ${getInitials(s.name)}
-      </div>
-      <div style="flex:1;min-width:0;">
-        <div class="person-name">${escHtml(s.name)}</div>
-        <div class="person-sub">${s.grade}</div>
-        <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
-          <span class="badge badge-info">${formatCurrency(s.rate)}/s</span>
-          <span class="badge badge-muted">${s.completedTopics?.length || 0} konu ✓</span>
+  return students.map(s => {
+    const avatarColor = getAvatarColor(s.name);
+    return `
+      <div class="premium-card person-card" data-student-id="${s.id}" style="padding: 24px; border-top: none; border-left: 5px solid ${avatarColor};">
+        <div class="person-avatar" style="background:${avatarColor}; width: 60px; height: 60px; border-radius: 18px; box-shadow: 0 10px 20px rgba(0,0,0,0.05); font-size: 20px;">
+          ${getInitials(s.name)}
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div class="person-name" style="font-size: 18px; font-weight: 800; color: var(--text-primary);">${escHtml(s.name)}</div>
+          <div class="person-sub" style="font-size: 13px; font-weight: 600; color: var(--text-muted); margin-top: 2px;">${s.grade}</div>
+          <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+            <span class="badge" style="background: var(--brand-green-soft); color: var(--brand-green); font-size: 11px; padding: 4px 10px; border-radius: 8px;">${formatCurrency(s.rate)}/saat</span>
+            <span class="badge" style="background: #f1f5f9; color: #475569; font-size: 11px; padding: 4px 10px; border-radius: 8px;">${s.completedTopics?.length || 0} konu bitti</span>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
+          <button class="btn btn-ghost btn-sm btn-icon" data-edit-student="${s.id}" style="border-radius: 10px; background: var(--bg-secondary);">${icon('edit', 14)}</button>
+          <button class="btn btn-ghost btn-sm btn-icon" style="color:var(--danger); border-radius: 10px; background: #fff1f2;" data-delete-student="${s.id}">${icon('trash', 14)}</button>
         </div>
       </div>
-      <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;">
-        <button class="btn btn-ghost btn-sm btn-icon" data-edit-student="${s.id}">${icon('edit', 13)}</button>
-        <button class="btn btn-ghost btn-sm btn-icon" style="color:var(--danger);" data-delete-student="${s.id}">${icon('trash', 13)}</button>
-      </div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
 function initStudents(container, navigate) {
   initStudentCardEvents(container, navigate);

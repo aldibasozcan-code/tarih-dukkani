@@ -141,7 +141,7 @@ export async function initStore() {
       await setDoc(docRef, _state);
     }
     
-    // 4. Migration: Cleanup Residual Google Data & Ensure status
+    // 4. Migration: Cleanup Residual Google Data, Ensure status & Deduplicate
     let migrationNeeded = false;
     
     // Purge googleEvents if it exists
@@ -155,11 +155,21 @@ export async function initStore() {
     const validStudentIds = new Set(_state.students.map(s => s.id));
     const validGroupIds = new Set(_state.groups.map(g => g.id));
     
-    _state.lessons = _state.lessons.filter(l => {
+    // 4a. Basic filter for validity
+    let filteredLessons = _state.lessons.filter(l => {
       if (l.googleId) return false;
       if (!l.refId) return false;
       if (l.type === 'student' && !validStudentIds.has(l.refId)) return false;
       if (l.type === 'group' && !validGroupIds.has(l.refId)) return false;
+      return true;
+    });
+
+    // 4b. Deduplication: Remove exact duplicates (same date, time, ref, and type)
+    const seen = new Set();
+    _state.lessons = filteredLessons.filter(l => {
+      const key = `${l.date}_${l.startTime}_${l.refId}_${l.type}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
       return true;
     });
 
@@ -518,7 +528,7 @@ export function updateGroup(id, data) {
       lessons = lessons.filter(l => !(l.type === 'group' && l.refId === id && l.status === 'upcoming' && l.date >= todayShort));
       
       // Regenerate upcoming lessons from TODAY onwards based on new schedule/range
-      const newUpcoming = _generateGroupLessonsForGroup(updatedGroup);
+      const { lessons: newUpcoming } = _generateRecurringLessons(updatedGroup, 'group');
       lessons = [...lessons, ...newUpcoming];
     }
 
@@ -698,11 +708,20 @@ export function addNextWeekLesson(lesson) {
   // Create same lesson +7 days
   const d = new Date(lesson.date);
   d.setDate(d.getDate() + 7);
+  const nextWeekDate = getLocalDateStr(d);
+  
+  // Prevent duplicate if a lesson already exists for this slot
+  const conflict = checkLessonConflict(nextWeekDate, lesson.startTime, lesson.endTime);
+  if (conflict) {
+    console.warn("Skipping automatic next week lesson: Conflict detected.", conflict);
+    return;
+  }
+
   addLesson({
     type: lesson.type,
     refId: lesson.refId,
     title: lesson.title,
-    date: getLocalDateStr(d),
+    date: nextWeekDate,
     startTime: lesson.startTime,
     endTime: lesson.endTime,
     subject: lesson.subject,
