@@ -12,6 +12,7 @@ let entityData = {};
 let schedules = [{ dayOfWeek: 1, time: '14:00', duration: 60 }];
 let generatedLessons = [];
 let allCurriculumTopics = []; // To hold the topics for shifting
+let selectedTopicIds = new Set();
 
 export function openPlannerWizard(onSave) {
   currentStep = 1;
@@ -28,6 +29,7 @@ export function openPlannerWizard(onSave) {
   schedules = [{ dayOfWeek: 1, time: '14:00', duration: 60 }];
   generatedLessons = [];
   allCurriculumTopics = [];
+  selectedTopicIds = new Set();
 
   renderModal(onSave);
 }
@@ -39,6 +41,7 @@ function renderModal(onSave) {
   else if (currentStep === 2) content = renderStep2();
   else if (currentStep === 3) content = renderStep3();
   else if (currentStep === 4) content = renderStep4();
+  else if (currentStep === 5) content = renderStep5();
 
   let footer = '';
   if (currentStep === 1) {
@@ -49,16 +52,21 @@ function renderModal(onSave) {
   } else if (currentStep === 2) {
     footer = `
       <button class="btn btn-secondary" id="pw-prev2"><i class="ph ph-arrow-left"></i> Geri</button>
-      <button class="btn btn-primary" id="pw-next2">İleri: Ders Programı <i class="ph ph-arrow-right"></i></button>
+      <button class="btn btn-primary" id="pw-next2">İleri: Müfredat Seçimi <i class="ph ph-arrow-right"></i></button>
     `;
   } else if (currentStep === 3) {
     footer = `
       <button class="btn btn-secondary" id="pw-prev3"><i class="ph ph-arrow-left"></i> Geri</button>
-      <button class="btn btn-primary" id="pw-next3">İleri: Planı Önizle <i class="ph ph-arrow-right"></i></button>
+      <button class="btn btn-primary" id="pw-next3">İleri: Ders Programı <i class="ph ph-arrow-right"></i></button>
     `;
   } else if (currentStep === 4) {
     footer = `
       <button class="btn btn-secondary" id="pw-prev4"><i class="ph ph-arrow-left"></i> Geri</button>
+      <button class="btn btn-primary" id="pw-next4">İleri: Planı Önizle <i class="ph ph-arrow-right"></i></button>
+    `;
+  } else if (currentStep === 5) {
+    footer = `
+      <button class="btn btn-secondary" id="pw-prev5"><i class="ph ph-arrow-left"></i> Geri</button>
       <button class="btn btn-primary" id="pw-save"><i class="ph ph-check"></i> Planı Kaydet</button>
     `;
   }
@@ -67,8 +75,9 @@ function renderModal(onSave) {
   const steps = [
     { num: 1, label: 'Tür Seçimi' },
     { num: 2, label: 'Bilgiler' },
-    { num: 3, label: 'Program' },
-    { num: 4, label: 'Önizleme' }
+    { num: 3, label: 'Müfredat' },
+    { num: 4, label: 'Program' },
+    { num: 5, label: 'Önizleme' }
   ];
   
   const stepIndicators = steps.map(s => `
@@ -90,7 +99,7 @@ function renderModal(onSave) {
     body: `
       <div style="display:flex; justify-content:space-between; margin-bottom:30px; position:relative;">
         <div style="position:absolute; top:16px; left:10%; right:10%; height:2px; background:var(--border-light); z-index:-1;"></div>
-        <div style="position:absolute; top:16px; left:10%; right:10%; height:2px; background:var(--brand-green); z-index:-1; width:${(currentStep-1)*33.3}%; transition: width 0.3s ease;"></div>
+        <div style="position:absolute; top:16px; left:10%; right:10%; height:2px; background:var(--brand-green); z-index:-1; width:${(currentStep-1)*25}%; transition: width 0.3s ease;"></div>
         ${stepIndicators}
       </div>
       <div id="pw-error" class="login-alert error" style="display:none; margin-bottom:16px;"></div>
@@ -171,6 +180,42 @@ function renderStep2() {
 }
 
 function renderStep3() {
+  if (allCurriculumTopics.length === 0) {
+    return `<div style="text-align:center; padding:40px; color:var(--text-light);">Seçilen sınıfa ait müfredat bulunamadı. Lütfen tüm konuları serbest olarak planlamak için devam edin.</div>`;
+  }
+
+  let listHtml = allCurriculumTopics.map((topic, i) => {
+    const isSelected = selectedTopicIds.has(topic.uniqueId);
+    return `
+      <div class="topic-row" style="display:flex; align-items:center; justify-content:space-between; padding:12px; border-bottom:1px solid var(--border-light); background:${isSelected ? 'white' : '#f8fafc'}; opacity:${isSelected ? '1' : '0.6'}; transition:all 0.2s;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <input type="checkbox" class="topic-checkbox" data-id="${topic.uniqueId}" ${isSelected ? 'checked' : ''} style="width:18px; height:18px; cursor:pointer;">
+          <div>
+            <div style="font-weight:600; font-size:14px; color:var(--text-primary);">${escHtml(topic.title)}</div>
+            <div style="font-size:11px; color:var(--brand-green);">${escHtml(topic.subject)}</div>
+          </div>
+        </div>
+        <div>
+          <button class="btn btn-sm btn-ghost btn-start-here" data-index="${i}" title="Döneme buradan başla (Önceki konuları atla)">
+            📍 Buradan Başla
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  return `
+    <div style="margin-bottom:16px;">
+      <h3 style="margin:0 0 4px 0; font-size:16px;">Müfredat Konuları</h3>
+      <p style="margin:0; font-size:13px; color:var(--text-light);">İşlemek istemediğiniz konuların işaretini kaldırabilir veya bir konunun yanındaki 'Buradan Başla' butonuna basarak önceki tüm konuları atlayabilirsiniz.</p>
+    </div>
+    <div style="border:1px solid var(--border-light); border-radius:12px; overflow:hidden; max-height:400px; overflow-y:auto;">
+      ${listHtml}
+    </div>
+  `;
+}
+
+function renderStep4() {
   let scheduleRows = schedules.map((sch, i) => `
     <div class="schedule-row" style="display:flex; gap:12px; margin-bottom:12px; align-items:flex-end;" data-index="${i}">
       <div class="form-group" style="flex:2; margin:0;">
@@ -205,7 +250,7 @@ function renderStep3() {
   `;
 }
 
-function renderStep4() {
+function renderStep5() {
   if (generatedLessons.length === 0) {
     return `<div style="text-align:center; padding:40px; color:var(--text-light);">Plan oluşturulamadı. Lütfen tarihleri kontrol edin.</div>`;
   }
@@ -328,6 +373,7 @@ function attachListeners(onSave) {
       return;
     }
     errorAlert.style.display = "none";
+    loadCurriculumForGrade();
     currentStep = 3;
     renderModal(onSave);
   });
@@ -355,8 +401,26 @@ function attachListeners(onSave) {
     });
   });
 
-  // Next 3 (Generate Plan)
+  // Prev 3
+  document.getElementById('pw-prev3')?.addEventListener('click', () => {
+    currentStep = 2;
+    renderModal(onSave);
+  });
+
+  // Next 3
   document.getElementById('pw-next3')?.addEventListener('click', () => {
+    currentStep = 4;
+    renderModal(onSave);
+  });
+
+  // Prev 4
+  document.getElementById('pw-prev4')?.addEventListener('click', () => {
+    currentStep = 3;
+    renderModal(onSave);
+  });
+
+  // Next 4 (Generate Plan)
+  document.getElementById('pw-next4')?.addEventListener('click', () => {
     saveSchedulesFromDOM();
     if (schedules.length === 0) {
       errorAlert.textContent = "En az bir ders günü eklemelisiniz.";
@@ -367,20 +431,39 @@ function attachListeners(onSave) {
     generateInitialPlan();
     
     errorAlert.style.display = "none";
+    currentStep = 5;
+    renderModal(onSave);
+  });
+
+  // Prev 5
+  document.getElementById('pw-prev5')?.addEventListener('click', () => {
     currentStep = 4;
     renderModal(onSave);
   });
 
-  // Prev 3
-  document.getElementById('pw-prev3')?.addEventListener('click', () => {
-    currentStep = 2;
-    renderModal(onSave);
+  // Curriculum Checkbox Toggle
+  document.querySelectorAll('.topic-checkbox').forEach(chk => {
+    chk.addEventListener('change', (e) => {
+      const id = e.target.dataset.id;
+      if (e.target.checked) selectedTopicIds.add(id);
+      else selectedTopicIds.delete(id);
+      renderModal(onSave);
+    });
   });
-  
-  // Prev 4
-  document.getElementById('pw-prev4')?.addEventListener('click', () => {
-    currentStep = 3;
-    renderModal(onSave);
+
+  // Start Here Action
+  document.querySelectorAll('.btn-start-here').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const idx = parseInt(e.currentTarget.dataset.index);
+      allCurriculumTopics.forEach((t, i) => {
+        if (i < idx) {
+          selectedTopicIds.delete(t.uniqueId);
+        } else {
+          selectedTopicIds.add(t.uniqueId);
+        }
+      });
+      renderModal(onSave);
+    });
   });
 
   // Interactive Actions
@@ -477,11 +560,8 @@ function saveSchedulesFromDOM() {
   });
 }
 
-function generateInitialPlan() {
+function loadCurriculumForGrade() {
   const state = getState();
-  const start = new Date(entityData.startDate + 'T00:00:00');
-  const end = new Date(entityData.endDate + 'T23:59:59');
-  
   const activeSubjects = getSubjectsForBranches(state.profile.branches || []);
   allCurriculumTopics = [];
   
@@ -493,12 +573,20 @@ function generateInitialPlan() {
           subject: subj,
           unitId: unit.id,
           topicId: topic.id,
-          title: topic.name
+          title: topic.name,
+          uniqueId: `${subj}_${unit.id}_${topic.id}`
         });
       });
     });
   });
 
+  selectedTopicIds = new Set(allCurriculumTopics.map(t => t.uniqueId));
+}
+
+function generateInitialPlan() {
+  const start = new Date(entityData.startDate + 'T00:00:00');
+  const end = new Date(entityData.endDate + 'T23:59:59');
+  
   let rawLessons = [];
   const iterDate = new Date(start);
   
@@ -530,6 +618,7 @@ function generateInitialPlan() {
 
 function remapTopics() {
   let topicIndex = 0;
+  const filteredTopics = allCurriculumTopics.filter(t => selectedTopicIds.has(t.uniqueId));
   
   generatedLessons.forEach(lesson => {
     if (lesson.isSkipped) {
@@ -542,7 +631,7 @@ function remapTopics() {
       lesson.title = lesson.specialTitle;
       lesson.subject = 'Sınav / Özel Etkinlik';
     } else {
-      const topic = allCurriculumTopics[topicIndex];
+      const topic = filteredTopics[topicIndex];
       if (topic) {
         lesson.subject = topic.subject;
         lesson.unitId = topic.unitId;
