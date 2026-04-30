@@ -410,6 +410,122 @@ export function addGroup(data) {
   return group;
 }
 
+export function addPlannedGroup(data, plannedLessons) {
+  const id = generateId();
+  const state = getState();
+  const activeSubjects = getSubjectsForBranches(state.profile.branches || []);
+  const curriculum = activeSubjects.map(s => ({ subject: s, grade: data.grade }));
+
+  const group = { 
+    id, 
+    ...data, 
+    status: 'active', 
+    curriculum, 
+    completedTopics: [], 
+    zoomLink: data.zoomLink || '',
+    startDate: data.startDate || todayStr(),
+    endDate: data.endDate || getLocalDateStr(addDays(new Date(), 240))
+  };
+
+  const newTransactions = [];
+  const today = todayStr();
+
+  const finalLessons = plannedLessons.map(l => {
+    const lessonId = generateId();
+    const isPast = l.date < today;
+
+    if (isPast && (group.rate || 0) > 0) {
+      newTransactions.push({
+        id: generateId(),
+        type: 'income',
+        amount: group.rate,
+        description: `${group.name} - ${l.date} Dersi (Geçmiş Kayıt)`,
+        date: l.date,
+        refId: group.id,
+        refType: 'group',
+        lessonId: lessonId
+      });
+    }
+
+    return {
+      ...l,
+      id: lessonId,
+      refId: group.id,
+      type: 'group',
+      status: isPast ? 'completed' : 'upcoming',
+      notes: isPast ? 'Geçmiş ders kaydı (Otomatik oluşturuldu)' : '',
+      fee: group.rate || 0,
+      lessonFormat: group.lessonFormat || 'zoom',
+      lessonLink: group.lessonLink || group.zoomLink || '',
+    };
+  });
+
+  setState(s => ({ 
+    groups: [...s.groups, group],
+    lessons: [...s.lessons, ...finalLessons],
+    transactions: [...s.transactions, ...newTransactions]
+  }));
+  return group;
+}
+
+export function addPlannedStudent(data, plannedLessons) {
+  const id = generateId();
+  const state = getState();
+  const activeSubjects = getSubjectsForBranches(state.profile.branches || []);
+  const curriculum = activeSubjects.map(s => ({ subject: s, grade: data.grade }));
+
+  const student = { 
+    id, 
+    ...data, 
+    status: 'active', 
+    curriculum, 
+    completedTopics: [],
+    homework: [],
+    startDate: data.startDate || todayStr(),
+    endDate: data.endDate || getLocalDateStr(addDays(new Date(), 240))
+  };
+
+  const newTransactions = [];
+  const today = todayStr();
+
+  const finalLessons = plannedLessons.map(l => {
+    const lessonId = generateId();
+    const isPast = l.date < today;
+
+    if (isPast && (student.rate || 0) > 0) {
+      newTransactions.push({
+        id: generateId(),
+        type: 'income',
+        amount: student.rate,
+        description: `${student.name} - ${l.date} Dersi (Geçmiş Kayıt)`,
+        date: l.date,
+        refId: student.id,
+        refType: 'student',
+        lessonId: lessonId
+      });
+    }
+
+    return {
+      ...l,
+      id: lessonId,
+      refId: student.id,
+      type: 'student',
+      status: isPast ? 'completed' : 'upcoming',
+      notes: isPast ? 'Geçmiş ders kaydı (Otomatik oluşturuldu)' : '',
+      fee: student.rate || 0,
+      lessonFormat: student.lessonFormat || 'meet',
+      lessonLink: student.lessonLink || student.meetLink || '',
+    };
+  });
+
+  setState(s => ({ 
+    students: [...s.students, student],
+    lessons: [...s.lessons, ...finalLessons],
+    transactions: [...s.transactions, ...newTransactions]
+  }));
+  return student;
+}
+
 function _generateRecurringLessons(entity, type) {
   if (entity.dayOfWeek === null || entity.dayOfWeek === undefined) return { lessons: [], transactions: [] };
 
@@ -781,7 +897,7 @@ function addHomeworkNotification(lesson, hw) {
   addNotification({
     type: 'info',
     text: `${lesson.title} için ödev oluşturuldu: ${hw}`,
-    link: 'students',
+    link: 'studentsAndGroups',
   });
 }
 

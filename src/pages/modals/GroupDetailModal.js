@@ -268,7 +268,7 @@ export function openGroupDetail(groupId, navigate) {
         import('./AddGroupModal.js').then(m => {
           closeModal();
           m.openAddGroupModal(() => {
-             if (navigate) navigate('groups');
+             if (navigate) navigate('studentsAndGroups');
           }, group.id);
         });
       });

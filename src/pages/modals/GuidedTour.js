@@ -16,22 +16,14 @@ const tourSteps = [
     title: 'Dijital Müfredat Sistemi 📚',
     content: 'Seçtiğiniz branşlara göre **MEB müfredatı** buraya otomatik yüklendi. Ünitelere tıklayarak alt konuları görebilir, her konunun yanına **kendi ders notlarınızı veya slaytlarınızı** ekleyerek dijital arşivinizi oluşturabilirsiniz.',
     tip: 'Müfredat verilerini Ayarlar sayfasından dilediğiniz zaman sıfırlayabilir veya branş değişikliği yapabilirsiniz.',
-    buttonText: 'Öğrencilere Bak',
-    nextPage: 'students'
+    buttonText: 'Öğrenci & Gruplara Bak',
+    nextPage: 'studentsAndGroups'
   },
   {
-    page: 'students',
-    title: 'Öğrenci Yönetimi 👥',
-    content: 'Bireysel öğrencilerinizi buradan ekleyin. Her birinin profilinde **müfredat ilerlemesini yüzde olarak** görebilir, ders bazlı özel notlar alabilirsiniz. Telefon ikonuna basarak veli iletişimine hızlıca geçebilirsiniz.',
+    page: 'studentsAndGroups',
+    title: 'Öğrenci ve Grup Yönetimi 👥',
+    content: 'Bireysel öğrencilerinizi ve gruplarınızı tek bir sayfadan kolayca ekleyin ve yönetin. Her birinin profilinde müfredat ilerlemesini görebilir ve gruba özel saatlik ücretler belirleyebilirsiniz.',
     tip: 'Öğrenci profilindeki dersleri tamamladıkça ilerleme çubuğu otomatik olarak güncellenir.',
-    buttonText: 'Gruplara Geç',
-    nextPage: 'groups'
-  },
-  {
-    page: 'groups',
-    title: 'Çalışma Grupları 🏫',
-    content: 'Birden fazla öğrenciyle yaptığınız dersleri gruplar altında toplayın. Grup sayfasından **tüm katılımcıların durumunu** ortak yönetebilir, grup bazlı özel saatlik ücretler belirleyebilirsiniz.',
-    tip: 'Grup bazlı bir dersi "Tamamlandı" olarak işaretlediğinizde, tüm öğrencilerin muhasebe kaydı aynı anda oluşur.',
     buttonText: 'Takvimi Gör',
     nextPage: 'calendar'
   },

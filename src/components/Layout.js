@@ -9,8 +9,7 @@ import { auth } from '../lib/firebase.js';
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Anasayfa', icon: 'dashboard' },
   { id: 'courses', label: 'Kurslar', icon: 'courses' },
-  { id: 'students', label: 'Öğrenciler', icon: 'students' },
-  { id: 'groups', label: 'Gruplar', icon: 'groups' },
+  { id: 'studentsAndGroups', label: 'Öğrenci & Grup', icon: 'students' },
   { id: 'finance', label: 'Muhasebe', icon: 'finance' },
   { id: 'calendar', label: 'Takvim', icon: 'calendar' },
   { id: 'chat', label: 'Mesajlar', icon: 'chat' },
@@ -94,7 +93,7 @@ function renderSidebar(state, currentPage, navigate) {
 function renderTopbar(state, unreadCount) {
   const pageTitles = {
     dashboard: 'Anasayfa', courses: 'Kurslar & Müfredat',
-    students: 'Öğrenciler', groups: 'Gruplar',
+    studentsAndGroups: 'Öğrenci & Grup Yönetimi',
     finance: 'Muhasebe', calendar: 'Takvim',
     chat: 'Mesajlar', liveClass: 'Canlı Sınıf',
     settings: 'Ayarlar', profile: 'Profil',
