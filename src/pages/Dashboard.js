@@ -59,7 +59,10 @@ function getRandomQuote() {
   return quotes[Math.floor(Math.random() * quotes.length)];
 }
 
+let dashWeekOffset = 0;
+
 export async function renderDashboard(navigate) {
+  dashWeekOffset = 0;
   const state = getState();
   const today = new Date();
   const dateStr = today.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -68,6 +71,10 @@ export async function renderDashboard(navigate) {
   const pendingLessons = await getPendingLessons();
   const stats = getMonthlyStats();
   
+  const todayDateStr = getLocalDateStr(today);
+  const pastPendingLessons = pendingLessons.filter(l => l.date < todayDateStr);
+  const combinedLessons = [...pastPendingLessons, ...todayLessons];
+
   const completedThisMonth = state.lessons.filter(l => {
     const m = new Date().getMonth();
     const y = new Date().getFullYear();
@@ -176,21 +183,21 @@ export async function renderDashboard(navigate) {
             </div>
           </div>
           <div style="margin-top:16px;">
-            ${todayLessons.length === 0 ? `
+            ${combinedLessons.length === 0 ? `
               <div class="empty-state" style="padding:60px 20px; opacity:0.6;">
                 ${icon('calendar', 48)}
-                <p style="margin-top:12px; font-weight:600;">Bugün için planlanmış bir kayıt bulunmuyor.</p>
+                <p style="margin-top:12px; font-weight:600;">Bugün için planlanmış veya onay bekleyen bir kayıt bulunmuyor.</p>
               </div>
-            ` : todayLessons.map(lesson => {
+            ` : combinedLessons.map(lesson => {
               const status = getLessonStatus(lesson);
               const si = getLessonStatusInfo(status);
               
               const borderColor = si.badgeClass.includes('success') ? 'var(--success)' : si.badgeClass.includes('warning') ? 'var(--warning)' : 'var(--border)';
               
               const badgeLabel = si.label;
-                
               const badgeClass = si.badgeClass;
               const displayTitle = lesson.refName ? `${lesson.refName} ${lesson.title ? ' - ' + lesson.title : ''}` : lesson.title;
+              const isPast = lesson.date < todayDateStr;
 
               return `
                 <div class="card card-sm hover-lift" style="margin-bottom:12px; border-left:4px solid ${borderColor}; background:rgba(255,255,255,0.5); padding: 12px 16px;" data-lesson-id="${lesson.id}">
@@ -201,9 +208,12 @@ export async function renderDashboard(navigate) {
                       </div>
                     ` : ''}
                     <div style="flex:1;">
-                      <div style="font-weight:700;font-size:15px;color:var(--text-primary);">${escHtml(displayTitle)}</div>
+                      <div style="font-weight:700;font-size:15px;color:var(--text-primary);">
+                        ${isPast ? `<span style="font-size:10px; padding:2px 6px; background:var(--danger); color:white; border-radius:4px; margin-right:6px; vertical-align:middle;">Önceki Gün</span>` : ''}
+                        <span style="vertical-align:middle;">${escHtml(displayTitle)}</span>
+                      </div>
                       <div style="display:flex; align-items:center; gap:4px; font-size:12px; color:var(--text-muted); margin-top:4px;">
-                        ${icon('clock', 12)} ${lesson.startTime} – ${lesson.endTime}
+                        ${icon('clock', 12)} ${isPast ? formatDateShort(lesson.date) + ' • ' : ''}${lesson.startTime} – ${lesson.endTime}
                       </div>
                     </div>
                     <div style="text-align:right;">
@@ -221,21 +231,17 @@ export async function renderDashboard(navigate) {
           </div>
         </div>
 
-        <!-- Middle: Revenue and Stats -->
         <div style="display:flex; flex-direction:column; gap:16px;">
-          <div class="card glass-card hover-lift" id="performance-card" style="border-top:none; border-bottom:4px solid var(--brand-green-light); cursor:pointer;">
-            <div class="section-title">
-              <h3 class="text-gradient">${icon('trendUp', 18)} Haftalık Performans</h3>
+          <div class="card glass-card" id="performance-card-wrapper" style="border-top:none; border-bottom:4px solid var(--brand-green-light);">
+            <div class="section-title" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <h3 class="text-gradient" style="cursor:pointer;" id="dash-perf-title">${icon('trendUp', 18)} Haftalık Performans</h3>
+              <div style="display:flex; gap:8px;">
+                <button class="btn btn-icon btn-sm" id="dash-prev-week" style="background:var(--brand-green-soft); color:var(--brand-green); border-radius:50%;">${icon('chevronLeft', 14)}</button>
+                <button class="btn btn-icon btn-sm" id="dash-next-week" style="background:var(--brand-green-soft); color:var(--brand-green); border-radius:50%;">${icon('chevronRight', 14)}</button>
+              </div>
             </div>
-            ${renderMiniChart(state)}
-            <div style="margin-top:20px; padding:16px; background:var(--brand-green-soft); border-radius:12px; display:flex; align-items:center; gap:12px;">
-              <div style="width:40px;height:40px;background:white;border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--brand-green);">
-                ${icon('finance', 20)}
-              </div>
-              <div>
-                <div style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;">Tahmini Kazanç</div>
-                <div style="font-size:20px;font-weight:800;color:var(--brand-green);">${formatCurrency(stats.income)}</div>
-              </div>
+            <div id="dashboard-mini-chart-container" style="cursor:pointer;">
+              ${renderMiniChart(state, dashWeekOffset)}
             </div>
           </div>
 
@@ -287,20 +293,33 @@ export async function renderDashboard(navigate) {
   return { html, init: (el, nav) => initDashboard(el, nav) };
 }
 
-function renderMiniChart(state) {
+function renderMiniChart(state, weekOffset = 0) {
   const days = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
   const now = new Date();
+  
+  const startOfWeek = new Date(now);
+  const currentDay = startOfWeek.getDay();
+  const diffStart = startOfWeek.getDate() - currentDay + (currentDay === 0 ? -6 : 1);
+  startOfWeek.setDate(diffStart + weekOffset * 7);
+  
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+  const dateRangeStr = `${startOfWeek.getDate()} ${startOfWeek.toLocaleString('tr-TR', {month:'short'})} - ${endOfWeek.getDate()} ${endOfWeek.toLocaleString('tr-TR', {month:'short'})}`;
+
   const weekIncome = days.map((_, i) => {
-    const d = new Date(now);
-    d.setDate(d.getDate() - d.getDay() + i + 1);
+    const d = new Date(startOfWeek);
+    d.setDate(startOfWeek.getDate() + i);
     const dStr = getLocalDateStr(d);
     return state.transactions
       .filter(t => t.date === dStr && t.type === 'income')
       .reduce((s, t) => s + t.amount, 0);
   });
+  
   const max = Math.max(...weekIncome, 1);
+  const weeklyTotal = weekIncome.reduce((a,b) => a+b, 0);
 
   return `
+    <div style="font-size:12px; color:var(--text-muted); font-weight:600; margin-bottom:8px;">${dateRangeStr}</div>
     <div style="display:flex; align-items:flex-end; gap:8px; height:120px; margin:16px 0; padding-bottom:8px; border-bottom:1px dashed var(--border);">
       ${weekIncome.map((val, i) => {
         const h = Math.max((val / max) * 100, val > 0 ? 10 : 4);
@@ -311,6 +330,15 @@ function renderMiniChart(state) {
           </div>
         `;
       }).join('')}
+    </div>
+    <div style="margin-top:20px; padding:16px; background:var(--brand-green-soft); border-radius:12px; display:flex; align-items:center; gap:12px;">
+      <div style="width:40px;height:40px;background:white;border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--brand-green);">
+        ${icon('finance', 20)}
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;">Seçili Hafta Kazancı</div>
+        <div style="font-size:20px;font-weight:800;color:var(--brand-green);">${formatCurrency(weeklyTotal)}</div>
+      </div>
     </div>
   `;
 }
@@ -397,9 +425,43 @@ function initDashboard(el, navigate) {
   });
 
   // Performance card click
-  el.querySelector('#performance-card')?.addEventListener('click', () => {
+  el.querySelector('#dash-perf-title')?.addEventListener('click', () => {
     import('./modals/WeeklyPerformanceModal.js').then(m => m.openWeeklyPerformanceModal());
   });
+  el.querySelector('#dashboard-mini-chart-container')?.addEventListener('click', () => {
+    import('./modals/WeeklyPerformanceModal.js').then(m => m.openWeeklyPerformanceModal());
+  });
+
+  const updateChart = () => {
+    const container = el.querySelector('#dashboard-mini-chart-container');
+    if (container) {
+      container.innerHTML = renderMiniChart(getState(), dashWeekOffset);
+      const nextBtn = el.querySelector('#dash-next-week');
+      if (nextBtn) {
+        if (dashWeekOffset >= 0) {
+          nextBtn.style.opacity = '0.5';
+          nextBtn.style.pointerEvents = 'none';
+        } else {
+          nextBtn.style.opacity = '1';
+          nextBtn.style.pointerEvents = 'auto';
+        }
+      }
+    }
+  };
+
+  el.querySelector('#dash-prev-week')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    dashWeekOffset--;
+    updateChart();
+  });
+
+  el.querySelector('#dash-next-week')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    dashWeekOffset++;
+    updateChart();
+  });
+
+  updateChart();
 
   // KPI Cards clicks
   const openStats = (type) => import('./modals/DashboardStatsModal.js').then(m => m.openDashboardStatsModal(type));

@@ -3,28 +3,55 @@ import { openModal } from '../../components/modal.js';
 import { icon } from '../../components/icons.js';
 import { formatCurrency, getLocalDateStr } from '../../utils/helpers.js';
 
+let weekOffset = 0;
+
 export function openWeeklyPerformanceModal() {
-  const state = getState();
+  weekOffset = 0; // Reset on open
   
   openModal({
     title: 'Haftalık Performans Detayı',
-    body: renderPerformanceDetails(state),
+    body: '<div id="weekly-perf-container"></div>',
     size: 'lg'
   });
+
+  const update = () => {
+    const container = document.getElementById('weekly-perf-container');
+    if (container) {
+      container.innerHTML = renderPerformanceDetails(getState(), weekOffset);
+      
+      container.querySelector('#modal-prev-week')?.addEventListener('click', () => {
+        weekOffset--;
+        update();
+      });
+      container.querySelector('#modal-next-week')?.addEventListener('click', () => {
+        weekOffset++;
+        update();
+      });
+    }
+  };
+
+  setTimeout(update, 0);
 }
 
-function renderPerformanceDetails(state) {
+function renderPerformanceDetails(state, offset) {
   const days = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
   const dayShorts = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
   const now = new Date();
   
-  // Calculate income for each day of current week
+  const startOfWeek = new Date(now);
+  const currentDay = startOfWeek.getDay();
+  const diffStart = startOfWeek.getDate() - currentDay + (currentDay === 0 ? -6 : 1);
+  startOfWeek.setDate(diffStart + offset * 7);
+  
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+  
+  const dateRangeStr = `${startOfWeek.getDate()} ${startOfWeek.toLocaleString('tr-TR', {month:'short'})} - ${endOfWeek.getDate()} ${endOfWeek.toLocaleString('tr-TR', {month:'short'})}`;
+
+  // Calculate income for each day of target week
   const weekIncome = days.map((_, i) => {
-    const d = new Date(now);
-    // Find monday of this week
-    const currentDay = d.getDay(); // 0 (Sun) to 6 (Sat)
-    const diff = d.getDate() - currentDay + (currentDay === 0 ? -6 : 1); // Adjust when day is sunday
-    d.setDate(diff + i);
+    const d = new Date(startOfWeek);
+    d.setDate(startOfWeek.getDate() + i);
     
     const dStr = getLocalDateStr(d);
     return state.transactions
@@ -37,9 +64,15 @@ function renderPerformanceDetails(state) {
 
   return `
     <div class="performance-modal-content">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <button class="btn btn-icon btn-sm" id="modal-prev-week" style="background:var(--bg-secondary); border-radius:50%;">${icon('chevronLeft', 16)}</button>
+        <div style="font-weight:700; color:var(--text-primary); font-size:16px;">${dateRangeStr}</div>
+        <button class="btn btn-icon btn-sm" id="modal-next-week" style="background:var(--bg-secondary); border-radius:50%; ${offset >= 0 ? 'opacity:0.5; pointer-events:none;' : ''}">${icon('chevronRight', 16)}</button>
+      </div>
+
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:32px; padding:20px; background:var(--brand-green-soft); border-radius:16px;">
         <div>
-          <div style="font-size:14px; color:var(--text-secondary); font-weight:600;">Bu Haftaki Toplam Kazanç</div>
+          <div style="font-size:14px; color:var(--text-secondary); font-weight:600;">Seçili Hafta Kazanç</div>
           <div style="font-size:32px; font-weight:800; color:var(--brand-green); margin-top:4px;">${formatCurrency(totalWeekly)}</div>
         </div>
         <div style="text-align:right;">
@@ -58,7 +91,7 @@ function renderPerformanceDetails(state) {
 
         ${weekIncome.map((val, i) => {
           const h = (val / max) * 100;
-          const isToday = new Date().getDay() === (i + 1) % 7;
+          const isToday = offset === 0 && new Date().getDay() === (i + 1) % 7;
           
           return `
             <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:12px; height:100%; justify-content:flex-end;">

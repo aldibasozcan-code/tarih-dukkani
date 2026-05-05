@@ -183,7 +183,14 @@ function calcStats(state, period, filters = {}) {
     from = getLocalDateStr(d);
   }
   else if (period === 'month') {
-    from = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+    if (filters.month) {
+       from = `${filters.month}-01`;
+       const [y, m] = filters.month.split('-');
+       const lastDay = new Date(y, m, 0).getDate();
+       to = `${filters.month}-${String(lastDay).padStart(2, '0')}`;
+    } else {
+       from = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+    }
   }
 
   if (period !== 'all') {
@@ -253,6 +260,16 @@ function initFinance(el, navigate) {
   el.querySelectorAll('[data-period]').forEach(btn => {
     btn.addEventListener('click', () => {
       period = btn.dataset.period;
+      if (period !== 'month') {
+        filters.month = ''; // Clear month filter if switching to other tabs
+        el.querySelector('#filter-month').value = '';
+      } else {
+        // If clicking month tab, default to current month if empty
+        if (!filters.month) {
+           filters.month = new Date().toISOString().slice(0, 7);
+           el.querySelector('#filter-month').value = filters.month;
+        }
+      }
       el.querySelectorAll('[data-period]').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       updateView();
@@ -272,6 +289,9 @@ function initFinance(el, navigate) {
 
   el.querySelector('#filter-month').addEventListener('change', (e) => {
     filters.month = e.target.value;
+    period = 'month'; // Automatically switch to month view
+    el.querySelectorAll('[data-period]').forEach(b => b.classList.remove('active'));
+    el.querySelector('[data-period="month"]')?.classList.add('active');
     updateView();
   });
 

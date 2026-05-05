@@ -2,7 +2,7 @@
 // GLOBAL APP STATE - Firebase Firestore backed
 // ═══════════════════════════════════════════════════
 import { DEFAULT_CURRICULUM, CONTENT_TYPES, getSubjectsForBranches, SUBJECT_GRADES } from '../data/curriculum.js';
-import { todayStr, getLocalDateStr } from '../utils/helpers.js';
+import { todayStr, getLocalDateStr, addDays } from '../utils/helpers.js';
 import { db, auth } from '../lib/firebase.js';
 import { doc, getDoc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { deleteUser } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";

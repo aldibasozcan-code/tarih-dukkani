@@ -15,28 +15,30 @@ export function renderCourses(navigate) {
 
   const html = `
     <div class="fade-in">
-      <div class="page-header">
+      <div class="page-header" style="background: linear-gradient(135deg, var(--brand-green-soft) 0%, rgba(255,255,255,1) 100%); padding: 32px 24px; border-radius: 20px; margin-bottom: 32px; border: 1px solid rgba(16,185,129,0.15); box-shadow: 0 10px 30px rgba(0,0,0,0.02);">
         <div>
-          <h2>Müfredat Yönetimi</h2>
-          <p>Sınıflara göre ünite ve konu içeriklerini yönetin</p>
+          <h2 style="font-size: 32px; font-weight: 800; color: var(--brand-green); margin-bottom: 8px; display: flex; align-items: center; gap: 12px; letter-spacing: -0.5px;">
+            ${icon('book', 32)} Müfredat Yönetimi
+          </h2>
+          <p style="color: var(--text-secondary); font-size: 16px; font-weight: 500;">Sınıflara göre ünite ve konu içeriklerini profesyonelce yönetin</p>
         </div>
-        <div style="display:flex; gap:8px;">
-          <button class="btn btn-secondary" id="btn-export-curr">${icon('download', 14)} Dışa Aktar</button>
-          <button class="btn btn-secondary" id="btn-import-curr">${icon('upload', 14)} İçe Aktar</button>
+        <div style="display:flex; gap:12px; align-items: center;">
+          <button class="btn btn-secondary hover-lift" id="btn-export-curr" style="background: white; border: 1px solid var(--border); box-shadow: var(--shadow-sm); padding: 10px 16px; font-weight: 600;">${icon('download', 16)} Dışa Aktar</button>
+          <button class="btn btn-secondary hover-lift" id="btn-import-curr" style="background: white; border: 1px solid var(--border); box-shadow: var(--shadow-sm); padding: 10px 16px; font-weight: 600;">${icon('upload', 16)} İçe Aktar</button>
           <input type="file" id="import-curr-file" accept=".json" style="display:none;">
-          <button class="btn btn-primary" id="btn-add-material">${icon('plus', 14)} İçerik Ekle</button>
+          <button class="btn btn-primary hover-lift" id="btn-add-material" style="box-shadow: 0 8px 20px rgba(16,185,129,0.3); padding: 10px 20px; font-weight: 700; font-size: 15px;">${icon('plus', 16)} İçerik Ekle</button>
         </div>
       </div>
 
       <!-- Grade Tabs -->
-      <div class="tabs" id="grade-tabs" style="margin-bottom:24px; overflow-x: auto; display: flex; gap: 8px;">
+      <div class="tabs-modern" id="grade-tabs" style="margin-bottom:32px; overflow-x: auto; display: flex; gap: 8px; padding: 8px; background: var(--bg-secondary); border-radius: 16px; border: 1px solid var(--border); max-width: 100%;">
         ${availableGrades.map((g, i) => `
-          <button class="tab-btn ${g === activeGrade ? 'active' : ''}" data-grade="${g}" style="white-space: nowrap;">${g}</button>
+          <button class="tab-btn-modern ${g === activeGrade ? 'active' : ''}" data-grade="${g}" style="flex:1; min-width:80px; text-align:center; padding: 12px 20px; border-radius: 10px; border: none; background: ${g === activeGrade ? 'white' : 'transparent'}; color: ${g === activeGrade ? 'var(--brand-green)' : 'var(--text-secondary)'}; font-weight: ${g === activeGrade ? '800' : '600'}; font-size: 15px; box-shadow: ${g === activeGrade ? '0 4px 12px rgba(0,0,0,0.05)' : 'none'}; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); white-space: nowrap;">${g}</button>
         `).join('')}
       </div>
 
       <!-- Curriculum Content -->
-      <div id="curriculum-content">
+      <div id="curriculum-content" style="background: white; padding: 32px; border-radius: 20px; border: 1px solid var(--border); box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
         ${renderCurriculumContent(state, activeGrade)}
       </div>
     </div>
@@ -76,10 +78,14 @@ function renderCurriculumContent(state, grade) {
 
     if (subjects.length > 1) {
       html += `
-        <div style="margin: 24px 0 16px 0; border-bottom: 2px solid var(--border); padding-bottom: 8px;">
-          <h3 style="color: var(--text); display:flex; align-items:center; gap: 8px; font-size: 18px;">
-            ${subjectInfo?.icon || ''} ${subjectInfo?.name || subject}
+        <div style="margin: 32px 0 24px 0; display:flex; align-items:center; gap: 16px;">
+          <div style="width: 48px; height: 48px; background: linear-gradient(135deg, var(--brand-green-soft) 0%, rgba(255,255,255,1) 100%); border-radius: 14px; display: flex; align-items: center; justify-content: center; color: var(--brand-green); font-size: 24px; box-shadow: 0 4px 12px rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2);">
+             ${subjectInfo?.icon || '📚'}
+          </div>
+          <h3 style="color: var(--text-primary); font-size: 24px; font-weight: 800; margin: 0; letter-spacing: -0.5px;">
+            ${subjectInfo?.name || subject}
           </h3>
+          <div style="flex:1; height:2px; background: linear-gradient(to right, var(--border), transparent); margin-left: 16px;"></div>
         </div>
       `;
     }
@@ -99,57 +105,59 @@ function renderCurriculumContent(state, grade) {
         const unitMaterials = allMaterials.filter(m => m.unitId === unit.id && !m.topicId);
         
         return `
-          <div class="unit-accordion ${isExpanded ? 'active' : ''}" data-unit-id="${unit.id}" style="margin-bottom: 16px; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: #fff; box-shadow: var(--shadow-sm);">
+          <div class="unit-accordion hover-lift ${isExpanded ? 'active' : ''}" data-unit-id="${unit.id}" style="margin-bottom: 24px; border: 1px solid ${isExpanded ? 'rgba(16,185,129,0.3)' : 'var(--border)'}; border-radius: 16px; overflow: hidden; background: #fff; box-shadow: ${isExpanded ? '0 12px 30px rgba(16,185,129,0.06)' : 'var(--shadow-sm)'}; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);">
             <!-- Unit Header -->
-            <div class="unit-header" data-toggle-unit="${unit.id}" style="padding: 16px 20px; background: ${isExpanded ? 'var(--brand-green-soft)' : '#fff'}; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: var(--transition);">
-              <div class="unit-icon" style="color: var(--brand-green); transform: rotate(${isExpanded ? '90deg' : '0deg'}); transition: transform 0.3s;">
+            <div class="unit-header" data-toggle-unit="${unit.id}" style="padding: 20px 24px; background: ${isExpanded ? 'linear-gradient(to right, var(--brand-green-soft), #ffffff)' : '#fff'}; cursor: pointer; display: flex; align-items: center; gap: 16px; border-left: 5px solid ${isExpanded ? 'var(--brand-green)' : 'transparent'}; transition: all 0.3s ease;">
+              <div class="unit-icon" style="color: ${isExpanded ? 'var(--brand-green)' : 'var(--text-muted)'}; transform: rotate(${isExpanded ? '90deg' : '0deg'}); transition: transform 0.3s; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: ${isExpanded ? 'white' : 'var(--bg-secondary)'}; border-radius: 10px; box-shadow: ${isExpanded ? '0 2px 8px rgba(0,0,0,0.05)' : 'none'};">
                 ${icon('chevronRight', 20)}
               </div>
-              <h3 style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0; flex: 1; display: flex; align-items: center; gap: 8px;">
-                ${icon('book', 18)} ${escHtml(unit.name)}
+              <h3 style="font-size: 18px; font-weight: 800; color: ${isExpanded ? 'var(--brand-green)' : 'var(--text-primary)'}; margin: 0; flex: 1;">
+                ${escHtml(unit.name)}
               </h3>
-              <div style="display: flex; gap: 8px;" onclick="event.stopPropagation()">
-                <button class="btn btn-ghost btn-sm btn-icon" data-edit-unit="${unit.id}" data-subject="${subject}" data-grade="${grade}" title="Üniteyi Düzenle">${icon('edit', 16)}</button>
-                <button class="btn btn-ghost btn-sm btn-icon" data-delete-unit="${unit.id}" data-subject="${subject}" data-grade="${grade}" style="color: var(--danger);" title="Üniteyi Sil">${icon('trash', 16)}</button>
-                <button class="btn btn-secondary btn-sm" data-add-topic="${unit.id}" data-subject="${subject}" data-grade="${grade}">
-                  ${icon('plus', 12)} Konu Ekle
+              <div style="display: flex; gap: 8px; opacity: ${isExpanded ? '1' : '0.6'}; transition: opacity 0.3s;" onclick="event.stopPropagation()">
+                <button class="btn btn-ghost btn-sm btn-icon hover-scale" data-edit-unit="${unit.id}" data-subject="${subject}" data-grade="${grade}" title="Üniteyi Düzenle" style="background: white; border: 1px solid var(--border); border-radius: 8px;">${icon('edit', 16)}</button>
+                <button class="btn btn-ghost btn-sm btn-icon hover-scale" data-delete-unit="${unit.id}" data-subject="${subject}" data-grade="${grade}" style="color: var(--danger); background: white; border: 1px solid var(--border); border-radius: 8px;" title="Üniteyi Sil">${icon('trash', 16)}</button>
+                <button class="btn btn-primary btn-sm hover-scale" data-add-topic="${unit.id}" data-subject="${subject}" data-grade="${grade}" style="border-radius: 8px; font-weight: 700;">
+                  ${icon('plus', 14)} Konu Ekle
                 </button>
               </div>
             </div>
 
             <!-- Unit Content -->
-            <div class="unit-content" style="display: ${isExpanded ? 'block' : 'none'}; padding: 20px; border-top: 1px solid var(--border);">
+            <div class="unit-content" style="display: ${isExpanded ? 'block' : 'none'}; padding: 24px; border-top: 1px solid var(--border); background: #fcfcfc;">
               <div class="topic-list" style="display:flex; flex-direction:column; gap: 16px;">
                 ${unit.topics.length === 0 ? `
                   <div class="empty-state" style="padding: 20px; opacity: 0.5;">
-                    <p style="font-size: 13px;">Bu ünitede henüz konu bulunmuyor.</p>
+                    <p style="font-size: 14px; font-weight: 500;">Bu ünitede henüz konu bulunmuyor.</p>
                   </div>
                 ` : ''}
                 ${unit.topics.map((topic, index) => {
                   const topicMaterials = allMaterials.filter(m => m.unitId === unit.id && m.topicId === topic.id);
                   return `
-                    <div class="topic-item" draggable="true" 
+                    <div class="topic-item hover-lift" draggable="true" 
                          data-index="${index}" 
                          data-topic-id="${topic.id}" 
                          data-unit-id="${unit.id}" 
                          data-subject="${subject}" 
                          data-grade="${grade}"
-                         style="background: var(--bg-secondary); border-radius: 10px; padding: 12px 16px; border: 1px solid var(--border);">
-                      <div style="display:flex;align-items:center;gap:12px; margin-bottom: 8px;">
-                        <div class="topic-drag-handle" style="cursor: grab; color: var(--text-muted); opacity: 0.6;">
-                          ${icon('dragHandle', 16)}
+                         style="background: #ffffff; border-radius: 14px; padding: 18px 24px; border: 1px solid var(--border); border-left: 3px solid var(--border); transition: all 0.2s ease; box-shadow: 0 2px 10px rgba(0,0,0,0.01);">
+                      <div style="display:flex;align-items:center;gap:16px; margin-bottom: 16px;">
+                        <div class="topic-drag-handle" style="cursor: grab; color: var(--text-muted); opacity: 0.4; padding: 4px; border-radius: 6px; transition: all 0.2s;" onmouseover="this.style.background='var(--border)'; this.style.opacity='1'" onmouseout="this.style.background='transparent'; this.style.opacity='0.4'">
+                          ${icon('dragHandle', 20)}
                         </div>
-                        <h4 style="font-size:14px; font-weight:700; color:var(--text-primary); margin:0; flex:1; display:flex; align-items:center; gap:8px;">
-                          <span style="color: var(--brand-green); font-weight: 800;">${index + 1}.</span>
+                        <div style="width: 32px; height: 32px; background: var(--brand-green-soft); border: 1px solid rgba(16,185,129,0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; color: var(--brand-green); box-shadow: 0 2px 6px rgba(16,185,129,0.1);">
+                          ${index + 1}
+                        </div>
+                        <h4 style="font-size:16px; font-weight:800; color:var(--text-primary); margin:0; flex:1; letter-spacing: -0.3px;">
                           ${escHtml(topic.name)}
                         </h4>
-                        <div style="display:flex; gap:4px;">
-                          <button class="btn btn-ghost btn-sm btn-icon" data-edit-topic="${topic.id}" data-unit-id="${unit.id}" data-subject="${subject}" data-grade="${grade}" title="Düzenle">${icon('edit', 12)}</button>
-                          <button class="btn btn-ghost btn-sm btn-icon" data-delete-topic="${topic.id}" data-unit-id="${unit.id}" data-subject="${subject}" data-grade="${grade}" style="color:var(--danger);" title="Sil">${icon('trash', 12)}</button>
+                        <div style="display:flex; gap:8px;">
+                          <button class="btn btn-ghost btn-sm btn-icon hover-scale" data-edit-topic="${topic.id}" data-unit-id="${unit.id}" data-subject="${subject}" data-grade="${grade}" title="Düzenle" style="background: var(--bg-secondary); border-radius: 8px;">${icon('edit', 14)}</button>
+                          <button class="btn btn-ghost btn-sm btn-icon hover-scale" data-delete-topic="${topic.id}" data-unit-id="${unit.id}" data-subject="${subject}" data-grade="${grade}" style="color:var(--danger); background: var(--bg-secondary); border-radius: 8px;" title="Sil">${icon('trash', 14)}</button>
                         </div>
                       </div>
                       
-                      <div style="display:flex; flex-wrap: wrap; gap:8px; padding-left: 28px;">
+                      <div style="display:flex; flex-wrap: wrap; gap:12px; padding-left: 64px;">
                         ${topicMaterials.map(m => {
                           const cType = CONTENT_TYPES.find(ct => ct.id === m.contentType);
                           const isYoutube = isYoutubeUrl(m.link);
@@ -162,17 +170,17 @@ function renderCurriculumContent(state, grade) {
                           else if (isDrive && drivePreview) clickAttrs = `data-preview-url="${escHtml(drivePreview)}" data-preview-title="${escHtml(m.title)}"`;
 
                           return `
-                          <div class="material-chip" style="display:flex; align-items:center; gap: 6px; padding: 6px 10px; background: #fff; border: 1px solid var(--border); border-radius: 6px; font-size:12px;">
-                            <span style="font-size:14px;">${isYoutube ? '🎬' : (isDrive ? '📁' : (cType?.icon || '📄'))}</span>
-                            <a href="${escHtml(m.link)}" ${clickAttrs} class="hover-underline ${isYoutube ? 'youtube-link' : (isDrive ? 'drive-link' : '')}" style="color:var(--text-primary); text-decoration:none; font-weight:500;">
+                          <div class="material-chip hover-scale" style="display:flex; align-items:center; gap: 8px; padding: 8px 14px; background: white; border: 1px solid var(--border); border-radius: 24px; font-size:13px; box-shadow: 0 2px 6px rgba(0,0,0,0.03); cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--brand-green)'; this.style.boxShadow='0 4px 12px rgba(16,185,129,0.1)'" onmouseout="this.style.borderColor='var(--border)'; this.style.boxShadow='0 2px 6px rgba(0,0,0,0.03)'">
+                            <span style="font-size:16px;">${isYoutube ? '🎬' : (isDrive ? '📁' : (cType?.icon || '📄'))}</span>
+                            <a href="${escHtml(m.link)}" ${clickAttrs} class="${isYoutube ? 'youtube-link' : (isDrive ? 'drive-link' : '')}" style="color:var(--text-primary); text-decoration:none; font-weight:600;">
                               ${escHtml(m.title)}
                             </a>
-                            <button class="btn btn-ghost btn-sm btn-icon" data-delete-material="${m.id}" style="width:20px;height:20px;color:var(--danger);opacity:0.5;" title="Sil">${icon('x', 12)}</button>
+                            <button class="btn btn-ghost btn-sm btn-icon" data-delete-material="${m.id}" style="width:24px;height:24px;color:var(--danger);opacity:0.4; transition: opacity 0.2s; background: var(--bg-secondary); border-radius: 50%;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.4'" title="Sil">${icon('x', 14)}</button>
                           </div>
                           `;
                         }).join('')}
-                        <button class="btn btn-ghost btn-sm" data-add-material-to-topic="${topic.id}" data-unit-id="${unit.id}" data-subject="${subject}" data-grade="${grade}" style="padding: 4px 10px; font-size: 11px; color: var(--text-muted); border: 1px dashed var(--border); border-radius: 6px;">
-                          ${icon('plus', 10)} İçerik Ekle
+                        <button class="btn btn-ghost btn-sm hover-scale" data-add-material-to-topic="${topic.id}" data-unit-id="${unit.id}" data-subject="${subject}" data-grade="${grade}" style="padding: 8px 16px; font-size: 13px; font-weight: 700; color: var(--brand-green); border: 1.5px dashed rgba(16,185,129,0.4); border-radius: 24px; background: var(--brand-green-soft);">
+                          ${icon('plus', 14)} İçerik Ekle
                         </button>
                       </div>
                     </div>
@@ -181,14 +189,17 @@ function renderCurriculumContent(state, grade) {
               </div>
 
               <!-- Unit Level Materials -->
-              <div style="margin-top: 24px; padding-top: 16px; border-top: 1px dashed var(--border);">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                  <h4 style="font-size:12px; font-weight:800; color:var(--text-muted); text-transform: uppercase;">Ünite Testleri / Kaynaklar</h4>
-                  <button class="btn btn-ghost btn-sm" data-add-unit-material="${unit.id}" data-subject="${subject}" data-grade="${grade}">
-                    ${icon('plus', 12)} Ekle
+              <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                  <h4 style="font-size:14px; font-weight:800; color:var(--brand-green); text-transform: uppercase; letter-spacing: 0.5px; display:flex; align-items:center; gap: 8px;">
+                    <span style="display:flex; align-items:center; justify-content:center; width: 28px; height: 28px; background: var(--brand-green-soft); border-radius: 8px;">${icon('book', 16)}</span>
+                    Ünite Testleri ve Genel Kaynaklar
+                  </h4>
+                  <button class="btn btn-secondary btn-sm hover-scale" data-add-unit-material="${unit.id}" data-subject="${subject}" data-grade="${grade}" style="background: white; border: 1px solid var(--border); font-weight: 700; border-radius: 8px;">
+                    ${icon('plus', 14)} Ekle
                   </button>
                 </div>
-                <div style="display:flex; flex-wrap: wrap; gap:8px;">
+                <div style="display:flex; flex-wrap: wrap; gap:12px;">
                   ${unitMaterials.map(m => {
                     const cType = CONTENT_TYPES.find(ct => ct.id === m.contentType);
                     const isYoutube = isYoutubeUrl(m.link);
@@ -201,15 +212,18 @@ function renderCurriculumContent(state, grade) {
                     else if (isDrive && drivePreview) clickAttrs = `data-preview-url="${escHtml(drivePreview)}" data-preview-title="${escHtml(m.title)}"`;
 
                     return `
-                    <div class="material-chip premium" style="display:flex; align-items:center; gap: 8px; padding: 8px 12px; background: var(--brand-green-soft); border: 1px solid rgba(0,69,38,0.1); border-radius: 8px; font-size:13px;">
-                      <span style="font-size:16px;">${isYoutube ? '🎬' : (isDrive ? '📁' : (cType?.icon || '📋'))}</span>
-                      <a href="${escHtml(m.link)}" ${clickAttrs} class="hover-underline ${isYoutube ? 'youtube-link' : (isDrive ? 'drive-link' : '')}" style="color:var(--brand-green); font-weight: 700; text-decoration:none;">
+                    <div class="material-chip premium hover-scale" style="display:flex; align-items:center; gap: 12px; padding: 12px 20px; background: linear-gradient(135deg, var(--brand-green-soft) 0%, rgba(255,255,255,1) 100%); border: 1px solid rgba(16,185,129,0.3); border-radius: 14px; font-size:14px; box-shadow: 0 6px 16px rgba(16,185,129,0.08); cursor: pointer;">
+                      <div style="width: 36px; height: 36px; background: white; border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-sm); font-size: 18px;">
+                        ${isYoutube ? '🎬' : (isDrive ? '📁' : (cType?.icon || '📋'))}
+                      </div>
+                      <a href="${escHtml(m.link)}" ${clickAttrs} class="${isYoutube ? 'youtube-link' : (isDrive ? 'drive-link' : '')}" style="color:var(--brand-green); font-weight: 800; text-decoration:none; font-size: 15px;">
                         ${escHtml(m.title)}
                       </a>
-                      <button class="btn btn-ghost btn-sm btn-icon" data-delete-material="${m.id}" style="color:var(--danger); opacity:0.8;">${icon('x', 14)}</button>
+                      <button class="btn btn-ghost btn-sm btn-icon" data-delete-material="${m.id}" style="color:var(--danger); opacity:0.6; margin-left: 8px; transition: opacity 0.2s; background: white; border-radius: 8px; width: 32px; height: 32px;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'" title="Sil">${icon('trash', 16)}</button>
                     </div>
                     `;
                   }).join('')}
+                  ${unitMaterials.length === 0 ? `<div style="font-size:14px; color:var(--text-muted); font-style:italic; padding: 12px 0; font-weight: 500;">Bu ünite için genel bir kaynak eklenmemiş.</div>` : ''}
                 </div>
               </div>
             </div>
@@ -218,8 +232,8 @@ function renderCurriculumContent(state, grade) {
       }).join('');
       
       html += `
-        <div style="text-align:center; padding: 16px 0;">
-          <button class="btn btn-secondary" data-add-unit="${subject}" data-grade="${grade}">${icon('plus', 14)} Yeni Ünite Ekle</button>
+        <div style="text-align:center; padding: 24px 0;">
+          <button class="btn btn-secondary hover-lift" data-add-unit="${subject}" data-grade="${grade}" style="padding: 12px 24px; font-size: 15px; font-weight: 700; border-radius: 12px; background: white; border: 1px dashed var(--brand-green); color: var(--brand-green);">${icon('plus', 16)} Yeni Ünite Ekle</button>
         </div>
       `;
     }
