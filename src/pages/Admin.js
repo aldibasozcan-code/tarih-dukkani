@@ -92,8 +92,8 @@ async function updateView(el, navFn) {
          <tbody>
            ${activePosts.map((post, index) => `
              <tr style="border-bottom:1px solid var(--border); transition:var(--transition);" onmouseover="this.style.background='#f8fbf9'" onmouseout="this.style.background='white'">
-               <td style="padding:20px;">
-                 <span class="badge ${post.type === 'forum' ? 'badge-primary' : 'badge-info'}" style="text-transform:uppercase; font-size:10px; font-weight:800; letter-spacing:0.5px;">${post.type === 'forum' ? 'Forum' : 'Blog'}</span>
+                <td style="padding:20px;">
+                 <span class="badge ${post.type === 'forum' ? 'badge-primary' : post.type === 'sozluk' ? 'badge-warning' : 'badge-info'}" style="text-transform:uppercase; font-size:10px; font-weight:800; letter-spacing:0.5px;">${post.type === 'forum' ? 'Forum' : post.type === 'sozluk' ? 'Sözlük' : 'Blog'}</span>
                  <div style="font-size:11px; margin-top:6px; color:var(--brand-green); font-weight:700;">${post.grade || ''}</div>
                  <div style="font-size:10px; color:var(--text-muted); font-weight:600;">${post.category}</div>
                </td>
@@ -190,6 +190,7 @@ function openEditPostModal(post, rootEl, navFn) {
           <select id="edit-type">
             <option value="forum" ${post.type === 'forum' ? 'selected' : ''}>Forum Materyali</option>
             <option value="blog" ${post.type === 'blog' ? 'selected' : ''}>Eğitim Bloğu / Yazı</option>
+            <option value="sozluk" ${post.type === 'sozluk' ? 'selected' : ''}>İmece Sözlük</option>
           </select>
         </div>
         <div class="form-group">
@@ -265,6 +266,11 @@ function openEditPostModal(post, rootEl, navFn) {
     { val: 'Deneyim Paylaşımı', label: 'Deneyim Paylaşımı' }
   ];
 
+  const sozlukCategories = [
+    { val: 'Tanım/Açıklama', label: 'Tanım / Açıklama' },
+    { val: 'Soru', label: 'Soru (Merak Edilen)' }
+  ];
+
   const forumTags = ['deneme', 'konuozeti', 'cikmissorular', 'mufredat', 'etkinlik', 'sunum', 'yazilihazirlik'];
   const blogTags = ['akademik', 'pedagoji', 'edtech', 'mebGundemi', 'rehberlik', 'inceleme', 'deneyim'];
   let selectedTags = post.tags ? [...post.tags] : [];
@@ -317,7 +323,9 @@ function openEditPostModal(post, rootEl, navFn) {
   const updateEditCategoryOptions = (type, selectedVal = null) => {
     const catSelect = document.getElementById('edit-category');
     if (!catSelect) return;
-    const cats = type === 'blog' ? blogCategories : forumCategories;
+    let cats = forumCategories;
+    if (type === 'blog') cats = blogCategories;
+    if (type === 'sozluk') cats = sozlukCategories;
     catSelect.innerHTML = cats.map(c => `<option value="${c.val}" ${selectedVal === c.val ? 'selected' : ''}>${c.label}</option>`).join('');
     
     // Also update tags when type changes in modal

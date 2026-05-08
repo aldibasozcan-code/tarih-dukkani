@@ -15,6 +15,7 @@ export async function submitPost(data) {
 
   const post = {
     ...data,
+    imageUrl: data.imageUrl || null,
     authorId: auth.currentUser.uid,
     authorName: auth.currentUser.displayName || auth.currentUser.email.split('@')[0],
     authorEmail: auth.currentUser.email,
@@ -204,7 +205,8 @@ export async function seedInitialData() {
       topic: '1. Dönem 1. Yazılı',
       title: '9. Sınıf Tarih 1. Dönem 1. Yazılı Hazırlık Soruları (2024)',
       summary: 'Yeni müfredata uygun, açık uçlu ve senaryo temelli yazılı hazırlık soruları ve cevap anahtarı.',
-      content: '9. sınıf öğrencilerimiz için hazırladığımız yazılı provasıdır...',
+      content: '9. sınıf öğrencilerimiz için hazırladığımız yazılı provasıdır. Sorular tamamen klasik ve senaryolara uygundur.',
+      imageUrl: '/images/study.png',
       tags: ['yazilihazirlik', 'deneme'],
       authorName: 'Müverrih Hoca',
       authorId: 'system',
@@ -233,6 +235,7 @@ export async function seedInitialData() {
       title: '10. Sınıf: Dünya Gücü Osmanlı (1453-1595) İnteraktif Sunum',
       summary: 'İstanbul\'un Fethi ve yükseliş dönemini kapsayan görsel ağırlıklı ders materyali.',
       content: '10. sınıfın en önemli konularından biri olan Osmanlı Yükseliş dönemi için hazırladığım sunumdur. Haritalar ve 3D canlandırmalar içermektedir.',
+      imageUrl: '/images/ottoman.png',
       tags: ['sunum', 'etkinlik'],
       authorName: 'Mehmet Hoca',
       authorId: 'system',
@@ -245,6 +248,7 @@ export async function seedInitialData() {
       title: 'Dijital Çağda Tarih Okuryazarlığı',
       summary: 'Yapay zeka ve dijital kaynakların tarih eğitimindeki kritik rolü üzerine bir inceleme.',
       content: 'Günümüzde bilgiye ulaşım hızlanırken, bilginin doğruluğunu teyit etmek her zamankinden daha önemli hale gelmiştir...',
+      imageUrl: '/images/study.png',
       category: 'Akademik Makale',
       grade: 'TYT-AYT',
       tags: ['akademik', 'pedagoji'],
@@ -253,6 +257,46 @@ export async function seedInitialData() {
       authorEmail: 'aldibasozcan@gmail.com',
       createdAt: Date.now() - 1000 * 60 * 60 * 12,
       status: 'approved'
+    },
+    {
+      type: 'sozluk',
+      title: 'Tersyüz Edilmiş Sınıf (Flipped Classroom)',
+      content: 'Öğrencilerin konu anlatımını evde videolarla öğrenip, sınıfta sadece pratik ve tartışma yaptıkları harika bir model. Ancak Türkiye şartlarında her öğrencinin evde internet ve cihaz erişimi olmaması uygulanabilirliğini çok düşürüyor.',
+      authorName: 'Yenilikçi Öğretmen',
+      authorId: 'system_dict_1',
+      isQuestion: false,
+      status: 'approved',
+      createdAt: Date.now() - 1000 * 60 * 60 * 24
+    },
+    {
+      type: 'sozluk',
+      title: 'Tersyüz Edilmiş Sınıf (Flipped Classroom)',
+      content: 'Kesinlikle katılıyorum. Ben sadece konu özetlerini kısa notlar halinde verip, ertesi gün derste doğrudan soru çözümüne geçerek benzer bir etki yaratmaya çalışıyorum.',
+      authorName: 'Pratik Hoca',
+      authorId: 'system_dict_2',
+      isQuestion: false,
+      status: 'approved',
+      createdAt: Date.now() - 1000 * 60 * 60 * 20
+    },
+    {
+      type: 'sozluk',
+      title: 'Kapsayıcı Eğitim',
+      content: 'Özel gereksinimli öğrencilerin normal gelişim gösteren akranlarıyla aynı sınıfta eğitim görmesi. Ancak bu konuda branş öğretmenlerinin pedagojik altyapısı eksik bırakılıyor, ne yapacağımızı bilemiyoruz.',
+      authorName: 'Dertli Muallim',
+      authorId: 'system_dict_3',
+      isQuestion: false,
+      status: 'approved',
+      createdAt: Date.now() - 1000 * 60 * 60 * 48
+    },
+    {
+      type: 'sozluk',
+      title: 'Web 2.0 Araçları',
+      content: 'Hala aktif olarak Kahoot veya Quizizz dışında düzenli kullanılan, gerçekten fayda sağlayan araçlar var mı? Piyasada yüzlercesi var ama çoğu derste vakit kaybı gibi geliyor.',
+      authorName: 'Teknoloji Arıyor',
+      authorId: 'system_dict_4',
+      isQuestion: true,
+      status: 'approved',
+      createdAt: Date.now() - 1000 * 60 * 60 * 5
     }
   ];
 
@@ -260,7 +304,7 @@ export async function seedInitialData() {
     await addDoc(collection(db, POSTS_COLLECTION), post);
   }
   
-  console.log("Forum seed verileri başarıyla eklendi.");
+  console.log("Forum/Sözlük seed verileri başarıyla eklendi.");
 }
 /**
  * Tüm ONAYLANMIŞ gönderileri getirir (Admin/Moderasyon için tip bağımsız)

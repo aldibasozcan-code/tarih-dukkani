@@ -13,7 +13,7 @@ import { icon } from './components/icons.js';
 let currentPage = '';
 let currentLayout = null; // Forces initial layout render
 
-const PUBLIC_PAGES = ['home', 'forum', 'blog', 'post-detail', 'privacy', 'terms-of-service'];
+const PUBLIC_PAGES = ['home', 'forum', 'blog', 'sozluk', 'post-detail', 'privacy', 'terms-of-service'];
 const DASHBOARD_PAGES = ['dashboard', 'courses', 'studentsAndGroups', 'finance', 'calendar', 'chat', 'liveClass', 'publish', 'settings', 'profile', 'notifications', 'admin'];
 
 // ─── Navigate function ───
@@ -98,6 +98,9 @@ async function navigate(page, force = false) {
     } else if (page === 'post-detail') {
       module = await import('./pages/PublicPostDetail.js');
       result = await module.renderPublicPostDetail(postId, navigate);
+    } else if (page === 'sozluk') {
+      module = await import('./pages/PublicDictionary.js');
+      result = await module.renderPublicDictionary(navigate);
     } else if (page === 'privacy') {
       module = await import('./pages/PrivacyPolicy.js');
       result = module.renderPrivacyPolicy(navigate);

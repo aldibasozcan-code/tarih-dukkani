@@ -13,6 +13,7 @@ export function renderPublicLayout(currentPage, navigate) {
           <a href="#home" class="nav-link ${currentPage === 'home' ? 'active' : ''}" data-nav="home">Anasayfa</a>
           <a href="#forum" class="nav-link ${currentPage === 'forum' ? 'active' : ''}" data-nav="forum">Öğretmen Forumu</a>
           <a href="#blog" class="nav-link ${currentPage === 'blog' ? 'active' : ''}" data-nav="blog">Eğitim Bloğu</a>
+          <a href="#sozluk" class="nav-link ${currentPage === 'sozluk' ? 'active' : ''}" data-nav="sozluk">Sözlük</a>
         </div>
         
         <div class="nav-actions">
@@ -25,6 +26,8 @@ export function renderPublicLayout(currentPage, navigate) {
       <main id="public-content">
         <!-- Page content will be injected here -->
       </main>
+
+      <div id="modal-container"></div>
 
       <!-- Global AdSense Banner Area (1 Adet) -->
       <aside style="display:flex; justify-content:center; align-items:center; width:100%; padding:40px 5%; background:var(--bg-secondary); border-top:1px solid var(--border);">
@@ -57,6 +60,7 @@ export function renderPublicLayout(currentPage, navigate) {
             <a href="#" class="footer-link" data-nav="home">Anasayfa</a>
             <a href="#" class="footer-link" data-nav="forum">Forum</a>
             <a href="#" class="footer-link" data-nav="blog">Blog</a>
+            <a href="#" class="footer-link" data-nav="sozluk">Sözlük</a>
           </div>
           <div>
             <h4 style="margin-bottom:20px; font-weight:700;">Öğretmenler</h4>

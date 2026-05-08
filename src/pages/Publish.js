@@ -83,19 +83,24 @@ export async function renderPublish(navigate) {
             </div>
           </div>
           
+          <div class="form-group mb-4" id="pub-image-group">
+            <label style="font-weight:700; color:var(--text-secondary); margin-bottom:8px; display:block; font-size:13px;">Görsel URL (İsteğe Bağlı - Forum paylaşımları için önerilir)</label>
+            <input type="text" id="pub-image-url" class="form-control" placeholder="https://ornek.com/gorsel.png">
+          </div>
+
           <div class="form-group mb-4">
             <label style="font-weight:700; color:var(--text-secondary); margin-bottom:8px; display:block; font-size:13px;">Başlık</label>
             <input type="text" id="pub-title" class="form-control" placeholder="İçeriğinizin dikkat çekici başlığı">
           </div>
           
           <div class="form-group mb-4">
-            <label style="font-weight:700; color:var(--text-secondary); margin-bottom:8px; display:block; font-size:13px;">Kısa Özet</label>
+            <label id="lbl-summary" style="font-weight:700; color:var(--text-secondary); margin-bottom:8px; display:block; font-size:13px;">Kısa Özet</label>
             <textarea id="pub-summary" class="form-control" rows="2" placeholder="Listeleme ekranında görünecek 1-2 cümlelik kısa açıklama..."></textarea>
           </div>
           
           <div class="form-group mb-4">
-            <label style="font-weight:700; color:var(--text-secondary); margin-bottom:8px; display:block; font-size:13px;">İçerik</label>
-            <textarea id="pub-content" class="form-control" rows="10" placeholder="Detaylı içeriğinizi, sorularınızı veya makalenizi buraya yazın..."></textarea>
+            <label id="lbl-content" style="font-weight:700; color:var(--text-secondary); margin-bottom:8px; display:block; font-size:13px;">İçerik / Açıklama</label>
+            <textarea id="pub-content" class="form-control" rows="10" placeholder="Detaylı içeriğinizi veya görsel açıklamanızı buraya yazın..."></textarea>
           </div>
           
           <div style="background:var(--brand-green-soft); color:var(--brand-green); padding:16px; border-radius:var(--radius-md); font-size:13px; font-weight:600; margin-bottom:24px; display:flex; align-items:start; gap:12px; line-height:1.5;">
@@ -183,6 +188,7 @@ export async function renderPublish(navigate) {
         el.querySelector('#pub-title').value = '';
         el.querySelector('#pub-summary').value = '';
         el.querySelector('#pub-content').value = '';
+        el.querySelector('#pub-image-url').value = '';
       };
 
       const forumCategories = [
@@ -213,6 +219,12 @@ export async function renderPublish(navigate) {
 
       el.querySelector('#pub-type').addEventListener('change', (e) => {
         updateCategoryOptions(e.target.value);
+        if (e.target.value === 'forum') {
+          el.querySelector('#lbl-content').innerText = 'Görsel Açıklaması / İçerik';
+          el.querySelector('#pub-image-group').style.display = 'block';
+        } else {
+          el.querySelector('#lbl-content').innerText = 'İçerik (Makale/İnceleme)';
+        }
       });
 
       const forumTags = ['deneme', 'konuozeti', 'cikmissorular', 'mufredat', 'etkinlik', 'sunum', 'yazilihazirlik'];
@@ -306,6 +318,7 @@ export async function renderPublish(navigate) {
           el.querySelector('#pub-title').value = post.title;
           el.querySelector('#pub-summary').value = post.summary || '';
           el.querySelector('#pub-content').value = post.content;
+          el.querySelector('#pub-image-url').value = post.imageUrl || '';
           
           window.scrollTo({ top: 0, behavior: 'smooth' });
         };
@@ -342,7 +355,8 @@ export async function renderPublish(navigate) {
           tags: selectedTags,
           title: el.querySelector('#pub-title').value.trim(),
           summary: el.querySelector('#pub-summary').value.trim(),
-          content: el.querySelector('#pub-content').value.trim()
+          content: el.querySelector('#pub-content').value.trim(),
+          imageUrl: el.querySelector('#pub-image-url').value.trim()
         };
 
         if (!data.title || !data.content || !data.grade) {
