@@ -38,7 +38,7 @@ export function renderFinance(navigate) {
       <div class="finance-banner" style="margin-bottom:24px; background: linear-gradient(135deg, var(--brand-green) 0%, #10b981 100%); border-radius: 20px; padding: 28px; color: white; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 25px rgba(16,185,129,0.2); position: relative; overflow: hidden;">
         <div style="z-index: 1;">
           <div style="font-size:14px; opacity: 0.9; margin-bottom:4px; font-weight: 600;">Net Dönem Kazancı</div>
-          <div class="finance-amount" id="net-display" style="font-size: 36px; font-weight: 800; letter-spacing: -1px; margin-bottom: 12px;">${formatCurrency(stats.netProfit)}</div>
+          <div id="net-display" style="font-size: 36px; font-weight: 800; letter-spacing: -1px; margin-bottom: 12px; color: #ffffff;">${formatCurrency(stats.netProfit)}</div>
           <div style="display:flex; gap:24px; margin-top:16px;">
             <div>
               <div style="font-size:11px; opacity: 0.8; margin-bottom: 2px;">Tahsil Edilen (Kesin)</div>
