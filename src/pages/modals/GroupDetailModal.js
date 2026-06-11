@@ -6,6 +6,7 @@ import { icon } from '../../components/icons.js';
 import { openModal, closeModal } from '../../components/modal.js';
 import { escHtml, getAvatarColor, getInitials, getGroupInitials, formatCurrency, formatDate, formatDateShort } from '../../utils/helpers.js';
 import { SUBJECTS, getSubjectsForBranches, CONTENT_TYPES, DAYS_TR } from '../../data/curriculum.js';
+import { openMonthlySummary } from './MonthlySummaryModal.js';
 
 export function openGroupDetail(groupId, navigate) {
   const state = getState();
@@ -73,6 +74,9 @@ export function openGroupDetail(groupId, navigate) {
               <div style="display: flex; gap: 12px; flex-wrap: wrap;">
                 <button class="btn" id="btn-edit-group-detail" style="background: #fff; color: ${primaryColor}; padding: 10px 20px; border-radius: 12px; font-weight: 700; box-shadow: 0 10px 20px rgba(0,0,0,0.1);">
                   ${icon('edit', 16)} Grubu Düzenle
+                </button>
+                <button class="btn" id="btn-monthly-summary" style="background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); padding: 10px 20px; border-radius: 12px; backdrop-filter: blur(4px);">
+                  ${icon('fileText', 16)} Aylık Özet
                 </button>
                 ${group.zoomLink ? `<a href="${escHtml(group.zoomLink)}" target="_blank" class="btn" style="background: #10b981; color: #fff; padding: 10px 20px; border-radius: 12px; text-decoration: none; font-weight: 700;">📹 Zoom Ders Odası</a>` : ''}
                 ${group.meetLink ? `<a href="${escHtml(group.meetLink)}" target="_blank" class="btn" style="background: #3b82f6; color: #fff; padding: 10px 20px; border-radius: 12px; text-decoration: none; font-weight: 700;">🎥 Google Meet</a>` : ''}
@@ -271,6 +275,13 @@ export function openGroupDetail(groupId, navigate) {
              if (navigate) navigate('studentsAndGroups');
           }, group.id);
         });
+      });
+    }
+
+    const summaryBtn = document.getElementById('btn-monthly-summary');
+    if (summaryBtn) {
+      summaryBtn.addEventListener('click', () => {
+        openMonthlySummary(group.id, 'group', navigate);
       });
     }
 

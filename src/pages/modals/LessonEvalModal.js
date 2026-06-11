@@ -1,11 +1,12 @@
 // ═════════════════════════════════════════════════
 // LESSON EVALUATION MODAL
 // ═════════════════════════════════════════════════
-import { getState, completeLesson, postponeLesson, addNextWeekLesson, addNotification, deleteLesson } from '../../store/store.js';
+import { getState, completeLesson, postponeLesson, addNextWeekLesson, addNotification, deleteLesson, getLessonUnitDetails } from '../../store/store.js';
 import { icon } from '../../components/icons.js';
 import { openModal, closeModal, showConfirm } from '../../components/modal.js';
 import { escHtml, todayStr } from '../../utils/helpers.js';
 import { openEditLessonModal } from './EditLessonModal.js';
+import { openUnitCompletionModal } from './UnitCompletionModal.js';
 
 export function openLessonEvalModal(lessonId, navigate) {
   const state = getState();
@@ -213,32 +214,47 @@ export function openLessonEvalModal(lessonId, navigate) {
       });
     }
 
-    // Ask about next week lesson
-    closeModal();
-    showConfirm({
-      title: 'Haftalık Tekrar',
-      message: `Bir sonraki hafta için (${getNextWeekDate(lesson.date)}) aynı dersi otomatik ekleyeyim mi?`,
-      confirmText: 'Evet, Ekle',
-      cancelText: 'Hayır',
-      onConfirm: () => {
-        addNextWeekLesson(lesson);
-        if (navigate) navigate(window.location.hash.replace('#','') || 'dashboard');
-      },
-      onCancel: () => {
-        if (navigate) navigate(window.location.hash.replace('#','') || 'dashboard');
-      }
-    });
-
-    // Send WA notification
-    if (hwLink && hasPhone) {
-      const phone = (ref.parentPhone || ref.phone).replace(/[^0-9]/g, '');
-      const msg = encodeURIComponent(`Sayın veli, ${ref.name} öğrencimizin ödevi: ${hwTitle} - ${hwLink}`);
-      setTimeout(() => {
-        const waBtn = document.createElement('a');
-        waBtn.href = `https://wa.me/${phone}?text=${msg}`;
-        waBtn.target = '_blank';
-        waBtn.click();
-      }, 500);
+    const updatedLessonInfo = getLessonUnitDetails(lessonId);
+    if (updatedLessonInfo?.isComplete) {
+      openUnitCompletionModal({
+        lesson: updatedLessonInfo.lesson,
+        student: updatedLessonInfo.student,
+        unit: updatedLessonInfo.unit,
+        homeworkTitle: hwTitle,
+        homeworkLink: hwLink,
+        lessonNotes: notes,
+        progressText: `${updatedLessonInfo.completedCount}/${updatedLessonInfo.totalCount} konu tamamlandı`,
+        onClose: () => {
+          showConfirm({
+            title: 'Haftalık Tekrar',
+            message: `Bir sonraki hafta için (${getNextWeekDate(lesson.date)}) aynı dersi otomatik ekleyeyim mi?`,
+            confirmText: 'Evet, Ekle',
+            cancelText: 'Hayır',
+            onConfirm: () => {
+              addNextWeekLesson(lesson);
+              if (navigate) navigate(window.location.hash.replace('#','') || 'dashboard');
+            },
+            onCancel: () => {
+              if (navigate) navigate(window.location.hash.replace('#','') || 'dashboard');
+            }
+          });
+        }
+      });
+    } else {
+      closeModal();
+      showConfirm({
+        title: 'Haftalık Tekrar',
+        message: `Bir sonraki hafta için (${getNextWeekDate(lesson.date)}) aynı dersi otomatik ekleyeyim mi?`,
+        confirmText: 'Evet, Ekle',
+        cancelText: 'Hayır',
+        onConfirm: () => {
+          addNextWeekLesson(lesson);
+          if (navigate) navigate(window.location.hash.replace('#','') || 'dashboard');
+        },
+        onCancel: () => {
+          if (navigate) navigate(window.location.hash.replace('#','') || 'dashboard');
+        }
+      });
     }
   });
 

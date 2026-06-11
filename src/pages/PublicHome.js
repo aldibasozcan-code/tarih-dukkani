@@ -85,6 +85,67 @@ export function renderPublicHome(navigate) {
         </div>
       </section>
 
+      <!-- Statistics / Numbers Section -->
+      <section style="padding:60px 5% 80px; text-align:center; background:#ffffff; border-top:1px solid var(--border); border-bottom:1px solid var(--border);">
+        <h2 style="font-size:36px; font-weight:800; color:var(--brand-green); margin-bottom:40px; letter-spacing:-1px;">Sayilarla Platformumuz</h2>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:32px; max-width:1100px; margin:0 auto;">
+          <div style="padding:24px; background:var(--bg-secondary); border-radius:16px; border:1px solid var(--border); box-shadow:var(--shadow-sm);">
+            <div style="font-size:40px; font-weight:900; color:var(--brand-green); margin-bottom:8px;">5.000+</div>
+            <div style="font-size:14px; font-weight:700; color:var(--text-secondary);">Aktif Ogretmen</div>
+          </div>
+          <div style="padding:24px; background:var(--bg-secondary); border-radius:16px; border:1px solid var(--border); box-shadow:var(--shadow-sm);">
+            <div style="font-size:40px; font-weight:900; color:var(--brand-green); margin-bottom:8px;">25.000+</div>
+            <div style="font-size:14px; font-weight:700; color:var(--text-secondary);">Paylasilan Materyal</div>
+          </div>
+          <div style="padding:24px; background:var(--bg-secondary); border-radius:16px; border:1px solid var(--border); box-shadow:var(--shadow-sm);">
+            <div style="font-size:40px; font-weight:900; color:var(--brand-green); margin-bottom:8px;">%98</div>
+            <div style="font-size:14px; font-weight:700; color:var(--text-secondary);">Memnuniyet Orani</div>
+          </div>
+          <div style="padding:24px; background:var(--bg-secondary); border-radius:16px; border:1px solid var(--border); box-shadow:var(--shadow-sm);">
+            <div style="font-size:40px; font-weight:900; color:var(--brand-green); margin-bottom:8px;">100.000+</div>
+            <div style="font-size:14px; font-weight:700; color:var(--text-secondary);">Indirilen Kaynak</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- FAQ Accordions -->
+      <section style="padding:80px 5%; background:#f8fafc;">
+        <h2 style="font-size:36px; font-weight:800; color:var(--brand-green); text-align:center; margin-bottom:12px; letter-spacing:-1px;">Sikca Sorulan Sorular</h2>
+        <p style="text-align:center; color:var(--text-secondary); font-size:16px; margin-bottom:48px; font-weight:500;">Bitig.app hakkinda en cok merak edilen konulari asagida bulabilirsiniz.</p>
+        
+        <div style="max-width:800px; margin:0 auto; display:flex; flex-direction:column; gap:16px;">
+          <details style="background:white; border:1px solid var(--border); border-radius:12px; padding:16px; cursor:pointer; box-shadow:var(--shadow-sm);">
+            <summary style="font-weight:800; font-size:16px; color:var(--text-primary); list-style:none; display:flex; justify-content:space-between; align-items:center;">
+              Platformu kullanmak ucretsiz mi?
+              <span style="color:var(--brand-green); font-size:18px;">+</span>
+            </summary>
+            <p style="margin-top:12px; font-size:14px; color:var(--text-secondary); line-height:1.6; font-weight:500; cursor:default;">
+              Evet! Bitig.app egitimde yardimlasma ruhunu destekler. Ogretmenlerimizin ders materyalleri paylasmasi, mufredat takibi yapmasi ve forumda meslektaslariyla fikir alisverisinde bulunmasi tamamen ucretsizdir.
+            </p>
+          </details>
+
+          <details style="background:white; border:1px solid var(--border); border-radius:12px; padding:16px; cursor:pointer; box-shadow:var(--shadow-sm);">
+            <summary style="font-weight:800; font-size:16px; color:var(--text-primary); list-style:none; display:flex; justify-content:space-between; align-items:center;">
+              Kendi ders materyallerimi nasil yukleyebilirim?
+              <span style="color:var(--brand-green); font-size:18px;">+</span>
+            </summary>
+            <p style="margin-top:12px; font-size:14px; color:var(--text-secondary); line-height:1.6; font-weight:500; cursor:default;">
+              Uye girisi yaptiktan sonra Mufredat sayfasina giderek derslerinize, unitelerinize veya direkt konularin yanina Google Drive ya da YouTube linklerinizi kolayca ekleyebilirsiniz.
+            </p>
+          </details>
+
+          <details style="background:white; border:1px solid var(--border); border-radius:12px; padding:16px; cursor:pointer; box-shadow:var(--shadow-sm);">
+            <summary style="font-weight:800; font-size:16px; color:var(--text-primary); list-style:none; display:flex; justify-content:space-between; align-items:center;">
+              Mufredat icerikleri MEB modeline uygun mu?
+              <span style="color:var(--brand-green); font-size:18px;">+</span>
+            </summary>
+            <p style="margin-top:12px; font-size:14px; color:var(--text-secondary); line-height:1.6; font-weight:500; cursor:default;">
+              Evet, sisteme dahil olan tum uniteler ve konular MEB Maarif Modeline uygun olarak hazirlanmistir. Branşinizi sectiginizde ilgili mufredat otomatik olarak profilinize tanimlanir.
+            </p>
+          </details>
+        </div>
+      </section>
+
       <!-- Legal Footer for Google Verification -->
       <footer style="padding:40px 5%; background:var(--bg-card); text-align:center; border-top:1px solid var(--border);">
         <p style="color:var(--text-muted); font-size:13px; margin-bottom:12px;">© ${new Date().getFullYear()} bitika.app. Eğitim ve materyal paylaşım platformu.</p>

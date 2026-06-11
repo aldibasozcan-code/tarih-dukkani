@@ -8,11 +8,11 @@ const tourSteps = [
     title: 'Komuta Merkeziniz! 📊',
     content: 'Bitig.app\'e hoş geldiniz! **Panel**, günlük akışınızı yönettiğiniz yerdir. Üstteki kartlardan aylık kazancınızı ve ders istatistiklerinizi anlık olarak takip edebilirsiniz.',
     tip: 'KPI kartlarına tıklayarak detaylı finansal raporlarınıza hızlıca göz atabilirsiniz.',
-    buttonText: 'Kursları Keşfet',
-    nextPage: 'courses'
+    buttonText: 'Müfredatı Keşfet',
+    nextPage: 'curriculum'
   },
   {
-    page: 'courses',
+    page: 'curriculum',
     title: 'Dijital Müfredat Sistemi 📚',
     content: 'Seçtiğiniz branşlara göre **MEB müfredatı** buraya otomatik yüklendi. Ünitelere tıklayarak alt konuları görebilir, her konunun yanına **kendi ders notlarınızı veya slaytlarınızı** ekleyerek dijital arşivinizi oluşturabilirsiniz.',
     tip: 'Müfredat verilerini Ayarlar sayfasından dilediğiniz zaman sıfırlayabilir veya branş değişikliği yapabilirsiniz.',

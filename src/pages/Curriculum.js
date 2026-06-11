@@ -7,6 +7,15 @@ import { SUBJECTS, ALL_GRADES, CONTENT_TYPES, SUBJECT_GRADES, getSubjectsForBran
 import { escHtml, getYoutubeVideoId, isYoutubeUrl, getGoogleDrivePreviewUrl, isGoogleDriveUrl } from '../utils/helpers.js';
 import { openModal, closeModal } from '../components/modal.js';
 
+function renderGradeTabButton(g, activeGrade) {
+  const isActive = g === activeGrade;
+  return `
+    <button class="tab-btn-modern ${isActive ? 'active' : ''}" data-grade="${g}" style="flex:1; min-width:80px; text-align:center; padding: 12px 20px; border-radius: 10px; border: none; background: ${isActive ? 'white' : 'transparent'}; color: ${isActive ? 'var(--brand-green)' : 'var(--text-secondary)'}; font-weight: ${isActive ? '800' : '600'}; font-size: 15px; box-shadow: ${isActive ? '0 4px 12px rgba(0,0,0,0.05)' : 'none'}; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); white-space: nowrap;">
+      ${g}
+    </button>
+  `;
+}
+
 export function renderCurriculum(navigate) {
   const state = getState();
   const activeGrades = state.profile.grades || [];
@@ -32,9 +41,7 @@ export function renderCurriculum(navigate) {
 
       <!-- Grade Tabs -->
       <div class="tabs-modern" id="grade-tabs" style="margin-bottom:32px; overflow-x: auto; display: flex; gap: 8px; padding: 8px; background: var(--bg-secondary); border-radius: 16px; border: 1px solid var(--border); max-width: 100%;">
-        ${availableGrades.map((g, i) => `
-          <button class="tab-btn-modern ${g === activeGrade ? 'active' : ''}" data-grade="${g}" style="flex:1; min-width:80px; text-align:center; padding: 12px 20px; border-radius: 10px; border: none; background: ${g === activeGrade ? 'white' : 'transparent'}; color: ${g === activeGrade ? 'var(--brand-green)' : 'var(--text-secondary)'}; font-weight: ${g === activeGrade ? '800' : '600'}; font-size: 15px; box-shadow: ${g === activeGrade ? '0 4px 12px rgba(0,0,0,0.05)' : 'none'}; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); white-space: nowrap;">${g}</button>
-        `).join('')}
+        ${availableGrades.map(g => renderGradeTabButton(g, activeGrade)).join('')}
       </div>
 
       <!-- Curriculum Content -->
@@ -50,22 +57,102 @@ export function renderCurriculum(navigate) {
   };
 }
 
+const CHIP_STYLES = {
+  ders_notu: { bg: 'rgba(99, 202, 183, 0.1)', border: 'rgba(99, 202, 183, 0.25)', text: '#2d7d6f', icon: '📄' },
+  slayt: { bg: 'rgba(124, 106, 255, 0.1)', border: 'rgba(124, 106, 255, 0.25)', text: '#4e3bc2', icon: '🖥️' },
+  yeni_nesil: { bg: 'rgba(246, 201, 14, 0.12)', border: 'rgba(246, 201, 14, 0.3)', text: '#a27f00', icon: '💡' },
+  tarama: { bg: 'rgba(255, 159, 67, 0.1)', border: 'rgba(255, 159, 67, 0.25)', text: '#c86900', icon: '✅' },
+  deneme: { bg: 'rgba(255, 90, 101, 0.1)', border: 'rgba(255, 90, 101, 0.25)', text: '#cc2935', icon: '📋' },
+  video: { bg: 'rgba(255, 0, 0, 0.08)', border: 'rgba(255, 0, 0, 0.2)', text: '#cc0000', icon: '🎬' }
+};
+const defaultStyle = { bg: 'rgba(108, 117, 125, 0.1)', border: 'rgba(108, 117, 125, 0.2)', text: 'var(--text-primary)', icon: '📄' };
+
 function renderCurriculumContent(state, grade) {
   const activeSubjectIds = getSubjectsForBranches(state.profile.branches || []);
-  // We now show all active subjects for the selected grade if they have content in the curriculum
   const subjects = activeSubjectIds
     .filter(subj => state.curriculum[subj] && state.curriculum[subj][grade])
     .map(subj => ({ subject: subj, grade: grade }));
-  let html = '';
 
   if (subjects.length === 0) {
     return `<div class="empty-state">${icon('book', 36)}<h3>Bu sınıf için müfredat tanımlanmamış</h3></div>`;
   }
 
+  // Calculate statistics
+  let totalUnits = 0;
+  let totalTopics = 0;
+  let totalMaterials = 0;
+  let videoCount = 0;
+  let docCount = 0;
+
+  subjects.forEach(({ subject }) => {
+    const units = state.curriculum[subject]?.[grade] || [];
+    totalUnits += units.length;
+    units.forEach(u => {
+      totalTopics += u.topics.length;
+    });
+
+    const mats = Object.values(state.materials).filter(m => m.subject === subject && m.grade === grade);
+    totalMaterials += mats.length;
+    mats.forEach(m => {
+      if (m.contentType === 'video') videoCount++;
+      else docCount++;
+    });
+  });
+
+  let html = `
+    <!-- Bento Grid Stats -->
+    <div class="grid grid-4 fade-in-up stagger-1" style="margin-bottom: 32px; gap: 16px;">
+      <div class="kpi-card hover-lift" style="border-left: 4px solid var(--brand-green); background: rgba(255, 255, 255, 0.7); padding: 16px 20px;">
+        <div class="kpi-icon" style="background: rgba(16, 185, 129, 0.1); color: var(--brand-green); width: 42px; height: 42px; border-radius: 10px;">
+          ${icon('book', 20)}
+        </div>
+        <div>
+          <div class="kpi-value" style="font-size: 24px;">${totalUnits}</div>
+          <div class="kpi-label" style="font-size: 12px;">Müfredat Ünitesi</div>
+        </div>
+      </div>
+      <div class="kpi-card hover-lift" style="border-left: 4px solid #7c6aff; background: rgba(255, 255, 255, 0.7); padding: 16px 20px;">
+        <div class="kpi-icon" style="background: rgba(124, 106, 255, 0.1); color: #7c6aff; width: 42px; height: 42px; border-radius: 10px;">
+          ${icon('courses', 20)}
+        </div>
+        <div>
+          <div class="kpi-value" style="font-size: 24px;">${totalTopics}</div>
+          <div class="kpi-label" style="font-size: 12px;">Toplam Konu</div>
+        </div>
+      </div>
+      <div class="kpi-card hover-lift" style="border-left: 4px solid #ff9f43; background: rgba(255, 255, 255, 0.7); padding: 16px 20px;">
+        <div class="kpi-icon" style="background: rgba(255, 159, 67, 0.1); color: #ff9f43; width: 42px; height: 42px; border-radius: 10px;">
+          ${icon('fileText', 20)}
+        </div>
+        <div>
+          <div class="kpi-value" style="font-size: 24px;">${totalMaterials}</div>
+          <div class="kpi-label" style="font-size: 12px;">Toplam Kaynak</div>
+        </div>
+      </div>
+      <div class="kpi-card hover-lift" style="border-left: 4px solid #ff5a65; background: rgba(255, 255, 255, 0.7); padding: 16px 20px;">
+        <div class="kpi-icon" style="background: rgba(255, 90, 101, 0.1); color: #ff5a65; width: 42px; height: 42px; border-radius: 10px;">
+          ${icon('video', 20)}
+        </div>
+        <div>
+          <div class="kpi-value" style="font-size: 14px; margin-top: 6px; font-weight: 800; color: var(--text-primary);">
+            ${videoCount} Video / ${docCount} Doküman
+          </div>
+          <div class="kpi-label" style="margin-top: 8px; font-size: 12px;">Materyal Dağılımı</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Search Input Bar -->
+    <div style="margin-bottom: 32px; position: relative;" class="fade-in-up stagger-2">
+      <span style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-muted); display: flex; align-items: center;">
+        ${icon('search', 20)}
+      </span>
+      <input type="text" id="curriculum-search" placeholder="Müfredatta ünite veya konu ara..." style="width: 100%; padding: 14px 16px 14px 48px; border-radius: 14px; border: 1px solid var(--border); font-size: 15px; font-weight: 600; outline: none; transition: all 0.3s; background: var(--bg-secondary);">
+    </div>
+  `;
+
   subjects.forEach(({ subject }) => {
     let subjectInfo = SUBJECTS.find(s => s.id === subject);
-    
-    // Fallback for dynamic subjects (Math, Physics, etc.)
     if (!subjectInfo) {
       subjectInfo = { 
         id: subject, 
@@ -101,8 +188,9 @@ function renderCurriculumContent(state, grade) {
       window._expandedUnits = window._expandedUnits || {};
       
       html += units.map((unit, uIndex) => {
-        const isExpanded = window._expandedUnits[unit.id] !== false; // Default to expanded if not set
+        const isExpanded = window._expandedUnits[unit.id] !== false;
         const unitMaterials = allMaterials.filter(m => m.unitId === unit.id && !m.topicId);
+        const totalResources = unitMaterials.length + unit.topics.reduce((acc, t) => acc + allMaterials.filter(m => m.unitId === unit.id && m.topicId === t.id).length, 0);
         
         return `
           <div class="unit-accordion hover-lift ${isExpanded ? 'active' : ''}" data-unit-id="${unit.id}" style="margin-bottom: 24px; border: 1px solid ${isExpanded ? 'rgba(16,185,129,0.3)' : 'var(--border)'}; border-radius: 16px; overflow: hidden; background: #fff; box-shadow: ${isExpanded ? '0 12px 30px rgba(16,185,129,0.06)' : 'var(--shadow-sm)'}; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);">
@@ -111,8 +199,16 @@ function renderCurriculumContent(state, grade) {
               <div class="unit-icon" style="color: ${isExpanded ? 'var(--brand-green)' : 'var(--text-muted)'}; transform: rotate(${isExpanded ? '90deg' : '0deg'}); transition: transform 0.3s; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: ${isExpanded ? 'white' : 'var(--bg-secondary)'}; border-radius: 10px; box-shadow: ${isExpanded ? '0 2px 8px rgba(0,0,0,0.05)' : 'none'};">
                 ${icon('chevronRight', 20)}
               </div>
-              <h3 style="font-size: 18px; font-weight: 800; color: ${isExpanded ? 'var(--brand-green)' : 'var(--text-primary)'}; margin: 0; flex: 1;">
-                ${escHtml(unit.name)}
+              <h3 style="font-size: 18px; font-weight: 800; color: ${isExpanded ? 'var(--brand-green)' : 'var(--text-primary)'}; margin: 0; flex: 1; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                <span>${escHtml(unit.name)}</span>
+                <span style="display: flex; gap: 6px; flex-wrap: wrap;">
+                  <span style="border-radius: 20px; font-size: 11px; padding: 4px 10px; font-weight: 700; background: ${isExpanded ? 'white' : 'var(--brand-green-soft)'}; color: var(--brand-green); border: 1px solid rgba(16, 185, 129, 0.15); display: flex; align-items: center; gap: 4px;">
+                    ${icon('book', 12)} ${unit.topics.length} Konu
+                  </span>
+                  <span style="border-radius: 20px; font-size: 11px; padding: 4px 10px; font-weight: 700; background: ${isExpanded ? 'white' : 'var(--bg-secondary)'}; color: var(--text-secondary); border: 1px solid var(--border); display: flex; align-items: center; gap: 4px;">
+                    ${icon('fileText', 12)} ${totalResources} Kaynak
+                  </span>
+                </span>
               </h3>
               <div style="display: flex; gap: 8px; opacity: ${isExpanded ? '1' : '0.6'}; transition: opacity 0.3s;" onclick="event.stopPropagation()">
                 <button class="btn btn-ghost btn-sm btn-icon hover-scale" data-edit-unit="${unit.id}" data-subject="${subject}" data-grade="${grade}" title="Üniteyi Düzenle" style="background: white; border: 1px solid var(--border); border-radius: 8px;">${icon('edit', 16)}</button>
@@ -148,8 +244,13 @@ function renderCurriculumContent(state, grade) {
                         <div style="width: 32px; height: 32px; background: var(--brand-green-soft); border: 1px solid rgba(16,185,129,0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; color: var(--brand-green); box-shadow: 0 2px 6px rgba(16,185,129,0.1);">
                           ${index + 1}
                         </div>
-                        <h4 style="font-size:16px; font-weight:800; color:var(--text-primary); margin:0; flex:1; letter-spacing: -0.3px;">
-                          ${escHtml(topic.name)}
+                        <h4 style="font-size:16px; font-weight:800; color:var(--text-primary); margin:0; flex:1; letter-spacing: -0.3px; display: flex; align-items: center; gap: 8px;">
+                          <span>${escHtml(topic.name)}</span>
+                          ${topicMaterials.length > 0 ? `
+                            <span style="font-size: 11px; font-weight: 700; color: var(--brand-green); background: var(--brand-green-soft); padding: 2px 8px; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.15); white-space: nowrap;">
+                              ${topicMaterials.length} Kaynak
+                            </span>
+                          ` : ''}
                         </h4>
                         <div style="display:flex; gap:8px;">
                           <button class="btn btn-ghost btn-sm btn-icon hover-scale" data-edit-topic="${topic.id}" data-unit-id="${unit.id}" data-subject="${subject}" data-grade="${grade}" title="Düzenle" style="background: var(--bg-secondary); border-radius: 8px;">${icon('edit', 14)}</button>
@@ -159,7 +260,6 @@ function renderCurriculumContent(state, grade) {
                       
                       <div style="display:flex; flex-wrap: wrap; gap:12px; padding-left: 64px;">
                         ${topicMaterials.map(m => {
-                          const cType = CONTENT_TYPES.find(ct => ct.id === m.contentType);
                           const isYoutube = isYoutubeUrl(m.link);
                           const isDrive = isGoogleDriveUrl(m.link);
                           const videoId = getYoutubeVideoId(m.link);
@@ -169,13 +269,17 @@ function renderCurriculumContent(state, grade) {
                           if (isYoutube) clickAttrs = `data-video-id="${videoId}" data-video-title="${escHtml(m.title)}"`;
                           else if (isDrive && drivePreview) clickAttrs = `data-preview-url="${escHtml(drivePreview)}" data-preview-title="${escHtml(m.title)}"`;
 
+                          const style = CHIP_STYLES[m.contentType] || defaultStyle;
+                          const chipIcon = isYoutube ? '🎬' : (isDrive ? '📁' : style.icon);
+                          const chipStyle = isYoutube ? CHIP_STYLES.video : (isDrive ? { bg: 'rgba(16, 185, 129, 0.1)', border: 'rgba(16, 185, 129, 0.25)', text: '#10b981' } : style);
+
                           return `
-                          <div class="material-chip hover-scale" style="display:flex; align-items:center; gap: 8px; padding: 8px 14px; background: white; border: 1px solid var(--border); border-radius: 24px; font-size:13px; box-shadow: 0 2px 6px rgba(0,0,0,0.03); cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--brand-green)'; this.style.boxShadow='0 4px 12px rgba(16,185,129,0.1)'" onmouseout="this.style.borderColor='var(--border)'; this.style.boxShadow='0 2px 6px rgba(0,0,0,0.03)'">
-                            <span style="font-size:16px;">${isYoutube ? '🎬' : (isDrive ? '📁' : (cType?.icon || '📄'))}</span>
-                            <a href="${escHtml(m.link)}" ${clickAttrs} class="${isYoutube ? 'youtube-link' : (isDrive ? 'drive-link' : '')}" style="color:var(--text-primary); text-decoration:none; font-weight:600;">
+                          <div class="material-chip hover-scale" style="display:flex; align-items:center; gap: 8px; padding: 6px 14px; background: ${chipStyle.bg}; border: 1px solid ${chipStyle.border}; border-radius: 24px; font-size:13px; box-shadow: 0 2px 6px rgba(0,0,0,0.02); cursor: pointer; transition: all 0.2s;">
+                            <span style="font-size:16px; color: ${chipStyle.text}; display: flex; align-items: center;">${chipIcon}</span>
+                            <a href="${escHtml(m.link)}" ${clickAttrs} class="${isYoutube ? 'youtube-link' : (isDrive ? 'drive-link' : '')}" style="color: ${chipStyle.text}; text-decoration:none; font-weight:700;">
                               ${escHtml(m.title)}
                             </a>
-                            <button class="btn btn-ghost btn-sm btn-icon" data-delete-material="${m.id}" style="width:24px;height:24px;color:var(--danger);opacity:0.4; transition: opacity 0.2s; background: var(--bg-secondary); border-radius: 50%;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.4'" title="Sil">${icon('x', 14)}</button>
+                            <button class="btn btn-ghost btn-sm btn-icon" data-delete-material="${m.id}" style="width:20px; height:20px; color: ${chipStyle.text}; opacity:0.5; transition: opacity 0.2s; background: rgba(255,255,255,0.4); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; padding: 0;" onmouseover="this.style.opacity='1'; this.style.background='white';" onmouseout="this.style.opacity='0.5'; this.style.background='rgba(255,255,255,0.4)';" title="Sil">${icon('x', 10)}</button>
                           </div>
                           `;
                         }).join('')}
@@ -201,7 +305,6 @@ function renderCurriculumContent(state, grade) {
                 </div>
                 <div style="display:flex; flex-wrap: wrap; gap:12px;">
                   ${unitMaterials.map(m => {
-                    const cType = CONTENT_TYPES.find(ct => ct.id === m.contentType);
                     const isYoutube = isYoutubeUrl(m.link);
                     const isDrive = isGoogleDriveUrl(m.link);
                     const videoId = getYoutubeVideoId(m.link);
@@ -211,15 +314,19 @@ function renderCurriculumContent(state, grade) {
                     if (isYoutube) clickAttrs = `data-video-id="${videoId}" data-video-title="${escHtml(m.title)}"`;
                     else if (isDrive && drivePreview) clickAttrs = `data-preview-url="${escHtml(drivePreview)}" data-preview-title="${escHtml(m.title)}"`;
 
+                    const style = CHIP_STYLES[m.contentType] || defaultStyle;
+                    const unitIcon = isYoutube ? '🎬' : (isDrive ? '📁' : '📋');
+                    const unitStyle = isYoutube ? CHIP_STYLES.video : (isDrive ? { bg: 'rgba(16, 185, 129, 0.1)', border: 'rgba(16, 185, 129, 0.25)', text: '#10b981' } : style);
+
                     return `
-                    <div class="material-chip premium hover-scale" style="display:flex; align-items:center; gap: 12px; padding: 12px 20px; background: linear-gradient(135deg, var(--brand-green-soft) 0%, rgba(255,255,255,1) 100%); border: 1px solid rgba(16,185,129,0.3); border-radius: 14px; font-size:14px; box-shadow: 0 6px 16px rgba(16,185,129,0.08); cursor: pointer;">
-                      <div style="width: 36px; height: 36px; background: white; border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-sm); font-size: 18px;">
-                        ${isYoutube ? '🎬' : (isDrive ? '📁' : (cType?.icon || '📋'))}
+                    <div class="material-chip premium hover-scale" style="display:flex; align-items:center; gap: 12px; padding: 10px 18px; background: ${unitStyle.bg}; border: 1px solid ${unitStyle.border}; border-radius: 12px; font-size:14px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); cursor: pointer; transition: all 0.2s;">
+                      <div style="width: 32px; height: 32px; background: white; border-radius: 8px; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-sm); font-size: 16px; border: 1px solid ${unitStyle.border};">
+                        ${unitIcon}
                       </div>
-                      <a href="${escHtml(m.link)}" ${clickAttrs} class="${isYoutube ? 'youtube-link' : (isDrive ? 'drive-link' : '')}" style="color:var(--brand-green); font-weight: 800; text-decoration:none; font-size: 15px;">
+                      <a href="${escHtml(m.link)}" ${clickAttrs} class="${isYoutube ? 'youtube-link' : (isDrive ? 'drive-link' : '')}" style="color: ${unitStyle.text}; font-weight: 800; text-decoration:none; font-size: 14px; flex: 1;">
                         ${escHtml(m.title)}
                       </a>
-                      <button class="btn btn-ghost btn-sm btn-icon" data-delete-material="${m.id}" style="color:var(--danger); opacity:0.6; margin-left: 8px; transition: opacity 0.2s; background: white; border-radius: 8px; width: 32px; height: 32px;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'" title="Sil">${icon('trash', 16)}</button>
+                      <button class="btn btn-ghost btn-sm btn-icon" data-delete-material="${m.id}" style="color: var(--danger); opacity:0.6; transition: opacity 0.2s; background: white; border-radius: 8px; width: 28px; height: 28px; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;" onmouseover="this.style.opacity='1'; this.style.borderColor='rgba(239, 68, 68, 0.3)';" onmouseout="this.style.opacity='0.6'; this.style.borderColor='var(--border)';" title="Sil">${icon('trash', 14)}</button>
                     </div>
                     `;
                   }).join('')}
@@ -248,20 +355,15 @@ function initCurriculum(el, navigate) {
     const activeGrades = currentState.profile.grades || [];
     const availableGrades = ALL_GRADES.filter(g => activeGrades.includes(g));
     
-    // If we have an activeGrade already, keep it, otherwise take first available
     if (!window._activeGrade || !availableGrades.includes(window._activeGrade)) {
       window._activeGrade = availableGrades[0];
     }
 
-    // Re-render tabs to ensure they match current profile
     const tabsContainer = el.querySelector('#grade-tabs');
     if (tabsContainer) {
-      tabsContainer.innerHTML = availableGrades.map(g => `
-        <button class="tab-btn ${g === window._activeGrade ? 'active' : ''}" data-grade="${g}" style="white-space: nowrap;">${g}</button>
-      `).join('');
+      tabsContainer.innerHTML = availableGrades.map(g => renderGradeTabButton(g, window._activeGrade)).join('');
       
-      // Re-bind tab clicks
-      tabsContainer.querySelectorAll('.tab-btn').forEach(tab => {
+      tabsContainer.querySelectorAll('.tab-btn-modern').forEach(tab => {
         tab.addEventListener('click', () => {
           window._activeGrade = tab.dataset.grade;
           refresh();
@@ -274,6 +376,81 @@ function initCurriculum(el, navigate) {
       content.innerHTML = renderCurriculumContent(currentState, window._activeGrade);
       initMaterialButtons(el, navigate);
       initCurriculumButtons(el, refresh, navigate);
+
+      // Bind Search Filter
+      const searchInput = el.querySelector('#curriculum-search');
+      if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+          const query = e.target.value.toLowerCase().trim();
+          const normalizedQuery = query
+            .replace(/ı/g, 'i').replace(/ş/g, 's').replace(/ğ/g, 'g')
+            .replace(/ü/g, 'u').replace(/ö/g, 'o').replace(/ç/g, 'c');
+
+          const accordions = el.querySelectorAll('.unit-accordion');
+          accordions.forEach(acc => {
+            const unitHeader = acc.querySelector('.unit-header h3 span');
+            const unitTitle = unitHeader ? unitHeader.textContent.toLowerCase() : '';
+            const normalizedUnitTitle = unitTitle
+              .replace(/ı/g, 'i').replace(/ş/g, 's').replace(/ğ/g, 'g')
+              .replace(/ü/g, 'u').replace(/ö/g, 'o').replace(/ç/g, 'c');
+            
+            const topics = acc.querySelectorAll('.topic-item');
+            let unitHasMatch = normalizedUnitTitle.includes(normalizedQuery);
+            let visibleTopicsCount = 0;
+
+            topics.forEach(topic => {
+              const topicHeader = topic.querySelector('h4 span');
+              const topicTitle = topicHeader ? topicHeader.textContent.toLowerCase() : '';
+              const normalizedTopicTitle = topicTitle
+                .replace(/ı/g, 'i').replace(/ş/g, 's').replace(/ğ/g, 'g')
+                .replace(/ü/g, 'u').replace(/ö/g, 'o').replace(/ç/g, 'c');
+              
+              const topicHasMatch = normalizedTopicTitle.includes(normalizedQuery);
+              if (topicHasMatch || normalizedUnitTitle.includes(normalizedQuery)) {
+                topic.style.display = 'block';
+                visibleTopicsCount++;
+              } else {
+                topic.style.display = 'none';
+              }
+            });
+
+            if (unitHasMatch || visibleTopicsCount > 0) {
+              acc.style.display = 'block';
+              if (visibleTopicsCount > 0 && query !== '') {
+                acc.classList.add('active');
+                acc.style.borderColor = 'rgba(16,185,129,0.3)';
+                acc.style.boxShadow = '0 12px 30px rgba(16,185,129,0.06)';
+                const contentDiv = acc.querySelector('.unit-content');
+                if (contentDiv) contentDiv.style.display = 'block';
+                const iconEl = acc.querySelector('.unit-icon');
+                if (iconEl) iconEl.style.transform = 'rotate(90deg)';
+              } else if (query === '') {
+                const unitId = acc.dataset.unitId;
+                const isExpanded = window._expandedUnits[unitId] !== false;
+                if (isExpanded) {
+                  acc.classList.add('active');
+                  acc.style.borderColor = 'rgba(16,185,129,0.3)';
+                  acc.style.boxShadow = '0 12px 30px rgba(16,185,129,0.06)';
+                  const contentDiv = acc.querySelector('.unit-content');
+                  if (contentDiv) contentDiv.style.display = 'block';
+                  const iconEl = acc.querySelector('.unit-icon');
+                  if (iconEl) iconEl.style.transform = 'rotate(90deg)';
+                } else {
+                  acc.classList.remove('active');
+                  acc.style.borderColor = 'var(--border)';
+                  acc.style.boxShadow = 'var(--shadow-sm)';
+                  const contentDiv = acc.querySelector('.unit-content');
+                  if (contentDiv) contentDiv.style.display = 'none';
+                  const iconEl = acc.querySelector('.unit-icon');
+                  if (iconEl) iconEl.style.transform = 'rotate(0deg)';
+                }
+              }
+            } else {
+              acc.style.display = 'none';
+            }
+          });
+        });
+      }
     }
   };
 
@@ -332,7 +509,7 @@ function initMaterialButtons(el, navigate) {
       openCurriculumConfirmModal('İçeriği Sil', 'Bu metaryali silmek istediğinize emin misiniz?', () => {
         deleteMaterial(btn.dataset.deleteMaterial);
         // Force app re-render to reflect changes immediately
-        navigate('courses', true); 
+        navigate('curriculum', true); 
       });
     });
   });

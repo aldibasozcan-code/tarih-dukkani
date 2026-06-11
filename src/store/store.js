@@ -984,7 +984,7 @@ export function syncCurriculumWithBranches(branches, grades, force = false) {
     addNotification({
       type: 'success',
       text: 'Müfredat başarıyla MEB verileriyle senkronize edildi.',
-      link: 'courses'
+      link: 'curriculum'
     });
   }
 }
@@ -1028,7 +1028,7 @@ export function importCurriculumFromExcel(subjectId, rows) {
   addNotification({
     type: 'success',
     text: 'Excel müfredat verileri başarıyla içe aktarıldı.',
-    link: 'courses'
+    link: 'curriculum'
   });
 }
 
@@ -1064,6 +1064,38 @@ export function setTourStep(step) {
   setState(s => ({
     profile: { ...s.profile, tourStep: step }
   }));
+}
+
+export function getLessonUnitDetails(lessonId) {
+  const state = getState();
+  const lesson = state.lessons.find(l => l.id === lessonId);
+  if (!lesson || lesson.type !== 'student' || !lesson.subject || !lesson.grade || !lesson.unitId || !lesson.topicId) {
+    return null;
+  }
+
+  const unit = state.curriculum?.[lesson.subject]?.[lesson.grade]?.find(u => u.id === lesson.unitId);
+  if (!unit) return null;
+
+  const student = state.students.find(s => s.id === lesson.refId);
+  if (!student) return null;
+
+  const completed = new Set(student.completedTopics || []);
+  const completedCount = unit.topics.filter(t => completed.has(t.id) || t.id === lesson.topicId).length;
+  const totalCount = unit.topics.length;
+  const missingTopics = unit.topics
+    .filter(t => !completed.has(t.id) && t.id !== lesson.topicId)
+    .map(t => t.name);
+
+  return {
+    lesson,
+    unit,
+    student,
+    completedCount,
+    totalCount,
+    missingTopics,
+    isComplete: totalCount > 0 && missingTopics.length === 0,
+    topicName: unit.topics.find(t => t.id === lesson.topicId)?.name || lesson.topicTitle || lesson.title,
+  };
 }
 
 // ─── Computed ───

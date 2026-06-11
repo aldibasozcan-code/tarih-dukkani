@@ -8,33 +8,87 @@ import { showConfirm } from '../components/modal.js';
 
 export function renderStudentsAndGroups(navigate) {
   const state = getState();
+  const activeStudents = state.students.filter(s => (s.status || 'active') === 'active');
+  const activeGroups = state.groups.filter(g => (g.status || 'active') === 'active');
+  
+  const hourlyCapacity = activeStudents.reduce((acc, s) => acc + (s.rate || 0), 0)
+    + activeGroups.reduce((acc, g) => acc + (g.rate || 0), 0);
+
+  const weeklyLessonHours = activeStudents.filter(s => s.dayOfWeek !== null && s.dayOfWeek !== undefined).length
+    + activeGroups.length;
 
   const html = `
     <div class="fade-in">
-      <div class="page-header">
+      <div class="page-header" style="background: linear-gradient(135deg, var(--brand-green-soft) 0%, rgba(255,255,255,1) 100%); padding: 32px 24px; border-radius: 20px; margin-bottom: 32px; border: 1px solid rgba(16,185,129,0.15); box-shadow: 0 10px 30px rgba(0,0,0,0.02);">
         <div>
-          <h2>Öğrenci & Grup</h2>
-          <p>Öğrenci ve grup listelerinizi buradan yönetebilirsiniz</p>
+          <h2 style="font-size: 32px; font-weight: 800; color: var(--brand-green); margin-bottom: 8px; display: flex; align-items: center; gap: 12px; letter-spacing: -0.5px;">
+            ${icon('students', 32)} Öğrenci & Grup
+          </h2>
+          <p style="color: var(--text-secondary); font-size: 16px; font-weight: 500;">Öğrenci ve grup listelerinizi profesyonelce yönetin</p>
         </div>
-        <div style="display:flex;gap:10px;">
-          <button class="btn btn-primary" id="btn-add-new">${icon('plus', 14)} Yeni Ekle</button>
+        <div style="display:flex;gap:10px; align-items: center;">
+          <button class="btn btn-primary hover-lift" id="btn-add-new" style="box-shadow: 0 8px 20px rgba(16,185,129,0.3); padding: 10px 20px; font-weight: 700; font-size: 15px;">
+            ${icon('plus', 16)} Yeni Ekle
+          </button>
         </div>
       </div>
 
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+      <!-- Bento Grid Stats -->
+      <div class="grid grid-4 fade-in-up stagger-1" style="margin-bottom: 32px; gap: 16px;">
+        <div class="kpi-card hover-lift" style="border-left: 4px solid var(--brand-green); background: rgba(255, 255, 255, 0.7); padding: 16px 20px;">
+          <div class="kpi-icon" style="background: rgba(16, 185, 129, 0.1); color: var(--brand-green); width: 42px; height: 42px; border-radius: 10px;">
+            ${icon('students', 20)}
+          </div>
+          <div>
+            <div class="kpi-value" style="font-size: 24px;">${activeStudents.length}</div>
+            <div class="kpi-label" style="font-size: 12px;">Aktif Öğrenci</div>
+          </div>
+        </div>
+        <div class="kpi-card hover-lift" style="border-left: 4px solid #7c6aff; background: rgba(255, 255, 255, 0.7); padding: 16px 20px;">
+          <div class="kpi-icon" style="background: rgba(124, 106, 255, 0.1); color: #7c6aff; width: 42px; height: 42px; border-radius: 10px;">
+            ${icon('groups', 20)}
+          </div>
+          <div>
+            <div class="kpi-value" style="font-size: 24px;">${activeGroups.length}</div>
+            <div class="kpi-label" style="font-size: 12px;">Aktif Grup</div>
+          </div>
+        </div>
+        <div class="kpi-card hover-lift" style="border-left: 4px solid #ff9f43; background: rgba(255, 255, 255, 0.7); padding: 16px 20px;">
+          <div class="kpi-icon" style="background: rgba(255, 159, 67, 0.1); color: #ff9f43; width: 42px; height: 42px; border-radius: 10px;">
+            ${icon('finance', 20)}
+          </div>
+          <div>
+            <div class="kpi-value" style="font-size: 22px; font-weight: 800;">${formatCurrency(hourlyCapacity)}</div>
+            <div class="kpi-label" style="font-size: 12px;">Saatlik Kazanç Kapasitesi</div>
+          </div>
+        </div>
+        <div class="kpi-card hover-lift" style="border-left: 4px solid #ff5a65; background: rgba(255, 255, 255, 0.7); padding: 16px 20px;">
+          <div class="kpi-icon" style="background: rgba(255, 90, 101, 0.1); color: #ff5a65; width: 42px; height: 42px; border-radius: 10px;">
+            ${icon('calendar', 20)}
+          </div>
+          <div>
+            <div class="kpi-value" style="font-size: 22px; font-weight: 800;">${weeklyLessonHours} Saat/Hafta</div>
+            <div class="kpi-label" style="font-size: 12px;">Haftalık Ders Yükü</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;" class="fade-in-up stagger-2">
         
         <!-- STUDENTS COLUMN -->
-        <div class="card" style="padding: 24px;">
+        <div class="card" style="padding: 24px; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.02);">
           <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h3 style="margin:0; font-size: 18px; color: var(--text-primary); display:flex; align-items:center; gap:8px;">${icon('students', 20)} Öğrenciler</h3>
+            <h3 style="margin:0; font-size: 18px; color: var(--text-primary); display:flex; align-items:center; gap:8px; font-weight: 800;">
+              ${icon('students', 20)} Öğrenciler
+            </h3>
             <div class="tabs" style="margin: 0; padding: 4px; background: var(--bg-secondary); border-radius: var(--radius-md);">
-              <button class="tab-btn active student-tab" data-student-tab="active" style="padding: 4px 12px; font-size: 13px;">Aktif</button>
-              <button class="tab-btn student-tab" data-student-tab="passive" style="padding: 4px 12px; font-size: 13px;">Pasif</button>
+              <button class="tab-btn active student-tab" data-student-tab="active" style="padding: 6px 14px; font-size: 13px; font-weight: 700; border-radius: 8px;">Aktif</button>
+              <button class="tab-btn student-tab" data-student-tab="passive" style="padding: 6px 14px; font-size: 13px; font-weight: 700; border-radius: 8px;">Pasif</button>
             </div>
           </div>
           <div class="search-box" style="margin-bottom:16px;">
             <span class="search-icon">${icon('search', 15)}</span>
-            <input type="text" id="student-search" placeholder="Öğrenci ara..." style="width:100%;">
+            <input type="text" id="student-search" placeholder="Öğrenci ara..." style="width:100%; font-weight: 600;">
           </div>
           <div class="grid" id="students-grid" style="grid-template-columns: 1fr;">
             <!-- student cards injected here -->
@@ -46,17 +100,19 @@ export function renderStudentsAndGroups(navigate) {
         </div>
 
         <!-- GROUPS COLUMN -->
-        <div class="card" style="padding: 24px;">
+        <div class="card" style="padding: 24px; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.02);">
           <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h3 style="margin:0; font-size: 18px; color: var(--text-primary); display:flex; align-items:center; gap:8px;">${icon('groups', 20)} Gruplar</h3>
+            <h3 style="margin:0; font-size: 18px; color: var(--text-primary); display:flex; align-items:center; gap:8px; font-weight: 800;">
+              ${icon('groups', 20)} Gruplar
+            </h3>
             <div class="tabs" style="margin: 0; padding: 4px; background: var(--bg-secondary); border-radius: var(--radius-md);">
-              <button class="tab-btn active group-tab" data-group-tab="active" style="padding: 4px 12px; font-size: 13px;">Aktif</button>
-              <button class="tab-btn group-tab" data-group-tab="passive" style="padding: 4px 12px; font-size: 13px;">Pasif</button>
+              <button class="tab-btn active group-tab" data-group-tab="active" style="padding: 6px 14px; font-size: 13px; font-weight: 700; border-radius: 8px;">Aktif</button>
+              <button class="tab-btn group-tab" data-group-tab="passive" style="padding: 6px 14px; font-size: 13px; font-weight: 700; border-radius: 8px;">Pasif</button>
             </div>
           </div>
           <div class="search-box" style="margin-bottom:16px;">
             <span class="search-icon">${icon('search', 15)}</span>
-            <input type="text" id="group-search" placeholder="Grup ara..." style="width:100%;">
+            <input type="text" id="group-search" placeholder="Grup ara..." style="width:100%; font-weight: 600;">
           </div>
           <div class="grid" id="groups-grid" style="grid-template-columns: 1fr;">
              <!-- group cards injected here -->
@@ -74,49 +130,79 @@ export function renderStudentsAndGroups(navigate) {
   return { html, init: (el, nav) => initStudentsAndGroups(el, nav) };
 }
 
-function renderStudentCards(students) {
+function renderStudentCards(students, state) {
   return students.map(s => {
     const avatarColor = getAvatarColor(s.name);
+    const completedCount = state.lessons.filter(l => l.type === 'individual' && l.refId === s.id && l.status === 'completed').length;
+    
     return `
-      <div class="premium-card person-card" data-student-id="${s.id}" style="padding: 16px; border-top: none; border-left: 4px solid ${avatarColor}; display:flex; align-items:center; gap: 16px; cursor: pointer;">
-        <div class="person-avatar" style="background:${avatarColor}; width: 48px; height: 48px; border-radius: 14px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); font-size: 18px; color:white; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+      <div class="premium-card person-card hover-lift" data-student-id="${s.id}" style="padding: 18px 24px; border-top: none; border-left: 4px solid ${avatarColor}; display:flex; align-items:center; gap: 16px; cursor: pointer; background: white; margin-bottom: 12px; border-radius: 16px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); transition: all 0.3s;">
+        <div class="person-avatar" style="background:${avatarColor}; width: 52px; height: 52px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); font-size: 18px; color:white; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-weight: 800;">
           ${getInitials(s.name)}
         </div>
-        <div style="flex:1;min-width:0;">
-          <div class="person-name" style="font-size: 15px; font-weight: 700; color: var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escHtml(s.name)}</div>
-          <div class="person-sub" style="font-size: 12px; font-weight: 600; color: var(--text-muted); margin-top: 2px;">${s.grade}</div>
-          <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
-            <span class="badge" style="background: var(--brand-green-soft); color: var(--brand-green); font-size: 10px; padding: 2px 8px; border-radius: 6px;">${formatCurrency(s.rate)}/saat</span>
+        <div style="flex:1; min-width:0;">
+          <div class="person-name" style="font-size: 16px; font-weight: 800; color: var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+            ${escHtml(s.name)}
+          </div>
+          <div class="person-sub" style="font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-top: 2px;">
+            ${s.grade} ${s.phone ? `• ${escHtml(s.phone)}` : ''}
+          </div>
+          <div style="display:flex; gap:6px; margin-top: 8px; flex-wrap:wrap; align-items: center;">
+            <span class="badge" style="background: var(--brand-green-soft); color: var(--brand-green); font-size: 11px; padding: 4px 10px; border-radius: 8px; font-weight: 700; border: 1px solid rgba(16, 185, 129, 0.15);">
+              ${formatCurrency(s.rate)}/saat
+            </span>
+            <span class="badge" style="background: rgba(124, 106, 255, 0.1); color: #7c6aff; font-size: 11px; padding: 4px 10px; border-radius: 8px; font-weight: 700; border: 1px solid rgba(124, 106, 255, 0.15);">
+              ${completedCount} Ders Tamamlandı
+            </span>
           </div>
         </div>
-        <div style="display:flex;gap:4px;flex-shrink:0;">
-          <button class="btn btn-ghost btn-sm btn-icon" data-edit-student="${s.id}" style="border-radius: 8px;">${icon('edit', 14)}</button>
-          <button class="btn btn-ghost btn-sm btn-icon" style="color:var(--danger); border-radius: 8px;" data-delete-student="${s.id}">${icon('trash', 14)}</button>
+        <div style="display:flex; gap:6px; flex-shrink:0;" onclick="event.stopPropagation()">
+          <button class="btn btn-ghost btn-sm btn-icon hover-scale" data-edit-student="${s.id}" style="border-radius: 8px; width: 32px; height: 32px; border: 1px solid var(--border); background: white; display:flex; align-items:center; justify-content:center;">
+            ${icon('edit', 14)}
+          </button>
+          <button class="btn btn-ghost btn-sm btn-icon hover-scale" style="color:var(--danger); border-radius: 8px; width: 32px; height: 32px; border: 1px solid var(--border); background: white; display:flex; align-items:center; justify-content:center;" data-delete-student="${s.id}">
+            ${icon('trash', 14)}
+          </button>
         </div>
       </div>
     `;
   }).join('');
 }
 
-function renderGroupCards(groups) {
+function renderGroupCards(groups, state) {
   const days = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
   return groups.map(g => {
     const avatarColor = getAvatarColor(g.name);
+    const completedCount = state.lessons.filter(l => l.type === 'group' && l.refId === g.id && l.status === 'completed').length;
+    
     return `
-      <div class="premium-card person-card" data-group-id="${g.id}" style="padding: 16px; border-top: none; border-left: 4px solid ${avatarColor}; display:flex; align-items:center; gap: 16px; cursor: pointer;">
-        <div class="person-avatar" style="background:${avatarColor}; width: 48px; height: 48px; border-radius: 14px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); font-size: 18px; color:white; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+      <div class="premium-card person-card hover-lift" data-group-id="${g.id}" style="padding: 18px 24px; border-top: none; border-left: 4px solid ${avatarColor}; display:flex; align-items:center; gap: 16px; cursor: pointer; background: white; margin-bottom: 12px; border-radius: 16px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); transition: all 0.3s;">
+        <div class="person-avatar" style="background:${avatarColor}; width: 52px; height: 52px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); font-size: 18px; color:white; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-weight: 800;">
           ${getGroupInitials(g.name)}
         </div>
-        <div style="flex:1;min-width:0;">
-          <div class="person-name" style="font-size: 15px; font-weight: 700; color: var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escHtml(g.name)}</div>
-          <div class="person-sub" style="font-size: 12px; font-weight: 600; color: var(--text-muted); margin-top: 2px;">${g.grade} • ${days[g.dayOfWeek]} ${g.time}</div>
-          <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
-            <span class="badge" style="background: #f3e8ff; color: #6b21a8; font-size: 10px; padding: 2px 8px; border-radius: 6px;">${formatCurrency(g.rate)}/saat</span>
+        <div style="flex:1; min-width:0;">
+          <div class="person-name" style="font-size: 16px; font-weight: 800; color: var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+            ${escHtml(g.name)}
+          </div>
+          <div class="person-sub" style="font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-top: 2px;">
+            ${g.grade} • ${days[g.dayOfWeek]} ${g.time}
+          </div>
+          <div style="display:flex; gap:6px; margin-top: 8px; flex-wrap:wrap; align-items: center;">
+            <span class="badge" style="background: rgba(124, 106, 255, 0.1); color: #7c6aff; font-size: 11px; padding: 4px 10px; border-radius: 8px; font-weight: 700; border: 1px solid rgba(124, 106, 255, 0.15);">
+              ${formatCurrency(g.rate)}/saat
+            </span>
+            <span class="badge" style="background: rgba(16, 185, 129, 0.1); color: var(--success); font-size: 11px; padding: 4px 10px; border-radius: 8px; font-weight: 700; border: 1px solid rgba(16, 185, 129, 0.15);">
+              ${completedCount} Ders Yapıldı
+            </span>
           </div>
         </div>
-        <div style="display:flex;gap:4px;flex-shrink:0;">
-          <button class="btn btn-ghost btn-sm btn-icon" data-edit-group="${g.id}" style="border-radius: 8px;">${icon('edit', 14)}</button>
-          <button class="btn btn-ghost btn-sm btn-icon" style="color:var(--danger); border-radius: 8px;" data-delete-group="${g.id}">${icon('trash', 14)}</button>
+        <div style="display:flex; gap:6px; flex-shrink:0;" onclick="event.stopPropagation()">
+          <button class="btn btn-ghost btn-sm btn-icon hover-scale" data-edit-group="${g.id}" style="border-radius: 8px; width: 32px; height: 32px; border: 1px solid var(--border); background: white; display:flex; align-items:center; justify-content:center;">
+            ${icon('edit', 14)}
+          </button>
+          <button class="btn btn-ghost btn-sm btn-icon hover-scale" style="color:var(--danger); border-radius: 8px; width: 32px; height: 32px; border: 1px solid var(--border); background: white; display:flex; align-items:center; justify-content:center;" data-delete-group="${g.id}">
+            ${icon('trash', 14)}
+          </button>
         </div>
       </div>
     `;
@@ -167,7 +253,7 @@ function initStudentsAndGroups(container, navigate) {
       return matchStatus && matchSearch;
     });
 
-    grid.innerHTML = renderStudentCards(filtered);
+    grid.innerHTML = renderStudentCards(filtered, state);
     if (empty) {
       empty.style.display = filtered.length === 0 ? 'flex' : 'none';
       empty.querySelector('h3').textContent = currentStudentTab === 'active' ? 'Henüz aktif öğrenci eklenmedi' : 'Pasif öğrenci bulunamadı';
@@ -188,7 +274,7 @@ function initStudentsAndGroups(container, navigate) {
       return matchStatus && matchSearch;
     });
 
-    grid.innerHTML = renderGroupCards(filtered);
+    grid.innerHTML = renderGroupCards(filtered, state);
     if (empty) {
       empty.style.display = filtered.length === 0 ? 'flex' : 'none';
       empty.querySelector('h3').textContent = currentGroupTab === 'active' ? 'Henüz aktif grup eklenmedi' : 'Pasif grup bulunamadı';

@@ -6,6 +6,7 @@ import { icon } from '../../components/icons.js';
 import { openModal, closeModal } from '../../components/modal.js';
 import { escHtml, getAvatarColor, getInitials, formatCurrency, formatDate } from '../../utils/helpers.js';
 import { ALL_GRADES, SUBJECTS, getSubjectsForBranches, CONTENT_TYPES } from '../../data/curriculum.js';
+import { openMonthlySummary } from './MonthlySummaryModal.js';
 
 export function openStudentDetail(studentId, navigate) {
   const state = getState();
@@ -34,6 +35,13 @@ export function openStudentDetail(studentId, navigate) {
             if (navigate) navigate('studentsAndGroups');
           }, studentId);
         });
+      });
+    }
+
+    const summaryBtn = document.getElementById('btn-monthly-summary');
+    if (summaryBtn) {
+      summaryBtn.addEventListener('click', () => {
+        openMonthlySummary(student.id, 'student', navigate);
       });
     }
 
@@ -147,6 +155,9 @@ function buildDetailBody(student, subjects, state, activeSubjects) {
               </button>
               <button class="btn" data-sync-curriculum="${student.id}" style="background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); padding: 10px 20px; border-radius: 12px; backdrop-filter: blur(4px);">
                 ${icon('refresh', 16)} Müfredatı Eşitle
+              </button>
+              <button class="btn" id="btn-monthly-summary" style="background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); padding: 10px 20px; border-radius: 12px; backdrop-filter: blur(4px);">
+                ${icon('fileText', 16)} Aylık Özet
               </button>
               ${student.meetLink ? `<a href="${escHtml(student.meetLink)}" target="_blank" class="btn" style="background: #10b981; color: #fff; padding: 10px 20px; border-radius: 12px; text-decoration: none; font-weight: 700;">🎥 Google Meet</a>` : ''}
             </div>

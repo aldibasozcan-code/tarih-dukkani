@@ -9,7 +9,6 @@ import { auth } from '../lib/firebase.js';
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Anasayfa', icon: 'dashboard' },
   { id: 'curriculum', label: 'Müfredat', icon: 'book' },
-  { id: 'courses', label: 'Kurslar (LMS)', icon: 'courses' },
   { id: 'studentsAndGroups', label: 'Öğrenci & Grup', icon: 'students' },
   { id: 'finance', label: 'Muhasebe', icon: 'finance' },
   { id: 'calendar', label: 'Takvim', icon: 'calendar' },
@@ -93,7 +92,7 @@ function renderSidebar(state, currentPage, navigate) {
 
 function renderTopbar(state, unreadCount) {
   const pageTitles = {
-    dashboard: 'Anasayfa', curriculum: 'Müfredat Yönetimi', courses: 'Kurslar (LMS)',
+    dashboard: 'Anasayfa', curriculum: 'Müfredat Yönetimi',
     studentsAndGroups: 'Öğrenci & Grup Yönetimi',
     finance: 'Muhasebe', calendar: 'Takvim',
     chat: 'Mesajlar', liveClass: 'Canlı Sınıf',
