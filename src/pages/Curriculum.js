@@ -24,28 +24,29 @@ export function renderCurriculum(navigate) {
 
   const html = `
     <div class="fade-in">
-      <div class="page-header" style="background: linear-gradient(135deg, var(--brand-green-soft) 0%, rgba(255,255,255,1) 100%); padding: 32px 24px; border-radius: 20px; margin-bottom: 32px; border: 1px solid rgba(16,185,129,0.15); box-shadow: 0 10px 30px rgba(0,0,0,0.02);">
+      <!-- Premium Header -->
+      <div class="page-header" style="background: linear-gradient(135deg, rgba(16,185,129,0.08) 0%, rgba(99,102,241,0.02) 100%); padding: 32px 24px; border-radius: 20px; margin-bottom: 28px; border: 1px solid rgba(16,185,129,0.15); box-shadow: 0 10px 30px rgba(0,0,0,0.02);">
         <div>
           <h2 style="font-size: 32px; font-weight: 800; color: var(--brand-green); margin-bottom: 8px; display: flex; align-items: center; gap: 12px; letter-spacing: -0.5px;">
             ${icon('book', 32)} Müfredat Yönetimi
           </h2>
           <p style="color: var(--text-secondary); font-size: 16px; font-weight: 500;">Sınıflara göre ünite ve konu içeriklerini profesyonelce yönetin</p>
         </div>
-        <div style="display:flex; gap:12px; align-items: center;">
-          <button class="btn btn-secondary hover-lift" id="btn-export-curr" style="background: white; border: 1px solid var(--border); box-shadow: var(--shadow-sm); padding: 10px 16px; font-weight: 600;">${icon('download', 16)} Dışa Aktar</button>
-          <button class="btn btn-secondary hover-lift" id="btn-import-curr" style="background: white; border: 1px solid var(--border); box-shadow: var(--shadow-sm); padding: 10px 16px; font-weight: 600;">${icon('upload', 16)} İçe Aktar</button>
+        <div style="display:flex; gap:10px; align-items: center; flex-wrap:wrap;">
+          <button class="btn btn-secondary hover-lift" id="btn-export-curr" style="background: white; border: 1px solid var(--border); box-shadow: var(--shadow-sm); padding: 9px 16px; font-weight: 700; border-radius:10px; font-size:13px;">${icon('download', 14)} Dışa Aktar</button>
+          <button class="btn btn-secondary hover-lift" id="btn-import-curr" style="background: white; border: 1px solid var(--border); box-shadow: var(--shadow-sm); padding: 9px 16px; font-weight: 700; border-radius:10px; font-size:13px;">${icon('upload', 14)} İçe Aktar</button>
           <input type="file" id="import-curr-file" accept=".json" style="display:none;">
-          <button class="btn btn-primary hover-lift" id="btn-add-material" style="box-shadow: 0 8px 20px rgba(16,185,129,0.3); padding: 10px 20px; font-weight: 700; font-size: 15px;">${icon('plus', 16)} İçerik Ekle</button>
+          <button class="btn btn-primary hover-lift" id="btn-add-material" style="box-shadow: 0 8px 20px rgba(16,185,129,0.3); padding: 10px 20px; font-weight: 700; font-size: 14px; border-radius:12px;">${icon('plus', 16)} İçerik Ekle</button>
         </div>
       </div>
 
       <!-- Grade Tabs -->
-      <div class="tabs-modern" id="grade-tabs" style="margin-bottom:32px; overflow-x: auto; display: flex; gap: 8px; padding: 8px; background: var(--bg-secondary); border-radius: 16px; border: 1px solid var(--border); max-width: 100%;">
+      <div class="tabs-modern" id="grade-tabs" style="margin-bottom: 28px; overflow-x: auto; display: flex; gap: 6px; padding: 6px; background: var(--bg-secondary); border-radius: 16px; border: 1px solid var(--border); max-width: 100%;">
         ${availableGrades.map(g => renderGradeTabButton(g, activeGrade)).join('')}
       </div>
 
       <!-- Curriculum Content -->
-      <div id="curriculum-content" style="background: white; padding: 32px; border-radius: 20px; border: 1px solid var(--border); box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
+      <div id="curriculum-content" style="background: linear-gradient(180deg, #f9fffe 0%, #ffffff 100%); padding: 32px; border-radius: 20px; border: 1px solid rgba(16,185,129,0.1); box-shadow: 0 4px 24px rgba(0,0,0,0.03);">
         ${renderCurriculumContent(state, activeGrade)}
       </div>
     </div>
@@ -179,9 +180,10 @@ function renderCurriculumContent(state, grade) {
 
     if (units.length === 0) {
       html += `
-        <div class="empty-state" style="padding: 20px; border: 1px dashed var(--border); margin-bottom: 16px; border-radius: 8px;">
-          <p style="color:var(--text-muted); margin-bottom: 12px;">Henüz ünite eklenmemiş.</p>
-          <button class="btn btn-secondary btn-sm" data-add-unit="${subject}" data-grade="${grade}">${icon('plus', 12)} Yeni Ünite Ekle</button>
+        <div style="padding:32px 24px; border: 2px dashed rgba(16,185,129,0.25); margin-bottom: 20px; border-radius: 16px; background: rgba(16,185,129,0.02); text-align:center;">
+          <div style="font-size:40px; margin-bottom:12px;">📂</div>
+          <p style="color:var(--text-secondary); font-size:15px; font-weight:600; margin-bottom: 16px;">Henüz ünite eklenmemiş.</p>
+          <button class="btn btn-primary hover-lift" data-add-unit="${subject}" data-grade="${grade}" style="border-radius:10px; padding:10px 24px; font-weight:700;">${icon('plus', 14)} İlk Üniteyi Ekle</button>
         </div>
       `;
     } else {
@@ -191,74 +193,92 @@ function renderCurriculumContent(state, grade) {
         const isExpanded = window._expandedUnits[unit.id] !== false;
         const unitMaterials = allMaterials.filter(m => m.unitId === unit.id && !m.topicId);
         const totalResources = unitMaterials.length + unit.topics.reduce((acc, t) => acc + allMaterials.filter(m => m.unitId === unit.id && m.topicId === t.id).length, 0);
+        const topicsWithMaterials = unit.topics.filter(t => allMaterials.some(m => m.topicId === t.id)).length;
+        const completionPct = unit.topics.length > 0 ? Math.round(topicsWithMaterials / unit.topics.length * 100) : 0;
         
         return `
-          <div class="unit-accordion hover-lift ${isExpanded ? 'active' : ''}" data-unit-id="${unit.id}" style="margin-bottom: 24px; border: 1px solid ${isExpanded ? 'rgba(16,185,129,0.3)' : 'var(--border)'}; border-radius: 16px; overflow: hidden; background: #fff; box-shadow: ${isExpanded ? '0 12px 30px rgba(16,185,129,0.06)' : 'var(--shadow-sm)'}; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);">
+          <div class="unit-accordion ${isExpanded ? 'active' : ''}" data-unit-id="${unit.id}" style="margin-bottom: 20px; border: 1px solid ${isExpanded ? 'rgba(16,185,129,0.25)' : 'var(--border)'}; border-radius: 18px; overflow: hidden; background: #fff; box-shadow: ${isExpanded ? '0 8px 28px rgba(16,185,129,0.07)' : '0 2px 8px rgba(0,0,0,0.03)'}; transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);">
             <!-- Unit Header -->
-            <div class="unit-header" data-toggle-unit="${unit.id}" style="padding: 20px 24px; background: ${isExpanded ? 'linear-gradient(to right, var(--brand-green-soft), #ffffff)' : '#fff'}; cursor: pointer; display: flex; align-items: center; gap: 16px; border-left: 5px solid ${isExpanded ? 'var(--brand-green)' : 'transparent'}; transition: all 0.3s ease;">
-              <div class="unit-icon" style="color: ${isExpanded ? 'var(--brand-green)' : 'var(--text-muted)'}; transform: rotate(${isExpanded ? '90deg' : '0deg'}); transition: transform 0.3s; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: ${isExpanded ? 'white' : 'var(--bg-secondary)'}; border-radius: 10px; box-shadow: ${isExpanded ? '0 2px 8px rgba(0,0,0,0.05)' : 'none'};">
-                ${icon('chevronRight', 20)}
+            <div class="unit-header" data-toggle-unit="${unit.id}" style="padding: 18px 22px; background: ${isExpanded ? 'linear-gradient(135deg, rgba(16,185,129,0.06) 0%, rgba(255,255,255,1) 100%)' : '#ffffff'}; cursor: pointer; display: flex; align-items: center; gap: 14px; border-left: 4px solid ${isExpanded ? 'var(--brand-green)' : 'transparent'}; transition: all 0.3s ease;">
+              <!-- Unit Number Badge -->
+              <div style="width:40px; height:40px; border-radius:12px; background:${isExpanded ? 'var(--brand-green)' : 'var(--bg-secondary)'}; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:900; color:${isExpanded ? '#fff' : 'var(--text-secondary)'}; flex-shrink:0; transition:all 0.3s; box-shadow:${isExpanded ? '0 4px 12px rgba(16,185,129,0.3)' : 'none'};">
+                ${uIndex + 1}
               </div>
-              <h3 style="font-size: 18px; font-weight: 800; color: ${isExpanded ? 'var(--brand-green)' : 'var(--text-primary)'}; margin: 0; flex: 1; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-                <span>${escHtml(unit.name)}</span>
-                <span style="display: flex; gap: 6px; flex-wrap: wrap;">
-                  <span style="border-radius: 20px; font-size: 11px; padding: 4px 10px; font-weight: 700; background: ${isExpanded ? 'white' : 'var(--brand-green-soft)'}; color: var(--brand-green); border: 1px solid rgba(16, 185, 129, 0.15); display: flex; align-items: center; gap: 4px;">
-                    ${icon('book', 12)} ${unit.topics.length} Konu
+              <!-- Toggle Icon -->
+              <div style="color: ${isExpanded ? 'var(--brand-green)' : 'var(--text-muted)'}; transform: rotate(${isExpanded ? '90deg' : '0deg'}); transition: transform 0.3s; display: flex; align-items: center; flex-shrink:0;">
+                ${icon('chevronRight', 18)}
+              </div>
+              <div style="flex:1; min-width:0;">
+                <h3 style="font-size: 17px; font-weight: 800; color: ${isExpanded ? 'var(--brand-green)' : 'var(--text-primary)'}; margin: 0 0 6px 0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                  ${escHtml(unit.name)}
+                </h3>
+                <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+                  <span style="border-radius:20px; font-size:10px; padding:3px 9px; font-weight:700; background:${isExpanded ? 'rgba(16,185,129,0.1)' : 'var(--bg-secondary)'}; color:${isExpanded ? 'var(--brand-green)' : 'var(--text-secondary)'}; border:1px solid ${isExpanded ? 'rgba(16,185,129,0.2)' : 'var(--border)'}; display:flex; align-items:center; gap:3px;">
+                    ${icon('book', 10)} ${unit.topics.length} Konu
                   </span>
-                  <span style="border-radius: 20px; font-size: 11px; padding: 4px 10px; font-weight: 700; background: ${isExpanded ? 'white' : 'var(--bg-secondary)'}; color: var(--text-secondary); border: 1px solid var(--border); display: flex; align-items: center; gap: 4px;">
-                    ${icon('fileText', 12)} ${totalResources} Kaynak
+                  <span style="border-radius:20px; font-size:10px; padding:3px 9px; font-weight:700; background:var(--bg-secondary); color:var(--text-secondary); border:1px solid var(--border); display:flex; align-items:center; gap:3px;">
+                    ${icon('fileText', 10)} ${totalResources} Kaynak
                   </span>
-                </span>
-              </h3>
-              <div style="display: flex; gap: 8px; opacity: ${isExpanded ? '1' : '0.6'}; transition: opacity 0.3s;" onclick="event.stopPropagation()">
-                <button class="btn btn-ghost btn-sm btn-icon hover-scale" data-edit-unit="${unit.id}" data-subject="${subject}" data-grade="${grade}" title="Üniteyi Düzenle" style="background: white; border: 1px solid var(--border); border-radius: 8px;">${icon('edit', 16)}</button>
-                <button class="btn btn-ghost btn-sm btn-icon hover-scale" data-delete-unit="${unit.id}" data-subject="${subject}" data-grade="${grade}" style="color: var(--danger); background: white; border: 1px solid var(--border); border-radius: 8px;" title="Üniteyi Sil">${icon('trash', 16)}</button>
-                <button class="btn btn-primary btn-sm hover-scale" data-add-topic="${unit.id}" data-subject="${subject}" data-grade="${grade}" style="border-radius: 8px; font-weight: 700;">
-                  ${icon('plus', 14)} Konu Ekle
+                  ${unit.topics.length > 0 ? `
+                    <div style="display:flex; align-items:center; gap:5px;">
+                      <div style="width:56px; height:5px; background:var(--border); border-radius:3px; overflow:hidden;">
+                        <div style="width:${completionPct}%; height:100%; background:var(--brand-green); border-radius:3px; transition:width 0.4s;"></div>
+                      </div>
+                      <span style="font-size:10px; font-weight:700; color:var(--text-secondary);">${completionPct}%</span>
+                    </div>
+                  ` : ''}
+                </div>
+              </div>
+              <div style="display:flex; gap:6px; flex-shrink:0;" onclick="event.stopPropagation()">
+                <button class="btn btn-ghost btn-sm btn-icon hover-scale" data-edit-unit="${unit.id}" data-subject="${subject}" data-grade="${grade}" title="Üniteyi Düzenle" style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius:8px; width:32px; height:32px;">${icon('edit', 14)}</button>
+                <button class="btn btn-ghost btn-sm btn-icon hover-scale" data-delete-unit="${unit.id}" data-subject="${subject}" data-grade="${grade}" style="color:var(--danger); background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; width:32px; height:32px;" title="Üniteyi Sil">${icon('trash', 14)}</button>
+                <button class="btn btn-primary btn-sm hover-scale" data-add-topic="${unit.id}" data-subject="${subject}" data-grade="${grade}" style="border-radius:8px; font-weight:700; font-size:12px; padding:6px 12px;">
+                  ${icon('plus', 12)} Konu Ekle
                 </button>
               </div>
             </div>
 
             <!-- Unit Content -->
-            <div class="unit-content" style="display: ${isExpanded ? 'block' : 'none'}; padding: 24px; border-top: 1px solid var(--border); background: #fcfcfc;">
-              <div class="topic-list" style="display:flex; flex-direction:column; gap: 16px;">
+            <div class="unit-content" style="display: ${isExpanded ? 'block' : 'none'}; padding: 20px 22px; border-top: 1px solid rgba(16,185,129,0.1); background: #fafffe;">
+              <div class="topic-list" style="display:flex; flex-direction:column; gap: 12px;">
                 ${unit.topics.length === 0 ? `
-                  <div class="empty-state" style="padding: 20px; opacity: 0.5;">
-                    <p style="font-size: 14px; font-weight: 500;">Bu ünitede henüz konu bulunmuyor.</p>
+                  <div style="padding:24px; text-align:center; border:2px dashed rgba(16,185,129,0.2); border-radius:12px; background:rgba(16,185,129,0.02);">
+                    <div style="font-size:28px; margin-bottom:8px;">📝</div>
+                    <p style="font-size:13px; font-weight:600; color:var(--text-secondary); margin-bottom:12px;">Bu ünitede henüz konu bulunmuyor.</p>
+                    <button class="btn btn-primary btn-sm" data-add-topic="${unit.id}" data-subject="${subject}" data-grade="${grade}" style="border-radius:8px; font-size:12px;">${icon('plus', 12)} Konu Ekle</button>
                   </div>
                 ` : ''}
                 ${unit.topics.map((topic, index) => {
                   const topicMaterials = allMaterials.filter(m => m.unitId === unit.id && m.topicId === topic.id);
+                  const hasMaterials = topicMaterials.length > 0;
                   return `
-                    <div class="topic-item hover-lift" draggable="true" 
+                    <div class="topic-item" draggable="true" 
                          data-index="${index}" 
                          data-topic-id="${topic.id}" 
                          data-unit-id="${unit.id}" 
                          data-subject="${subject}" 
                          data-grade="${grade}"
-                         style="background: #ffffff; border-radius: 14px; padding: 18px 24px; border: 1px solid var(--border); border-left: 3px solid var(--border); transition: all 0.2s ease; box-shadow: 0 2px 10px rgba(0,0,0,0.01);">
-                      <div style="display:flex;align-items:center;gap:16px; margin-bottom: 16px;">
-                        <div class="topic-drag-handle" style="cursor: grab; color: var(--text-muted); opacity: 0.4; padding: 4px; border-radius: 6px; transition: all 0.2s;" onmouseover="this.style.background='var(--border)'; this.style.opacity='1'" onmouseout="this.style.background='transparent'; this.style.opacity='0.4'">
-                          ${icon('dragHandle', 20)}
+                         style="background:#ffffff; border-radius:14px; padding:16px 20px; border:1px solid ${hasMaterials ? 'rgba(16,185,129,0.2)' : 'var(--border)'}; border-left: 4px solid ${hasMaterials ? 'var(--brand-green)' : 'var(--border)'}; transition:all 0.2s ease; box-shadow: 0 1px 4px rgba(0,0,0,0.03);">
+                      <!-- Topic Header -->
+                      <div style="display:flex; align-items:center; gap:12px; margin-bottom:${topicMaterials.length > 0 ? '14px' : '0'};">
+                        <div class="topic-drag-handle" style="cursor:grab; color:var(--text-muted); opacity:0.35; flex-shrink:0; border-radius:6px; transition:all 0.2s; padding:2px;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='0.35'">
+                          ${icon('dragHandle', 16)}
                         </div>
-                        <div style="width: 32px; height: 32px; background: var(--brand-green-soft); border: 1px solid rgba(16,185,129,0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; color: var(--brand-green); box-shadow: 0 2px 6px rgba(16,185,129,0.1);">
+                        <!-- Number circle -->
+                        <div style="width:28px; height:28px; flex-shrink:0; border-radius:8px; background:${hasMaterials ? 'var(--brand-green)' : 'var(--bg-secondary)'}; border:1px solid ${hasMaterials ? 'rgba(16,185,129,0.3)' : 'var(--border)'}; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; color:${hasMaterials ? '#fff' : 'var(--text-secondary)'}; transition:all 0.2s;">
                           ${index + 1}
                         </div>
-                        <h4 style="font-size:16px; font-weight:800; color:var(--text-primary); margin:0; flex:1; letter-spacing: -0.3px; display: flex; align-items: center; gap: 8px;">
-                          <span>${escHtml(topic.name)}</span>
-                          ${topicMaterials.length > 0 ? `
-                            <span style="font-size: 11px; font-weight: 700; color: var(--brand-green); background: var(--brand-green-soft); padding: 2px 8px; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.15); white-space: nowrap;">
-                              ${topicMaterials.length} Kaynak
-                            </span>
-                          ` : ''}
-                        </h4>
-                        <div style="display:flex; gap:8px;">
-                          <button class="btn btn-ghost btn-sm btn-icon hover-scale" data-edit-topic="${topic.id}" data-unit-id="${unit.id}" data-subject="${subject}" data-grade="${grade}" title="Düzenle" style="background: var(--bg-secondary); border-radius: 8px;">${icon('edit', 14)}</button>
-                          <button class="btn btn-ghost btn-sm btn-icon hover-scale" data-delete-topic="${topic.id}" data-unit-id="${unit.id}" data-subject="${subject}" data-grade="${grade}" style="color:var(--danger); background: var(--bg-secondary); border-radius: 8px;" title="Sil">${icon('trash', 14)}</button>
+                        <h4 style="font-size:15px; font-weight:800; color:var(--text-primary); margin:0; flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escHtml(topic.name)}</h4>
+                        ${hasMaterials ? `<span style="background:rgba(16,185,129,0.1); color:var(--brand-green); border-radius:10px; padding:2px 8px; font-size:10px; font-weight:700; flex-shrink:0;">${topicMaterials.length} Kaynak</span>` : ''}
+                        <div style="display:flex; gap:5px; flex-shrink:0;">
+                          <button class="btn btn-ghost btn-sm btn-icon" data-edit-topic="${topic.id}" data-unit-id="${unit.id}" data-subject="${subject}" data-grade="${grade}" title="Düzenle" style="background:var(--bg-secondary); border-radius:7px; width:28px; height:28px; display:flex; align-items:center; justify-content:center;">${icon('edit', 12)}</button>
+                          <button class="btn btn-ghost btn-sm btn-icon" data-delete-topic="${topic.id}" data-unit-id="${unit.id}" data-subject="${subject}" data-grade="${grade}" style="color:var(--danger); background:var(--bg-secondary); border-radius:7px; width:28px; height:28px; display:flex; align-items:center; justify-content:center;" title="Sil">${icon('trash', 12)}</button>
                         </div>
                       </div>
                       
-                      <div style="display:flex; flex-wrap: wrap; gap:12px; padding-left: 64px;">
+                      <!-- Material chips -->
+                      ${topicMaterials.length > 0 || true ? `
+                      <div style="display:flex; flex-wrap:wrap; gap:8px; padding-left:${topicMaterials.length > 0 ? '52px' : '52px'};">
                         ${topicMaterials.map(m => {
                           const isYoutube = isYoutubeUrl(m.link);
                           const isDrive = isGoogleDriveUrl(m.link);
@@ -271,39 +291,38 @@ function renderCurriculumContent(state, grade) {
 
                           const style = CHIP_STYLES[m.contentType] || defaultStyle;
                           const chipIcon = isYoutube ? '🎬' : (isDrive ? '📁' : style.icon);
-                          const chipStyle = isYoutube ? CHIP_STYLES.video : (isDrive ? { bg: 'rgba(16, 185, 129, 0.1)', border: 'rgba(16, 185, 129, 0.25)', text: '#10b981' } : style);
+                          const chipStyle = isYoutube ? CHIP_STYLES.video : (isDrive ? { bg: 'rgba(16,185,129,0.1)', border: 'rgba(16,185,129,0.25)', text: '#10b981' } : style);
 
                           return `
-                          <div class="material-chip hover-scale" style="display:flex; align-items:center; gap: 8px; padding: 6px 14px; background: ${chipStyle.bg}; border: 1px solid ${chipStyle.border}; border-radius: 24px; font-size:13px; box-shadow: 0 2px 6px rgba(0,0,0,0.02); cursor: pointer; transition: all 0.2s;">
-                            <span style="font-size:16px; color: ${chipStyle.text}; display: flex; align-items: center;">${chipIcon}</span>
-                            <a href="${escHtml(m.link)}" ${clickAttrs} class="${isYoutube ? 'youtube-link' : (isDrive ? 'drive-link' : '')}" style="color: ${chipStyle.text}; text-decoration:none; font-weight:700;">
-                              ${escHtml(m.title)}
-                            </a>
-                            <button class="btn btn-ghost btn-sm btn-icon" data-delete-material="${m.id}" style="width:20px; height:20px; color: ${chipStyle.text}; opacity:0.5; transition: opacity 0.2s; background: rgba(255,255,255,0.4); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; padding: 0;" onmouseover="this.style.opacity='1'; this.style.background='white';" onmouseout="this.style.opacity='0.5'; this.style.background='rgba(255,255,255,0.4)';" title="Sil">${icon('x', 10)}</button>
+                          <div class="material-chip hover-scale" style="display:inline-flex; align-items:center; gap:7px; padding:5px 12px 5px 7px; background:${chipStyle.bg}; border:1px solid ${chipStyle.border}; border-radius:20px; font-size:12px; cursor:pointer; transition:all 0.15s; max-width:240px;">
+                            <div style="width:22px; height:22px; border-radius:6px; background:rgba(255,255,255,0.7); display:flex; align-items:center; justify-content:center; font-size:12px; flex-shrink:0;">${chipIcon}</div>
+                            <a href="${escHtml(m.link)}" ${clickAttrs} class="${isYoutube ? 'youtube-link' : (isDrive ? 'drive-link' : '')}" style="color:${chipStyle.text}; text-decoration:none; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escHtml(m.title)}</a>
+                            <button class="btn btn-ghost btn-sm btn-icon" data-delete-material="${m.id}" style="width:16px; height:16px; color:${chipStyle.text}; opacity:0.4; transition:opacity 0.2s; background:rgba(255,255,255,0.5); border-radius:50%; display:flex; align-items:center; justify-content:center; border:none; padding:0; flex-shrink:0;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.4'" title="Sil">${icon('x', 9)}</button>
                           </div>
                           `;
                         }).join('')}
-                        <button class="btn btn-ghost btn-sm hover-scale" data-add-material-to-topic="${topic.id}" data-unit-id="${unit.id}" data-subject="${subject}" data-grade="${grade}" style="padding: 8px 16px; font-size: 13px; font-weight: 700; color: var(--brand-green); border: 1.5px dashed rgba(16,185,129,0.4); border-radius: 24px; background: var(--brand-green-soft);">
-                          ${icon('plus', 14)} İçerik Ekle
+                        <button class="btn btn-ghost btn-sm" data-add-material-to-topic="${topic.id}" data-unit-id="${unit.id}" data-subject="${subject}" data-grade="${grade}" style="padding:5px 12px; font-size:11px; font-weight:700; color:var(--brand-green); border:1.5px dashed rgba(16,185,129,0.35); border-radius:20px; background:rgba(16,185,129,0.04); display:inline-flex; align-items:center; gap:4px;">
+                          ${icon('plus', 11)} Kaynak Ekle
                         </button>
                       </div>
+                      ` : ''}
                     </div>
                   `;
                 }).join('')}
               </div>
 
               <!-- Unit Level Materials -->
-              <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border);">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-                  <h4 style="font-size:14px; font-weight:800; color:var(--brand-green); text-transform: uppercase; letter-spacing: 0.5px; display:flex; align-items:center; gap: 8px;">
-                    <span style="display:flex; align-items:center; justify-content:center; width: 28px; height: 28px; background: var(--brand-green-soft); border-radius: 8px;">${icon('book', 16)}</span>
-                    Ünite Testleri ve Genel Kaynaklar
+              <div style="margin-top:24px; padding-top:20px; border-top:1px solid rgba(16,185,129,0.1);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                  <h4 style="font-size:12px; font-weight:800; color:var(--brand-green); text-transform:uppercase; letter-spacing:0.8px; display:flex; align-items:center; gap:7px;">
+                    <span style="display:flex; align-items:center; justify-content:center; width:24px; height:24px; background:var(--brand-green-soft); border-radius:7px;">${icon('book', 13)}</span>
+                    Ünite Testleri & Genel Kaynaklar
                   </h4>
-                  <button class="btn btn-secondary btn-sm hover-scale" data-add-unit-material="${unit.id}" data-subject="${subject}" data-grade="${grade}" style="background: white; border: 1px solid var(--border); font-weight: 700; border-radius: 8px;">
-                    ${icon('plus', 14)} Ekle
+                  <button class="btn btn-secondary btn-sm" data-add-unit-material="${unit.id}" data-subject="${subject}" data-grade="${grade}" style="background:white; border:1px solid var(--border); font-weight:700; border-radius:8px; font-size:12px; padding:5px 12px;">
+                    ${icon('plus', 12)} Ekle
                   </button>
                 </div>
-                <div style="display:flex; flex-wrap: wrap; gap:12px;">
+                <div style="display:flex; flex-wrap:wrap; gap:10px;">
                   ${unitMaterials.map(m => {
                     const isYoutube = isYoutubeUrl(m.link);
                     const isDrive = isGoogleDriveUrl(m.link);
@@ -316,21 +335,17 @@ function renderCurriculumContent(state, grade) {
 
                     const style = CHIP_STYLES[m.contentType] || defaultStyle;
                     const unitIcon = isYoutube ? '🎬' : (isDrive ? '📁' : '📋');
-                    const unitStyle = isYoutube ? CHIP_STYLES.video : (isDrive ? { bg: 'rgba(16, 185, 129, 0.1)', border: 'rgba(16, 185, 129, 0.25)', text: '#10b981' } : style);
+                    const unitStyle = isYoutube ? CHIP_STYLES.video : (isDrive ? { bg: 'rgba(16,185,129,0.1)', border: 'rgba(16,185,129,0.25)', text: '#10b981' } : style);
 
                     return `
-                    <div class="material-chip premium hover-scale" style="display:flex; align-items:center; gap: 12px; padding: 10px 18px; background: ${unitStyle.bg}; border: 1px solid ${unitStyle.border}; border-radius: 12px; font-size:14px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); cursor: pointer; transition: all 0.2s;">
-                      <div style="width: 32px; height: 32px; background: white; border-radius: 8px; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-sm); font-size: 16px; border: 1px solid ${unitStyle.border};">
-                        ${unitIcon}
-                      </div>
-                      <a href="${escHtml(m.link)}" ${clickAttrs} class="${isYoutube ? 'youtube-link' : (isDrive ? 'drive-link' : '')}" style="color: ${unitStyle.text}; font-weight: 800; text-decoration:none; font-size: 14px; flex: 1;">
-                        ${escHtml(m.title)}
-                      </a>
-                      <button class="btn btn-ghost btn-sm btn-icon" data-delete-material="${m.id}" style="color: var(--danger); opacity:0.6; transition: opacity 0.2s; background: white; border-radius: 8px; width: 28px; height: 28px; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;" onmouseover="this.style.opacity='1'; this.style.borderColor='rgba(239, 68, 68, 0.3)';" onmouseout="this.style.opacity='0.6'; this.style.borderColor='var(--border)';" title="Sil">${icon('trash', 14)}</button>
+                    <div class="material-chip premium hover-scale" style="display:flex; align-items:center; gap:10px; padding:8px 14px 8px 8px; background:${unitStyle.bg}; border:1px solid ${unitStyle.border}; border-radius:12px; font-size:13px; cursor:pointer; transition:all 0.15s;">
+                      <div style="width:30px; height:30px; background:white; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:14px; border:1px solid ${unitStyle.border}; flex-shrink:0;">${unitIcon}</div>
+                      <a href="${escHtml(m.link)}" ${clickAttrs} class="${isYoutube ? 'youtube-link' : (isDrive ? 'drive-link' : '')}" style="color:${unitStyle.text}; font-weight:700; text-decoration:none; font-size:13px;">${escHtml(m.title)}</a>
+                      <button class="btn btn-ghost btn-sm btn-icon" data-delete-material="${m.id}" style="color:var(--danger); opacity:0.5; transition:opacity 0.2s; background:white; border-radius:7px; width:26px; height:26px; border:1px solid var(--border); display:flex; align-items:center; justify-content:center; flex-shrink:0;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.5'" title="Sil">${icon('trash', 12)}</button>
                     </div>
                     `;
                   }).join('')}
-                  ${unitMaterials.length === 0 ? `<div style="font-size:14px; color:var(--text-muted); font-style:italic; padding: 12px 0; font-weight: 500;">Bu ünite için genel bir kaynak eklenmemiş.</div>` : ''}
+                  ${unitMaterials.length === 0 ? `<div style="font-size:13px; color:var(--text-muted); font-style:italic; padding:10px 0; font-weight:500;">Bu ünite için genel bir kaynak eklenmemiş.</div>` : ''}
                 </div>
               </div>
             </div>
@@ -339,8 +354,8 @@ function renderCurriculumContent(state, grade) {
       }).join('');
       
       html += `
-        <div style="text-align:center; padding: 24px 0;">
-          <button class="btn btn-secondary hover-lift" data-add-unit="${subject}" data-grade="${grade}" style="padding: 12px 24px; font-size: 15px; font-weight: 700; border-radius: 12px; background: white; border: 1px dashed var(--brand-green); color: var(--brand-green);">${icon('plus', 16)} Yeni Ünite Ekle</button>
+        <div style="text-align:center; padding:20px 0;">
+          <button class="btn hover-lift" data-add-unit="${subject}" data-grade="${grade}" style="padding:11px 28px; font-size:14px; font-weight:700; border-radius:12px; background:white; border:2px dashed rgba(16,185,129,0.4); color:var(--brand-green); display:inline-flex; align-items:center; gap:8px; transition:all 0.2s;">${icon('plus', 15)} Yeni Ünite Ekle</button>
         </div>
       `;
     }
@@ -348,6 +363,7 @@ function renderCurriculumContent(state, grade) {
 
   return html;
 }
+
 
 function initCurriculum(el, navigate) {
   const refresh = () => {
