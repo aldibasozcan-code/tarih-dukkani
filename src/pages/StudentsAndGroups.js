@@ -19,16 +19,19 @@ export function renderStudentsAndGroups(navigate) {
 
   const html = `
     <div class="fade-in">
-      <div class="page-header" style="background: linear-gradient(135deg, var(--brand-green-soft) 0%, rgba(255,255,255,1) 100%); padding: 32px 24px; border-radius: 20px; margin-bottom: 32px; border: 1px solid rgba(16,185,129,0.15); box-shadow: 0 10px 30px rgba(0,0,0,0.02);">
+      <div class="page-header" style="background: linear-gradient(135deg, rgba(16,185,129,0.08) 0%, rgba(99,102,241,0.02) 100%); padding: 32px 24px; border-radius: 20px; margin-bottom: 28px; border: 1px solid rgba(16,185,129,0.15); box-shadow: 0 10px 30px rgba(0,0,0,0.02);">
         <div>
           <h2 style="font-size: 32px; font-weight: 800; color: var(--brand-green); margin-bottom: 8px; display: flex; align-items: center; gap: 12px; letter-spacing: -0.5px;">
             ${icon('students', 32)} Öğrenci & Grup
           </h2>
           <p style="color: var(--text-secondary); font-size: 16px; font-weight: 500;">Öğrenci ve grup listelerinizi profesyonelce yönetin</p>
         </div>
-        <div style="display:flex;gap:10px; align-items: center;">
-          <button class="btn btn-primary hover-lift" id="btn-add-new" style="box-shadow: 0 8px 20px rgba(16,185,129,0.3); padding: 10px 20px; font-weight: 700; font-size: 15px;">
-            ${icon('plus', 16)} Yeni Ekle
+        <div style="display:flex;gap:10px; align-items: center; flex-wrap:wrap;">
+          <button class="btn btn-secondary hover-lift" id="btn-add-group" style="background:white; border:1px solid var(--border); box-shadow:var(--shadow-sm); padding:10px 18px; font-weight:700; font-size:14px; border-radius:12px;">
+            ${icon('group', 15)} Grup Ekle
+          </button>
+          <button class="btn btn-primary hover-lift" id="btn-add-student" style="box-shadow: 0 8px 20px rgba(16,185,129,0.3); padding: 10px 20px; font-weight: 700; font-size: 14px; border-radius:12px;">
+            ${icon('plus', 15)} Öğrenci Ekle
           </button>
         </div>
       </div>
@@ -76,50 +79,64 @@ export function renderStudentsAndGroups(navigate) {
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;" class="fade-in-up stagger-2">
         
         <!-- STUDENTS COLUMN -->
-        <div class="card" style="padding: 24px; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.02);">
-          <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h3 style="margin:0; font-size: 18px; color: var(--text-primary); display:flex; align-items:center; gap:8px; font-weight: 800;">
-              ${icon('students', 20)} Öğrenciler
-            </h3>
-            <div class="tabs" style="margin: 0; padding: 4px; background: var(--bg-secondary); border-radius: var(--radius-md);">
-              <button class="tab-btn active student-tab" data-student-tab="active" style="padding: 6px 14px; font-size: 13px; font-weight: 700; border-radius: 8px;">Aktif</button>
-              <button class="tab-btn student-tab" data-student-tab="passive" style="padding: 6px 14px; font-size: 13px; font-weight: 700; border-radius: 8px;">Pasif</button>
+        <div style="background:#fff; border:1px solid var(--border); border-radius:20px; overflow:hidden; box-shadow:0 4px 20px rgba(0,0,0,0.02);">
+          <!-- Section header strip -->
+          <div style="padding:16px 20px; background:linear-gradient(135deg,rgba(16,185,129,0.06) 0%,rgba(255,255,255,1) 100%); border-bottom:1px solid rgba(16,185,129,0.1); display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="width:32px;height:32px;border-radius:10px;background:rgba(16,185,129,0.12);color:var(--brand-green);display:flex;align-items:center;justify-content:center;">${icon('students', 16)}</div>
+              <div>
+                <h3 style="margin:0; font-size:16px; color:var(--brand-green); font-weight:800; letter-spacing:-0.3px;">Öğrenciler</h3>
+                <div style="font-size:11px;color:var(--text-muted);font-weight:600;margin-top:1px;">${activeStudents.length} aktif</div>
+              </div>
+            </div>
+            <div class="tabs" style="margin:0; padding:4px; background:rgba(16,185,129,0.06); border-radius:10px; border:1px solid rgba(16,185,129,0.12);">
+              <button class="tab-btn active student-tab" data-student-tab="active" style="padding:5px 12px; font-size:12px; font-weight:700; border-radius:7px;">Aktif</button>
+              <button class="tab-btn student-tab" data-student-tab="passive" style="padding:5px 12px; font-size:12px; font-weight:700; border-radius:7px;">Pasif</button>
             </div>
           </div>
-          <div class="search-box" style="margin-bottom:16px;">
-            <span class="search-icon">${icon('search', 15)}</span>
-            <input type="text" id="student-search" placeholder="Öğrenci ara..." style="width:100%; font-weight: 600;">
-          </div>
-          <div class="grid" id="students-grid" style="grid-template-columns: 1fr;">
-            <!-- student cards injected here -->
-          </div>
-          <div class="empty-state" id="students-empty" style="display:none; padding: 30px;">
-             ${icon('students', 40)}
-             <h3 style="font-size: 16px;">Henüz aktif öğrenci eklenmedi</h3>
+          <div style="padding:16px 20px 20px;">
+            <div style="position:relative; margin-bottom:14px;">
+              <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);display:flex;align-items:center;">${icon('search', 15)}</span>
+              <input type="text" id="student-search" placeholder="Öğrenci ara..." style="width:100%;padding:9px 12px 9px 36px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-weight:600;outline:none;transition:all 0.2s;box-sizing:border-box;">
+            </div>
+            <div class="grid" id="students-grid" style="grid-template-columns: 1fr;">
+              <!-- student cards injected here -->
+            </div>
+            <div class="empty-state" id="students-empty" style="display:none; padding: 30px;">
+              ${icon('students', 40)}
+              <h3 style="font-size: 16px;">Henüz aktif öğrenci eklenmedi</h3>
+            </div>
           </div>
         </div>
 
         <!-- GROUPS COLUMN -->
-        <div class="card" style="padding: 24px; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.02);">
-          <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h3 style="margin:0; font-size: 18px; color: var(--text-primary); display:flex; align-items:center; gap:8px; font-weight: 800;">
-              ${icon('groups', 20)} Gruplar
-            </h3>
-            <div class="tabs" style="margin: 0; padding: 4px; background: var(--bg-secondary); border-radius: var(--radius-md);">
-              <button class="tab-btn active group-tab" data-group-tab="active" style="padding: 6px 14px; font-size: 13px; font-weight: 700; border-radius: 8px;">Aktif</button>
-              <button class="tab-btn group-tab" data-group-tab="passive" style="padding: 6px 14px; font-size: 13px; font-weight: 700; border-radius: 8px;">Pasif</button>
+        <div style="background:#fff; border:1px solid var(--border); border-radius:20px; overflow:hidden; box-shadow:0 4px 20px rgba(0,0,0,0.02);">
+          <!-- Section header strip -->
+          <div style="padding:16px 20px; background:linear-gradient(135deg,rgba(79,70,229,0.05) 0%,rgba(255,255,255,1) 100%); border-bottom:1px solid rgba(79,70,229,0.1); display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="width:32px;height:32px;border-radius:10px;background:rgba(79,70,229,0.1);color:#4f46e5;display:flex;align-items:center;justify-content:center;">${icon('groups', 16)}</div>
+              <div>
+                <h3 style="margin:0; font-size:16px; color:#4f46e5; font-weight:800; letter-spacing:-0.3px;">Gruplar</h3>
+                <div style="font-size:11px;color:var(--text-muted);font-weight:600;margin-top:1px;">${activeGroups.length} aktif</div>
+              </div>
+            </div>
+            <div class="tabs" style="margin:0; padding:4px; background:rgba(79,70,229,0.05); border-radius:10px; border:1px solid rgba(79,70,229,0.1);">
+              <button class="tab-btn active group-tab" data-group-tab="active" style="padding:5px 12px; font-size:12px; font-weight:700; border-radius:7px;">Aktif</button>
+              <button class="tab-btn group-tab" data-group-tab="passive" style="padding:5px 12px; font-size:12px; font-weight:700; border-radius:7px;">Pasif</button>
             </div>
           </div>
-          <div class="search-box" style="margin-bottom:16px;">
-            <span class="search-icon">${icon('search', 15)}</span>
-            <input type="text" id="group-search" placeholder="Grup ara..." style="width:100%; font-weight: 600;">
-          </div>
-          <div class="grid" id="groups-grid" style="grid-template-columns: 1fr;">
-             <!-- group cards injected here -->
-          </div>
-          <div class="empty-state" id="groups-empty" style="display:none; padding: 30px;">
-             ${icon('groups', 40)}
-             <h3 style="font-size: 16px;">Henüz aktif grup eklenmedi</h3>
+          <div style="padding:16px 20px 20px;">
+            <div style="position:relative; margin-bottom:14px;">
+              <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);display:flex;align-items:center;">${icon('search', 15)}</span>
+              <input type="text" id="group-search" placeholder="Grup ara..." style="width:100%;padding:9px 12px 9px 36px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-weight:600;outline:none;transition:all 0.2s;box-sizing:border-box;">
+            </div>
+            <div class="grid" id="groups-grid" style="grid-template-columns: 1fr;">
+              <!-- group cards injected here -->
+            </div>
+            <div class="empty-state" id="groups-empty" style="display:none; padding: 30px;">
+              ${icon('groups', 40)}
+              <h3 style="font-size: 16px;">Henüz aktif grup eklenmedi</h3>
+            </div>
           </div>
         </div>
 
@@ -304,9 +321,13 @@ function initStudentsAndGroups(container, navigate) {
   refreshStudentList();
   refreshGroupList();
 
-  // Add button
-  container.querySelector('#btn-add-new')?.addEventListener('click', () => {
-    import('./modals/PlannerWizardModal.js').then(m => m.openPlannerWizard(() => navigate('studentsAndGroups')));
+  // Add buttons
+  container.querySelector('#btn-add-student')?.addEventListener('click', () => {
+    import('./modals/AddStudentModal.js').then(m => m.openAddStudentModal(() => navigate('studentsAndGroups')));
+  });
+
+  container.querySelector('#btn-add-group')?.addEventListener('click', () => {
+    import('./modals/AddGroupModal.js').then(m => m.openAddGroupModal(() => navigate('studentsAndGroups')));
   });
 }
 

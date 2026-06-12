@@ -577,90 +577,166 @@ function initTransactionButtons(el, navigate, updateView) {
 
 function openAddTransactionModal(navigate, updateView) {
   const state = getState();
-  
+
   openModal({
-    title: 'Manuel İşlem Ekle',
+    title: '',
     body: `
-      <div class="form-group">
-        <label style="font-weight:700; font-size:12px;">İşlem Türü</label>
-        <select id="tx-type" style="width:100%; padding:10px; border-radius:8px; font-weight:600;">
-          <option value="income" selected>Gelir (Elde Edilen Kazanç)</option>
-          <option value="expense">Gider (Harcama / Maliyet)</option>
-        </select>
+      <style>
+        .tx-hdr { padding:22px 28px 18px; position:relative; overflow:hidden; }
+        .tx-hdr::before { content:''; position:absolute; top:-30px; right:-30px; width:130px; height:130px; background:rgba(255,255,255,0.08); border-radius:50%; }
+        .tx-hdr-inner { position:relative; z-index:1; }
+        .tx-hdr h2 { font-size:20px; font-weight:800; color:#fff; margin:0 0 3px; display:flex; align-items:center; gap:10px; letter-spacing:-0.3px; }
+        .tx-hdr p { font-size:13px; color:rgba(255,255,255,0.72); margin:0; font-weight:500; }
+        .tx-body { padding:20px 28px; }
+        .tx-sec { margin-bottom:16px; background:#fafafa; border:1px solid #f0f0f0; border-radius:13px; overflow:hidden; }
+        .tx-sec-hdr { display:flex; align-items:center; gap:8px; padding:10px 15px; background:white; border-bottom:1px solid #f0f0f0; }
+        .tx-sec-ico { width:24px; height:24px; border-radius:6px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .tx-sec-ttl { font-size:11px; font-weight:800; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px; }
+        .tx-sec-body { padding:14px; }
+        .tx-type-btns { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+        .tx-type-btn { display:flex; align-items:center; justify-content:center; gap:8px; padding:12px; border:2px solid var(--border); border-radius:11px; background:white; cursor:pointer; font-size:13px; font-weight:700; color:var(--text-secondary); transition:all 0.2s; }
+        .tx-type-btn:hover { border-color:var(--brand-green); }
+        .tx-type-btn.income-active { border-color:var(--brand-green); color:var(--brand-green); background:rgba(16,185,129,0.08); }
+        .tx-type-btn.expense-active { border-color:#ef4444; color:#ef4444; background:rgba(239,68,68,0.07); }
+        .tx-field { display:flex; flex-direction:column; gap:5px; margin-bottom:12px; }
+        .tx-field:last-child { margin-bottom:0; }
+        .tx-label { font-size:11px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.4px; }
+        .tx-input, .tx-select { width:100%; padding:9px 12px; border:1.5px solid var(--border); border-radius:9px; font-size:13px; font-weight:600; color:var(--text-primary); background:white; transition:all 0.2s; outline:none; font-family:inherit; box-sizing:border-box; -webkit-appearance:none; }
+        .tx-input:focus, .tx-select:focus { border-color:var(--brand-green); box-shadow:0 0 0 3px rgba(16,185,129,0.1); }
+        .tx-select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23475569'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; background-size:14px; padding-right:34px; cursor:pointer; }
+        .tx-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+        .tx-footer { display:flex; gap:10px; justify-content:flex-end; padding:16px 28px; border-top:1px solid var(--border); background:#fafafa; margin:0 -28px -28px; }
+        .tx-btn-cancel { padding:9px 18px; border-radius:9px; border:1.5px solid var(--border); background:white; color:var(--text-secondary); font-size:13px; font-weight:700; cursor:pointer; transition:all 0.2s; font-family:inherit; }
+        .tx-btn-cancel:hover { background:#f5f5f5; }
+        .tx-btn-save { padding:9px 22px; border-radius:9px; border:none; color:white; font-size:13px; font-weight:800; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; gap:7px; font-family:inherit; }
+        .tx-btn-save:hover { transform:translateY(-1px); }
+      </style>
+
+      <!-- HEADER -->
+      <div class="tx-hdr" style="background:linear-gradient(135deg,#004526 0%,#047857 55%,#10b981 100%); margin:-32px -32px 0;">
+        <div class="tx-hdr-inner">
+          <h2>${icon('finance', 20)} Manuel İşlem Ekle</h2>
+          <p>Gelir veya gider kaydı oluşturun</p>
+        </div>
       </div>
-      <div class="form-group">
-        <label style="font-weight:700; font-size:12px;">Tutar (₺)</label>
-        <input type="number" id="tx-amount" placeholder="0.00" min="0" style="padding:10px; border-radius:8px; font-weight:600;">
+
+      <div class="tx-body">
+
+        <!-- TÜR SEÇİCİ -->
+        <div class="tx-sec" style="margin-top:20px;">
+          <div class="tx-sec-hdr">
+            <div class="tx-sec-ico" style="background:rgba(16,185,129,0.1);color:var(--brand-green);">${icon('trendUp', 13)}</div>
+            <span class="tx-sec-ttl">İşlem Türü</span>
+          </div>
+          <div class="tx-sec-body">
+            <input type="hidden" id="tx-type" value="income">
+            <div class="tx-type-btns">
+              <div class="tx-type-btn income-active" data-tx-type="income">
+                <span style="font-size:18px;">💰</span> Gelir
+              </div>
+              <div class="tx-type-btn" data-tx-type="expense">
+                <span style="font-size:18px;">💸</span> Gider
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TUTAR & TARİH -->
+        <div class="tx-sec">
+          <div class="tx-sec-hdr">
+            <div class="tx-sec-ico" style="background:rgba(255,159,67,0.1);color:#ff9f43;">${icon('finance', 13)}</div>
+            <span class="tx-sec-ttl">Tutar &amp; Tarih</span>
+          </div>
+          <div class="tx-sec-body">
+            <div class="tx-grid-2">
+              <div class="tx-field">
+                <label class="tx-label">Tutar (₺)</label>
+                <div style="position:relative;">
+                  <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:14px;font-weight:800;color:var(--text-muted);">₺</span>
+                  <input type="number" id="tx-amount" class="tx-input" style="padding-left:28px;" placeholder="0.00" min="0">
+                </div>
+              </div>
+              <div class="tx-field">
+                <label class="tx-label">Tarih</label>
+                <input type="date" id="tx-date" class="tx-input" value="${todayStr()}">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AÇIKLAMA & İLİŞKİ -->
+        <div class="tx-sec">
+          <div class="tx-sec-hdr">
+            <div class="tx-sec-ico" style="background:rgba(124,106,255,0.1);color:#7c6aff;">${icon('fileText', 13)}</div>
+            <span class="tx-sec-ttl">Açıklama &amp; İlişkilendirme</span>
+          </div>
+          <div class="tx-sec-body">
+            <div class="tx-field">
+              <label class="tx-label">Açıklama</label>
+              <input type="text" id="tx-desc" class="tx-input" placeholder="Örn: Ahmet Yılmaz — Ekim Dersleri">
+            </div>
+            <div class="tx-field">
+              <label class="tx-label">İlişkili Öğrenci / Grup (İsteğe Bağlı)</label>
+              <select id="tx-ref" class="tx-select">
+                <option value="">İlişkilendirme Yok</option>
+                <optgroup label="Öğrenciler">
+                  ${state.students.map(s => `<option value="student:${s.id}">${escHtml(s.name)}</option>`).join('')}
+                </optgroup>
+                <optgroup label="Gruplar">
+                  ${state.groups.map(g => `<option value="group:${g.id}">${escHtml(g.name)}</option>`).join('')}
+                </optgroup>
+              </select>
+            </div>
+          </div>
+        </div>
+
       </div>
-      <div class="form-group">
-        <label style="font-weight:700; font-size:12px;">Açıklama</label>
-        <input type="text" id="tx-desc" placeholder="Açıklama girin" style="padding:10px; border-radius:8px; font-weight:600;">
-      </div>
-      <div class="form-group">
-        <label style="font-weight:700; font-size:12px;">Tarih</label>
-        <input type="date" id="tx-date" value="${todayStr()}" style="padding:10px; border-radius:8px; font-weight:600;">
-      </div>
-      <div class="form-group">
-        <label style="font-weight:700; font-size:12px;">İlişkili Öğrenci / Grup (İsteğe Bağlı)</label>
-        <select id="tx-ref" style="width:100%; padding:10px; border-radius:8px; font-weight:600;">
-          <option value="">İlişkilendirme Yok</option>
-          <optgroup label="Öğrenciler">
-            ${state.students.map(s => `<option value="student:${s.id}">${escHtml(s.name)}</option>`).join('')}
-          </optgroup>
-          <optgroup label="Gruplar">
-            ${state.groups.map(g => `<option value="group:${g.id}">${escHtml(g.name)}</option>`).join('')}
-          </optgroup>
-        </select>
+
+      <div class="tx-footer">
+        <button class="tx-btn-cancel" id="tx-cancel">İptal</button>
+        <button class="tx-btn-save" id="tx-save" style="background:linear-gradient(135deg,#004526,#047857);box-shadow:0 4px 12px rgba(16,185,129,0.3);">
+          ${icon('check', 13)} Kaydet
+        </button>
       </div>
     `,
-    footer: `
-      <button class="btn btn-secondary" id="tx-cancel" style="padding: 8px 16px; border-radius:8px; font-weight:700;">İptal</button>
-      <button class="btn btn-primary" id="tx-save" style="padding: 8px 16px; border-radius:8px; font-weight:700; box-shadow: 0 4px 12px rgba(16,185,129,0.2);">Kaydet</button>
-    `,
+  });
+
+  // Type toggle
+  const txTypeHidden = document.getElementById('tx-type');
+  document.querySelectorAll('[data-tx-type]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-tx-type]').forEach(b => b.classList.remove('income-active', 'expense-active'));
+      const t = btn.dataset.txType;
+      btn.classList.add(t === 'income' ? 'income-active' : 'expense-active');
+      txTypeHidden.value = t;
+    });
   });
 
   document.getElementById('tx-cancel')?.addEventListener('click', closeModal);
   document.getElementById('tx-save')?.addEventListener('click', () => {
-    const type = document.getElementById('tx-type').value;
+    const type = txTypeHidden.value;
     const amount = parseFloat(document.getElementById('tx-amount').value);
     const desc = document.getElementById('tx-desc').value.trim();
     const date = document.getElementById('tx-date').value;
     const refVal = document.getElementById('tx-ref').value;
-    
+
     if (!amount || !desc) { alert('Tutar ve açıklama zorunludur.'); return; }
-    
-    let refId = '';
-    let refType = '';
-    let refName = '';
-    
+
+    let refId = '', refType = '', refName = '';
     if (refVal) {
       const parts = refVal.split(':');
-      refType = parts[0];
-      refId = parts[1];
-      
-      if (refType === 'student') {
-        refName = state.students.find(s => s.id === refId)?.name || '';
-      } else if (refType === 'group') {
-        refName = state.groups.find(g => g.id === refId)?.name || '';
-      }
+      refType = parts[0]; refId = parts[1];
+      if (refType === 'student') refName = state.students.find(s => s.id === refId)?.name || '';
+      else if (refType === 'group') refName = state.groups.find(g => g.id === refId)?.name || '';
     }
-    
-    addTransaction({
-      type,
-      amount,
-      description: desc,
-      date,
-      status: 'confirmed',
-      refId,
-      refType,
-      refName
-    });
-    
+
+    addTransaction({ type, amount, description: desc, date, status: 'confirmed', refId, refType, refName });
     closeModal();
     if (updateView) updateView();
     else navigate('finance');
   });
 }
+
 
 function openCollectStudentPaymentModal(refId, refType, name, updateView, navigate) {
   const state = getState();
