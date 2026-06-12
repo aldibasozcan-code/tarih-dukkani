@@ -14,12 +14,17 @@ export function openModal({ title, body, size = '', footer = '', onClose }) {
   const html = `
     <div class="modal-overlay" id="${modalId}-overlay">
       <div class="modal ${size === 'lg' ? 'modal-lg' : size === 'xl' ? 'modal-xl' : ''}">
+        ${title !== '' ? `
         <div class="modal-header">
           <h3>${title}</h3>
           <button class="close-btn" id="${modalId}-close">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
-        </div>
+        </div>` : `
+        <button class="close-btn" id="${modalId}-close" style="position:absolute;top:16px;right:16px;z-index:10;background:rgba(255,255,255,0.15);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.2);color:white;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>`}
+
         <div class="modal-body">${body}</div>
         ${footer ? `<div class="modal-footer">${footer}</div>` : ''}
       </div>
