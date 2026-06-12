@@ -602,60 +602,154 @@ function openDrivePreviewModal(previewUrl, title) {
 function openAddMaterialModal(defSubject, defGrade, targetUnitId, targetTopicId, navigate, onSave) {
   const isUnitMode = targetUnitId && targetTopicId === null; // Force unit level
 
-  const body = `
-    <div class="form-group row-group" style="display:flex; gap:16px;">
-      <div style="flex:1;">
-        <label>Sınıf</label>
-        <select id="mat-grade"></select>
-      </div>
-      <div style="flex:1;">
-        <label>Ders</label>
-        <select id="mat-subject"></select>
-      </div>
+  const contentTypeCards = CONTENT_TYPES.map((ct, i) => `
+    <div class="mat-type-card ${i === 0 && !isUnitMode ? 'active' : (isUnitMode && ct.id === 'deneme' ? 'active' : '')}" 
+         data-type-id="${ct.id}"
+         style="display:flex; flex-direction:column; align-items:center; gap:6px; padding:12px 8px; border:2px solid var(--border); border-radius:12px; background:white; cursor:pointer; transition:all 0.2s; text-align:center; min-width:0;">
+      <div style="font-size:22px; line-height:1;">${ct.icon}</div>
+      <div style="font-size:11px; font-weight:700; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;">${ct.label}</div>
     </div>
-    
-    <div class="form-group" style="${isUnitMode ? 'display:none;' : ''}">
-      <label>İçerik Seviyesi</label>
-       <select id="mat-level">
-        <option value="topic" ${!isUnitMode ? 'selected' : ''}>Konuya Özgü (Özet, Slayt vs.)</option>
-        <option value="unit" ${isUnitMode ? 'selected' : ''}>Ünite Geneli (Değerlendirme Testi, Deneme vb.)</option>
-      </select>
+  `).join('');
+
+  const body = `
+    <style>
+      .mat-type-card:hover { border-color: #7c6aff !important; background: rgba(124,106,255,0.05) !important; }
+      .mat-type-card.active { border-color: #7c6aff !important; background: rgba(124,106,255,0.1) !important; }
+      .mat-type-card.active div:last-child { color: #7c6aff !important; }
+      .mat-section { margin-bottom: 20px; background: #fafafa; border: 1px solid #f0f0f0; border-radius: 14px; overflow: hidden; }
+      .mat-section-hdr { display:flex; align-items:center; gap:8px; padding:12px 16px; background:white; border-bottom:1px solid #f0f0f0; }
+      .mat-section-icon { width:28px; height:28px; border-radius:7px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+      .mat-section-title { font-size:11px; font-weight:800; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px; }
+      .mat-section-body { padding:16px; }
+      .mat-field { display:flex; flex-direction:column; gap:5px; }
+      .mat-label { font-size:11px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.4px; display:flex; align-items:center; gap:4px; }
+      .mat-select, .mat-input { width:100%; padding:9px 12px; border:1.5px solid var(--border); border-radius:9px; font-size:13px; font-weight:600; color:var(--text-primary); background:white; transition:all 0.2s; outline:none; font-family:inherit; -webkit-appearance:none; box-sizing:border-box; }
+      .mat-select:focus, .mat-input:focus { border-color:#7c6aff; box-shadow:0 0 0 3px rgba(124,106,255,0.1); }
+      .mat-select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23475569'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; background-size:14px; padding-right:34px; cursor:pointer; }
+      .mat-link-preview { display:none; margin-top:10px; padding:10px 12px; background:rgba(16,185,129,0.06); border:1px solid rgba(16,185,129,0.2); border-radius:10px; }
+      .mat-error-box { display:none; padding:10px 12px; background:rgba(239,68,68,0.06); border:1.5px solid rgba(239,68,68,0.2); border-radius:9px; color:var(--danger); font-size:13px; font-weight:600; margin-bottom:16px; }
+      .mat-footer { display:flex; gap:10px; justify-content:flex-end; margin-top:8px; }
+      .mat-btn-cancel { padding:10px 20px; border-radius:9px; border:1.5px solid var(--border); background:white; color:var(--text-secondary); font-size:13px; font-weight:700; cursor:pointer; transition:all 0.2s; font-family:inherit; }
+      .mat-btn-cancel:hover { background:#f5f5f5; }
+      .mat-btn-save { padding:10px 24px; border-radius:9px; border:none; background:linear-gradient(135deg,#004526,#047857); color:white; font-size:13px; font-weight:800; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; gap:7px; box-shadow:0 4px 12px rgba(16,185,129,0.3); font-family:inherit; }
+      .mat-btn-save:hover { transform:translateY(-1px); box-shadow:0 6px 16px rgba(16,185,129,0.4); }
+      .mat-btn-save:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+    </style>
+
+    <!-- HEADER -->
+    <div style="background:linear-gradient(135deg,#3730a3 0%,#6d28d9 50%,#7c3aed 100%); padding:24px 28px 20px; margin:-32px -32px 24px; position:relative; overflow:hidden;">
+      <div style="position:absolute;top:-30px;right:-30px;width:130px;height:130px;background:rgba(255,255,255,0.07);border-radius:50%;"></div>
+      <div style="position:absolute;bottom:-20px;left:30px;width:80px;height:80px;background:rgba(255,255,255,0.05);border-radius:50%;"></div>
+      <div style="position:relative;z-index:1;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+          <div style="width:36px;height:36px;background:rgba(255,255,255,0.15);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;">📚</div>
+          <h2 style="font-size:20px;font-weight:800;color:#fff;margin:0;letter-spacing:-0.3px;">İçerik Ekle</h2>
+        </div>
+        <p style="font-size:13px;color:rgba(255,255,255,0.7);margin:0;font-weight:500;">Seçilen konuya bağlantı veya kaynak ekleyin</p>
+      </div>
     </div>
 
-    <div class="form-group row-group" style="display:flex; gap:16px;">
-      <div style="flex:1;">
-        <label>İçerik Türü</label>
-        <select id="mat-type">
-          ${CONTENT_TYPES.map(ct => `<option value="${ct.id}" ${isUnitMode && ct.id === 'deneme' ? 'selected' : ''}>${ct.icon} ${ct.label}</option>`).join('')}
-        </select>
+    <!-- SECTION 1: Hedef -->
+    <div class="mat-section">
+      <div class="mat-section-hdr">
+        <div class="mat-section-icon" style="background:rgba(124,106,255,0.1);color:#7c6aff;">${icon('book', 14)}</div>
+        <span class="mat-section-title">Hedef Sınıf &amp; Ders</span>
+      </div>
+      <div class="mat-section-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="mat-field">
+            <label class="mat-label">Sınıf</label>
+            <select id="mat-grade" class="mat-select"></select>
+          </div>
+          <div class="mat-field">
+            <label class="mat-label">Ders</label>
+            <select id="mat-subject" class="mat-select"></select>
+          </div>
+        </div>
       </div>
     </div>
-    
-    <div class="form-group">
-      <label>Ünite</label>
-      <select id="mat-unit"></select>
+
+    <!-- SECTION 2: Konum -->
+    <div class="mat-section">
+      <div class="mat-section-hdr">
+        <div class="mat-section-icon" style="background:rgba(16,185,129,0.1);color:var(--brand-green);">${icon('chevronRight', 14)}</div>
+        <span class="mat-section-title">Ünite &amp; Konu</span>
+      </div>
+      <div class="mat-section-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+          <div class="mat-field">
+            <label class="mat-label">Ünite</label>
+            <select id="mat-unit" class="mat-select"></select>
+          </div>
+          <div class="mat-field" id="topic-container" style="${isUnitMode ? 'display:none;' : ''}">
+            <label class="mat-label">Konu</label>
+            <select id="mat-topic" class="mat-select"></select>
+          </div>
+        </div>
+        <div style="${isUnitMode ? 'display:none;' : ''}" id="mat-level-wrap">
+          <div class="mat-field">
+            <label class="mat-label">İçerik Seviyesi</label>
+            <select id="mat-level" class="mat-select">
+              <option value="topic" ${!isUnitMode ? 'selected' : ''}>📌 Konuya Özgü</option>
+              <option value="unit" ${isUnitMode ? 'selected' : ''}>📂 Ünite Geneli (Test/Deneme)</option>
+            </select>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="form-group" id="topic-container" style="${isUnitMode ? 'display:none;' : ''}">
-      <label>Konu</label>
-      <select id="mat-topic"></select>
+
+    <!-- SECTION 3: İçerik Türü -->
+    <div class="mat-section">
+      <div class="mat-section-hdr">
+        <div class="mat-section-icon" style="background:rgba(255,159,67,0.1);color:#ff9f43;">${icon('fileText', 14)}</div>
+        <span class="mat-section-title">İçerik Türü</span>
+      </div>
+      <div class="mat-section-body">
+        <input type="hidden" id="mat-type" value="${isUnitMode ? 'deneme' : 'ders_notu'}">
+        <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;" id="mat-type-cards">
+          ${contentTypeCards}
+        </div>
+      </div>
     </div>
-    
-    <div class="form-group">
-      <label>Başlık</label>
-      <input type="text" id="mat-title" placeholder="İçerik başlığı (örn: Konu Özeti)">
+
+    <!-- SECTION 4: İçerik Detayı -->
+    <div class="mat-section">
+      <div class="mat-section-hdr">
+        <div class="mat-section-icon" style="background:rgba(16,185,129,0.1);color:var(--brand-green);">${icon('link', 14)}</div>
+        <span class="mat-section-title">Başlık &amp; Link</span>
+      </div>
+      <div class="mat-section-body">
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div class="mat-field">
+            <label class="mat-label">${icon('edit', 11)} Başlık</label>
+            <input type="text" id="mat-title" class="mat-input" placeholder="Örn: 1. Ünite Konu Özeti, Tarama Testi…">
+          </div>
+          <div class="mat-field">
+            <label class="mat-label">${icon('link', 11)} Google Drive veya YouTube Linki</label>
+            <input type="url" id="mat-link" class="mat-input" placeholder="https://drive.google.com/... veya https://youtu.be/...">
+            <div class="mat-link-preview" id="mat-link-preview">
+              <div style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--brand-green);">
+                <span id="mat-link-icon" style="font-size:16px;"></span>
+                <span id="mat-link-label"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="form-group">
-      <label>Google Drive / YouTube Linki</label>
-      <input type="url" id="mat-link" placeholder="https://drive.google.com/...">
+
+    <div class="mat-error-box" id="mat-error"></div>
+
+    <div class="mat-footer">
+      <button class="mat-btn-cancel" id="mat-cancel">İptal</button>
+      <button class="mat-btn-save" id="mat-save">${icon('check', 14)} Kaydet</button>
     </div>
-    <div id="mat-error" style="color:var(--danger); font-size:13px; margin-top:8px; display:none; padding:8px; background:rgba(234, 84, 85, 0.1); border-radius:4px;"></div>
   `;
 
   openModal({
-    title: 'İçerik Ekle',
+    title: '',
     size: '',
     body,
-    footer: `<button class="btn btn-secondary" id="mat-cancel">İptal</button><button class="btn btn-primary" id="mat-save">Kaydet</button>`,
   });
 
   const gradeSel = document.getElementById('mat-grade');
@@ -664,8 +758,48 @@ function openAddMaterialModal(defSubject, defGrade, targetUnitId, targetTopicId,
   const topicSel = document.getElementById('mat-topic');
   const levelSel = document.getElementById('mat-level');
   const topicContainer = document.getElementById('topic-container');
+  const matTypeHidden = document.getElementById('mat-type');
 
-  // Trigger content level change
+  // ─── CONTENT TYPE CARDS ───
+  document.querySelectorAll('.mat-type-card').forEach(card => {
+    card.addEventListener('click', () => {
+      document.querySelectorAll('.mat-type-card').forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+      matTypeHidden.value = card.dataset.typeId;
+    });
+  });
+
+  // ─── LINK PREVIEW DETECTION ───
+  const linkInput = document.getElementById('mat-link');
+  const linkPreview = document.getElementById('mat-link-preview');
+  const linkIcon = document.getElementById('mat-link-icon');
+  const linkLabel = document.getElementById('mat-link-label');
+
+  linkInput?.addEventListener('input', () => {
+    const val = linkInput.value.trim();
+    if (!val) { linkPreview.style.display = 'none'; return; }
+    if (isYoutubeUrl(val)) {
+      linkPreview.style.display = 'block';
+      linkIcon.textContent = '🎬';
+      linkLabel.textContent = 'YouTube videosu algılandı — uygulama içinde oynatılacak';
+      // Auto-select 'video' type
+      document.querySelectorAll('.mat-type-card').forEach(c => c.classList.remove('active'));
+      const vidCard = document.querySelector('.mat-type-card[data-type-id="video"]');
+      if (vidCard) { vidCard.classList.add('active'); matTypeHidden.value = 'video'; }
+    } else if (isGoogleDriveUrl(val)) {
+      linkPreview.style.display = 'block';
+      linkIcon.textContent = '📁';
+      linkLabel.textContent = 'Google Drive dosyası algılandı — uygulama içinde önizlenecek';
+    } else if (val.startsWith('http')) {
+      linkPreview.style.display = 'block';
+      linkIcon.textContent = '🔗';
+      linkLabel.textContent = 'Harici bağlantı — yeni sekmede açılacak';
+    } else {
+      linkPreview.style.display = 'none';
+    }
+  });
+
+  // ─── LEVEL CHANGE ───
   levelSel?.addEventListener('change', (e) => {
     if (e.target.value === 'unit') {
       topicContainer.style.display = 'none';
@@ -748,7 +882,7 @@ function openAddMaterialModal(defSubject, defGrade, targetUnitId, targetTopicId,
   document.getElementById('mat-save')?.addEventListener('click', () => {
     const link = document.getElementById('mat-link').value.trim();
     const title = document.getElementById('mat-title').value.trim();
-    const isUnitLvl = levelSel.value === 'unit';
+    const isUnitLvl = isUnitMode || (levelSel && levelSel.value === 'unit');
     const errEl = document.getElementById('mat-error');
     
     function showError(msg) {
@@ -764,7 +898,7 @@ function openAddMaterialModal(defSubject, defGrade, targetUnitId, targetTopicId,
       grade: gradeSel.value,
       unitId: unitSel.value,
       topicId: isUnitLvl ? null : topicSel.value,
-      contentType: document.getElementById('mat-type').value,
+      contentType: matTypeHidden.value,
       title,
       link,
     });
@@ -772,6 +906,7 @@ function openAddMaterialModal(defSubject, defGrade, targetUnitId, targetTopicId,
     if (onSave) onSave();
   });
 }
+
 
 function openCurriculumPromptModal(title, label, defaultValue, onSave) {
   const body = `
