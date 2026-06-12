@@ -58,7 +58,7 @@ export function getModalBody() {
 }
 
 export function showConfirm({ title, message, confirmText = 'Onayla', cancelText = 'İptal', onConfirm, onCancel, type = 'primary' }) {
-  const btnClass = type === 'danger' ? 'btn-danger' : 'btn-primary';
+  const btnClass = type === 'danger' ? 'btn-danger' : type === 'success' ? 'btn-success' : 'btn-primary';
   openModal({
     title,
     body: `<p style="color:var(--text-secondary);line-height:1.6;">${message}</p>`,

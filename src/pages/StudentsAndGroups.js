@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════
 // STUDENTS AND GROUPS PAGE
 // ═══════════════════════════════════════════════════
-import { getState, deleteStudent, deleteGroup } from '../store/store.js';
+import { getState, deleteStudent, deleteGroup, updateStudent, updateGroup } from '../store/store.js';
 import { icon } from '../components/icons.js';
 import { formatCurrency, getAvatarColor, getInitials, getGroupInitials, escHtml } from '../utils/helpers.js';
 import { showConfirm } from '../components/modal.js';
@@ -157,12 +157,21 @@ function renderStudentCards(students, state) {
           </div>
         </div>
         <div style="display:flex; gap:6px; flex-shrink:0;" onclick="event.stopPropagation()">
-          <button class="btn btn-ghost btn-sm btn-icon hover-scale" data-edit-student="${s.id}" style="border-radius: 8px; width: 32px; height: 32px; border: 1px solid var(--border); background: white; display:flex; align-items:center; justify-content:center;">
-            ${icon('edit', 14)}
-          </button>
-          <button class="btn btn-ghost btn-sm btn-icon hover-scale" style="color:var(--danger); border-radius: 8px; width: 32px; height: 32px; border: 1px solid var(--border); background: white; display:flex; align-items:center; justify-content:center;" data-delete-student="${s.id}">
-            ${icon('trash', 14)}
-          </button>
+          ${s.status === 'passive' ? `
+            <button class="btn btn-ghost btn-sm btn-icon hover-scale" data-activate-student="${s.id}" title="Aktife Al" style="color:#10b981; border-radius: 8px; width: 32px; height: 32px; border: 1px solid rgba(16,185,129,0.3); background: rgba(16,185,129,0.08); display:flex; align-items:center; justify-content:center;">
+              ${icon('check', 14)}
+            </button>
+            <button class="btn btn-ghost btn-sm btn-icon hover-scale" data-delete-student="${s.id}" title="Kalıcı Sil" style="color:var(--danger); border-radius: 8px; width: 32px; height: 32px; border: 1px solid var(--border); background: white; display:flex; align-items:center; justify-content:center;">
+              ${icon('trash', 14)}
+            </button>
+          ` : `
+            <button class="btn btn-ghost btn-sm btn-icon hover-scale" data-edit-student="${s.id}" style="border-radius: 8px; width: 32px; height: 32px; border: 1px solid var(--border); background: white; display:flex; align-items:center; justify-content:center;">
+              ${icon('edit', 14)}
+            </button>
+            <button class="btn btn-ghost btn-sm btn-icon hover-scale" data-delete-student="${s.id}" title="Pasife Al" style="color:var(--danger); border-radius: 8px; width: 32px; height: 32px; border: 1px solid var(--border); background: white; display:flex; align-items:center; justify-content:center;">
+              ${icon('trash', 14)}
+            </button>
+          `}
         </div>
       </div>
     `;
@@ -197,12 +206,21 @@ function renderGroupCards(groups, state) {
           </div>
         </div>
         <div style="display:flex; gap:6px; flex-shrink:0;" onclick="event.stopPropagation()">
-          <button class="btn btn-ghost btn-sm btn-icon hover-scale" data-edit-group="${g.id}" style="border-radius: 8px; width: 32px; height: 32px; border: 1px solid var(--border); background: white; display:flex; align-items:center; justify-content:center;">
-            ${icon('edit', 14)}
-          </button>
-          <button class="btn btn-ghost btn-sm btn-icon hover-scale" style="color:var(--danger); border-radius: 8px; width: 32px; height: 32px; border: 1px solid var(--border); background: white; display:flex; align-items:center; justify-content:center;" data-delete-group="${g.id}">
-            ${icon('trash', 14)}
-          </button>
+          ${g.status === 'passive' ? `
+            <button class="btn btn-ghost btn-sm btn-icon hover-scale" data-activate-group="${g.id}" title="Aktife Al" style="color:#10b981; border-radius: 8px; width: 32px; height: 32px; border: 1px solid rgba(16,185,129,0.3); background: rgba(16,185,129,0.08); display:flex; align-items:center; justify-content:center;">
+              ${icon('check', 14)}
+            </button>
+            <button class="btn btn-ghost btn-sm btn-icon hover-scale" data-delete-group="${g.id}" title="Kalıcı Sil" style="color:var(--danger); border-radius: 8px; width: 32px; height: 32px; border: 1px solid var(--border); background: white; display:flex; align-items:center; justify-content:center;">
+              ${icon('trash', 14)}
+            </button>
+          ` : `
+            <button class="btn btn-ghost btn-sm btn-icon hover-scale" data-edit-group="${g.id}" style="border-radius: 8px; width: 32px; height: 32px; border: 1px solid var(--border); background: white; display:flex; align-items:center; justify-content:center;">
+              ${icon('edit', 14)}
+            </button>
+            <button class="btn btn-ghost btn-sm btn-icon hover-scale" data-delete-group="${g.id}" title="Pasife Al" style="color:var(--danger); border-radius: 8px; width: 32px; height: 32px; border: 1px solid var(--border); background: white; display:flex; align-items:center; justify-content:center;">
+              ${icon('trash', 14)}
+            </button>
+          `}
         </div>
       </div>
     `;
@@ -295,7 +313,7 @@ function initStudentsAndGroups(container, navigate) {
 function initStudentCardEvents(container, navigate) {
   container.querySelectorAll('[data-student-id]').forEach(card => {
     card.addEventListener('click', (e) => {
-      if (e.target.closest('[data-edit-student]') || e.target.closest('[data-delete-student]')) return;
+      if (e.target.closest('[data-edit-student]') || e.target.closest('[data-delete-student]') || e.target.closest('[data-activate-student]')) return;
       const id = card.dataset.studentId;
       import('./modals/StudentDetailModal.js').then(m => m.openStudentDetail(id, navigate));
     });
@@ -305,6 +323,25 @@ function initStudentCardEvents(container, navigate) {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       import('./modals/AddStudentModal.js').then(m => m.openAddStudentModal(() => navigate('studentsAndGroups'), btn.dataset.editStudent));
+    });
+  });
+
+  // Activate (reactivate) student
+  container.querySelectorAll('[data-activate-student]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.activateStudent;
+      const s = getState().students.find(x => x.id === id);
+      showConfirm({
+        title: 'Öğrenciyi Aktife Al',
+        message: `"${s?.name}" öğrencisi tekrar aktif listeye taşınacak. Pasif durumdaki planlanmış dersleri de yeniden aktif hale getirilecek.`,
+        confirmText: 'Aktife Al',
+        type: 'success',
+        onConfirm: () => {
+          updateStudent(id, { status: 'active' });
+          navigate('studentsAndGroups');
+        },
+      });
     });
   });
 
@@ -334,7 +371,7 @@ function initStudentCardEvents(container, navigate) {
 function initGroupCardEvents(container, navigate) {
   container.querySelectorAll('[data-group-id]').forEach(card => {
     card.addEventListener('click', (e) => {
-      if (e.target.closest('[data-edit-group]') || e.target.closest('[data-delete-group]')) return;
+      if (e.target.closest('[data-edit-group]') || e.target.closest('[data-delete-group]') || e.target.closest('[data-activate-group]')) return;
       const id = card.dataset.groupId;
       import('./modals/GroupDetailModal.js').then(m => m.openGroupDetail(id, navigate));
     });
@@ -344,6 +381,25 @@ function initGroupCardEvents(container, navigate) {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       import('./modals/AddGroupModal.js').then(m => m.openAddGroupModal(() => navigate('studentsAndGroups'), btn.dataset.editGroup));
+    });
+  });
+
+  // Activate (reactivate) group
+  container.querySelectorAll('[data-activate-group]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.activateGroup;
+      const g = getState().groups.find(x => x.id === id);
+      showConfirm({
+        title: 'Grubu Aktife Al',
+        message: `"${g?.name}" grubu tekrar aktif listeye taşınacak. Pasif durumdaki planlanmış dersleri de yeniden aktif hale getirilecek.`,
+        confirmText: 'Aktife Al',
+        type: 'success',
+        onConfirm: () => {
+          updateGroup(id, { status: 'active' });
+          navigate('studentsAndGroups');
+        },
+      });
     });
   });
 
