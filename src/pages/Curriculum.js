@@ -734,6 +734,12 @@ function openAddMaterialModal(defSubject, defGrade, targetUnitId, targetTopicId,
               </div>
             </div>
           </div>
+          
+          <div class="mat-field" style="margin-top:12px; display:flex; flex-direction:row; align-items:center; gap:8px;">
+            <input type="checkbox" id="mat-is-homework" style="width:18px;height:18px;accent-color:var(--warning);cursor:pointer;">
+            <label for="mat-is-homework" style="font-size:13px;font-weight:700;color:var(--text-secondary);cursor:pointer;">Bu materyali "Ünite/Konu Sonu Ödevi" olarak ayarla</label>
+          </div>
+
         </div>
       </div>
     </div>
@@ -901,6 +907,7 @@ function openAddMaterialModal(defSubject, defGrade, targetUnitId, targetTopicId,
       contentType: matTypeHidden.value,
       title,
       link,
+      isHomework: document.getElementById('mat-is-homework')?.checked || false
     });
     closeModal();
     if (onSave) onSave();

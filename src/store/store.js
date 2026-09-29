@@ -1392,3 +1392,24 @@ export function checkSeasonRenewal() {
 }
 
 export { setState, subscribe, generateId, _addMinutes, importData, resetData, deleteAccount };
+
+
+// ═════════════════════════════════════════════════
+// ASSIGNMENTS ACTIONS
+// ═════════════════════════════════════════════════
+
+export function addAssignment(assignment) {
+  setState(s => ({ assignments: [...(s.assignments || []), assignment] }));
+}
+
+export function updateAssignment(id, data) {
+  setState(s => ({
+    assignments: (s.assignments || []).map(a => a.id === id ? { ...a, ...data } : a)
+  }));
+}
+
+export function deleteAssignment(id) {
+  setState(s => ({
+    assignments: (s.assignments || []).filter(a => a.id !== id)
+  }));
+}

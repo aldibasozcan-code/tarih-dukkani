@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { id: 'dashboard', label: 'Anasayfa', icon: 'dashboard' },
   { id: 'curriculum', label: 'Müfredat', icon: 'book' },
   { id: 'studentsAndGroups', label: 'Öğrenci & Grup', icon: 'students' },
+  { id: 'assignments', label: 'Ödev Takibi', icon: 'book' },
   { id: 'finance', label: 'Muhasebe', icon: 'finance' },
   { id: 'calendar', label: 'Takvim', icon: 'calendar' },
   { id: 'chat', label: 'Mesajlar', icon: 'chat' },
@@ -94,6 +95,7 @@ function renderTopbar(state, unreadCount) {
   const pageTitles = {
     dashboard: 'Anasayfa', curriculum: 'Müfredat Yönetimi',
     studentsAndGroups: 'Öğrenci & Grup Yönetimi',
+    assignments: 'Ödev Takibi',
     finance: 'Muhasebe', calendar: 'Takvim',
     chat: 'Mesajlar', liveClass: 'Canlı Sınıf',
     settings: 'Ayarlar', profile: 'Profil',

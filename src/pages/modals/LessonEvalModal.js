@@ -113,6 +113,10 @@ export function openLessonEvalModal(lessonId, navigate) {
             </select>
           </div>
         ` : ''}
+        <div style="margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+          <input type="checkbox" id="l-hw-trigger" style="width:16px;height:16px;accent-color:var(--brand-green);cursor:pointer;">
+          <label for="l-hw-trigger" style="font-size:13px;font-weight:600;color:var(--text-primary);cursor:pointer;">Ünite Tamamlandı (Ödev Hatırlatıcısı Oluştur)</label>
+        </div>
         <div style="padding:10px;background:rgba(46,213,115,0.08);border-radius:8px;margin-bottom:12px;font-size:12px;color:var(--success);">
           ✓ Ders tamamlanınca: ₺${lesson.fee || ref?.rate || 0} muhasebe kaydına eklenecek ve bir sonraki hafta için ders otomatik planlanacak.
         </div>
@@ -191,6 +195,42 @@ export function openLessonEvalModal(lessonId, navigate) {
     const hwLink = hwSel?.value || '';
     const hwTitle = hwSel?.options[hwSel.selectedIndex]?.dataset.title || '';
     const notes = document.getElementById('l-eval-notes')?.value || '';
+    const triggerHw = document.getElementById('l-hw-trigger')?.checked;
+
+    if (triggerHw) {
+      import('../../store/store.js').then(m => {
+        const state = m.getState();
+        const allMats = Object.values(state.materials || {});
+        // Find if any material is marked as homework for this unit/topic
+        const unitMats = allMats.filter(mat => 
+          mat.subject === lesson.subject && 
+          mat.grade === lesson.grade && 
+          mat.isHomework === true
+        );
+        let predefinedHw = '';
+        if (unitMats.length > 0) {
+          predefinedHw = unitMats.map(x => x.title).join(', ');
+        }
+        
+        let desc = '';
+        if (predefinedHw) desc = `Kayıtlı Ödev: ${predefinedHw}`;
+        else if (hwTitle) desc = `Derste Önerilen: ${hwTitle}`;
+
+        const topicName = document.getElementById('l-topic-done')?.value || lesson.unitId || 'İşlenen Konu';
+        m.addAssignment({
+          id: 'asn_' + Date.now().toString(36),
+          type: lesson.type,
+          refId: lesson.refId,
+          subject: lesson.subject,
+          grade: lesson.grade,
+          unit: topicName,
+          status: 'pending',
+          createdDate: todayStr(),
+          dueDate: null,
+          description: desc
+        });
+      });
+    }
 
     const extraOpts = {
       notes,

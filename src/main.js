@@ -14,7 +14,7 @@ let currentPage = '';
 let currentLayout = null; // Forces initial layout render
 
 const PUBLIC_PAGES = ['home', 'forum', 'blog', 'sozluk', 'post-detail', 'privacy', 'terms-of-service'];
-const DASHBOARD_PAGES = ['dashboard', 'curriculum', 'studentsAndGroups', 'finance', 'calendar', 'chat', 'liveClass', 'publish', 'settings', 'profile', 'notifications', 'admin'];
+const DASHBOARD_PAGES = ['dashboard', 'curriculum', 'studentsAndGroups', 'assignments', 'finance', 'calendar', 'chat', 'liveClass', 'publish', 'settings', 'profile', 'notifications', 'admin'];
 
 // ─── Navigate function ───
 async function navigate(page, force = false) {
@@ -137,6 +137,10 @@ async function navigate(page, force = false) {
         case 'liveClass':
           module = await import('./pages/LiveClass.js');
           result = module.renderLiveClass(navigate);
+          break;
+        case 'assignments':
+          module = await import('./pages/Assignments.js');
+          result = module.renderAssignments(navigate);
           break;
         case 'publish':
           module = await import('./pages/Publish.js');

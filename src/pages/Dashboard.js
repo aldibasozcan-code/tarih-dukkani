@@ -678,24 +678,34 @@ function renderGroupsWidget(state) {
 }
 
 function renderHomeworkWidget(recentHomeworks) {
+  const state = getState();
+  const assignments = state.assignments || [];
+  const pending = assignments.filter(a => a.status === 'pending');
+  
   return `
     <div class="dashboard-widget" data-widget-id="homework" style="width: 100%;">
-      <div class="card glass-card" style="padding:20px; border-top:none; border-bottom:4px solid var(--warning);">
+      <div class="card glass-card hover-lift" style="padding:20px; border-top:none; border-bottom:4px solid var(--warning); cursor:pointer;" onclick="document.querySelector('[data-nav=\'assignments\']')?.click()">
         <div class="section-title" style="margin-bottom:12px;">
-           <h3 style="font-size:14px; color:var(--warning);">${icon('book', 14)} Aktif Ödev Takibi</h3>
+           <h3 style="font-size:14px; color:var(--warning);">${icon('book', 14)} Ödev Hatırlatmaları</h3>
         </div>
         <div style="display:flex; flex-direction:column; gap:8px;">
-           ${recentHomeworks.length === 0 ? `
-             <p style="font-size:13px; color:var(--text-muted); font-style:italic;">Verilen ödev bulunmuyor.</p>
-           ` : recentHomeworks.map(hw => `
+           ${pending.length === 0 ? `
+             <p style="font-size:13px; color:var(--text-muted); font-style:italic;">Hatırlatma bulunmuyor.</p>
+           ` : pending.slice(0, 3).map(a => {
+             let entityName = 'Bilinmiyor';
+             if (a.type === 'student') entityName = state.students.find(x => x.id === a.refId)?.name || 'Bilinmiyor';
+             if (a.type === 'group') entityName = state.groups.find(x => x.id === a.refId)?.name || 'Bilinmiyor';
+             return `
              <div style="padding:10px; border:1px solid var(--border); border-radius:10px; background:white; display:flex; flex-direction:column; gap:4px;">
                <div style="display:flex; justify-content:space-between; align-items:center;">
-                 <span style="font-size:11px; font-weight:800; color:var(--brand-green);">${escHtml(hw.studentName)}</span>
-                 <span style="font-size:10px; color:var(--text-muted); font-weight:600;">${formatDateShort(hw.date)}</span>
+                 <span style="font-size:11px; font-weight:800; color:var(--brand-green);">${escHtml(entityName)}</span>
+                 <span style="font-size:10px; color:var(--text-muted); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:80px;">${escHtml(a.unit || '')}</span>
                </div>
-               <div style="font-size:12px; font-weight:600; color:var(--text-primary);">${escHtml(hw.description)}</div>
+               <div style="font-size:12px; font-weight:600; color:var(--warning);">Ödev verilmesi bekleniyor</div>
              </div>
-           `).join('')}
+             `;
+           }).join('')}
+           ${pending.length > 3 ? `<div style="text-align:center; font-size:11px; color:var(--text-muted); margin-top:4px;">+${pending.length - 3} hatırlatma daha</div>` : ''}
         </div>
       </div>
     </div>
