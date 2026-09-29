@@ -95,11 +95,21 @@ export function renderStudentsAndGroups(navigate) {
             </div>
           </div>
           <div style="padding:16px 20px 20px;">
-            <div style="position:relative; margin-bottom:14px;">
-              <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);display:flex;align-items:center;">${icon('search', 15)}</span>
-              <input type="text" id="student-search" placeholder="Öğrenci ara..." style="width:100%;padding:9px 12px 9px 36px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-weight:600;outline:none;transition:all 0.2s;box-sizing:border-box;">
+            <div style="display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; align-items:center;">
+              <div style="position:relative; flex:1; min-width:140px;">
+                <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);display:flex;align-items:center;">${icon('search', 15)}</span>
+                <input type="text" id="student-search" placeholder="Öğrenci ara..." style="width:100%;padding:9px 12px 9px 36px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-weight:600;outline:none;transition:all 0.2s;box-sizing:border-box;">
+              </div>
+              <select id="student-sort" style="padding:9px 12px; border:1.5px solid var(--border); border-radius:10px; font-size:13px; font-weight:600; outline:none; background:white; color:var(--text-primary); cursor:pointer;">
+                <option value="calendar" selected>Takvime Göre</option>
+                <option value="default">Kayıt Sırası</option>
+              </select>
+              <div style="display:flex; background:rgba(16,185,129,0.06); border:1.5px solid rgba(16,185,129,0.12); border-radius:10px; padding:3px;">
+                <button class="view-btn student-view active" data-view="list" style="padding:5px 12px; border:none; background:white; border-radius:7px; cursor:pointer; color:var(--brand-green); box-shadow:0 1px 3px rgba(0,0,0,0.05); font-size:12px; font-weight:700;">Liste</button>
+                <button class="view-btn student-view" data-view="grid" style="padding:5px 12px; border:none; background:transparent; border-radius:7px; cursor:pointer; color:var(--text-muted); font-size:12px; font-weight:700;">Galeri</button>
+              </div>
             </div>
-            <div class="grid" id="students-grid" style="grid-template-columns: 1fr;">
+            <div class="grid" id="students-grid" style="display:grid; grid-template-columns: 1fr; gap:12px;">
               <!-- student cards injected here -->
             </div>
             <div class="empty-state" id="students-empty" style="display:none; padding: 30px;">
@@ -126,11 +136,21 @@ export function renderStudentsAndGroups(navigate) {
             </div>
           </div>
           <div style="padding:16px 20px 20px;">
-            <div style="position:relative; margin-bottom:14px;">
-              <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);display:flex;align-items:center;">${icon('search', 15)}</span>
-              <input type="text" id="group-search" placeholder="Grup ara..." style="width:100%;padding:9px 12px 9px 36px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-weight:600;outline:none;transition:all 0.2s;box-sizing:border-box;">
+            <div style="display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; align-items:center;">
+              <div style="position:relative; flex:1; min-width:140px;">
+                <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);display:flex;align-items:center;">${icon('search', 15)}</span>
+                <input type="text" id="group-search" placeholder="Grup ara..." style="width:100%;padding:9px 12px 9px 36px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-weight:600;outline:none;transition:all 0.2s;box-sizing:border-box;">
+              </div>
+              <select id="group-sort" style="padding:9px 12px; border:1.5px solid var(--border); border-radius:10px; font-size:13px; font-weight:600; outline:none; background:white; color:var(--text-primary); cursor:pointer;">
+                <option value="calendar" selected>Takvime Göre</option>
+                <option value="default">Kayıt Sırası</option>
+              </select>
+              <div style="display:flex; background:rgba(79,70,229,0.05); border:1.5px solid rgba(79,70,229,0.1); border-radius:10px; padding:3px;">
+                <button class="view-btn group-view active" data-view="list" style="padding:5px 12px; border:none; background:white; border-radius:7px; cursor:pointer; color:#4f46e5; box-shadow:0 1px 3px rgba(0,0,0,0.05); font-size:12px; font-weight:700;">Liste</button>
+                <button class="view-btn group-view" data-view="grid" style="padding:5px 12px; border:none; background:transparent; border-radius:7px; cursor:pointer; color:var(--text-muted); font-size:12px; font-weight:700;">Galeri</button>
+              </div>
             </div>
-            <div class="grid" id="groups-grid" style="grid-template-columns: 1fr;">
+            <div class="grid" id="groups-grid" style="display:grid; grid-template-columns: 1fr; gap:12px;">
               <!-- group cards injected here -->
             </div>
             <div class="empty-state" id="groups-empty" style="display:none; padding: 30px;">
@@ -147,24 +167,28 @@ export function renderStudentsAndGroups(navigate) {
   return { html, init: (el, nav) => initStudentsAndGroups(el, nav) };
 }
 
-function renderStudentCards(students, state) {
+function renderStudentCards(students, state, viewMode = 'list') {
+  const days = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
   return students.map(s => {
     const avatarColor = getAvatarColor(s.name);
     const completedCount = state.lessons.filter(l => l.type === 'individual' && l.refId === s.id && l.status === 'completed').length;
     
+    const cardFlex = viewMode === 'grid' ? 'flex-direction: column; text-align: center;' : 'flex-direction: row; align-items: center;';
+    const actionFlex = viewMode === 'grid' ? 'width: 100%; justify-content: center; margin-top: auto;' : 'flex-shrink: 0;';
+
     return `
-      <div class="premium-card person-card hover-lift" data-student-id="${s.id}" style="padding: 18px 24px; border-top: none; border-left: 4px solid ${avatarColor}; display:flex; align-items:center; gap: 16px; cursor: pointer; background: white; margin-bottom: 12px; border-radius: 16px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); transition: all 0.3s;">
+      <div class="premium-card person-card hover-lift" data-student-id="${s.id}" style="padding: 18px 24px; border-top: none; border-left: 4px solid ${avatarColor}; display:flex; ${cardFlex} gap: 16px; cursor: pointer; background: white; margin-bottom: 0px; border-radius: 16px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); transition: all 0.3s; height: 100%; box-sizing: border-box;">
         <div class="person-avatar" style="background:${avatarColor}; width: 52px; height: 52px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); font-size: 18px; color:white; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-weight: 800;">
           ${getInitials(s.name)}
         </div>
-        <div style="flex:1; min-width:0;">
+        <div style="flex:1; min-width:0; width: 100%;">
           <div class="person-name" style="font-size: 16px; font-weight: 800; color: var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
             ${escHtml(s.name)}
           </div>
           <div class="person-sub" style="font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-top: 2px;">
-            ${s.grade} ${s.phone ? `• ${escHtml(s.phone)}` : ''}
+            ${s.grade} • ${s.dayOfWeek != null ? days[s.dayOfWeek] : ''} ${s.time || ''} ${s.phone ? `• ${escHtml(s.phone)}` : ''}
           </div>
-          <div style="display:flex; gap:6px; margin-top: 8px; flex-wrap:wrap; align-items: center;">
+          <div style="display:flex; gap:6px; margin-top: 8px; flex-wrap:wrap; align-items: center; ${viewMode === 'grid' ? 'justify-content: center;' : ''}">
             <span class="badge" style="background: var(--brand-green-soft); color: var(--brand-green); font-size: 11px; padding: 4px 10px; border-radius: 8px; font-weight: 700; border: 1px solid rgba(16, 185, 129, 0.15);">
               ${formatCurrency(s.rate)}/saat
             </span>
@@ -173,7 +197,7 @@ function renderStudentCards(students, state) {
             </span>
           </div>
         </div>
-        <div style="display:flex; gap:6px; flex-shrink:0;" onclick="event.stopPropagation()">
+        <div style="display:flex; gap:6px; ${actionFlex}" onclick="event.stopPropagation()">
           ${s.status === 'passive' ? `
             <button class="btn btn-ghost btn-sm btn-icon hover-scale" data-activate-student="${s.id}" title="Aktife Al" style="color:#10b981; border-radius: 8px; width: 32px; height: 32px; border: 1px solid rgba(16,185,129,0.3); background: rgba(16,185,129,0.08); display:flex; align-items:center; justify-content:center;">
               ${icon('check', 14)}
@@ -195,25 +219,28 @@ function renderStudentCards(students, state) {
   }).join('');
 }
 
-function renderGroupCards(groups, state) {
+function renderGroupCards(groups, state, viewMode = 'list') {
   const days = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
   return groups.map(g => {
     const avatarColor = getAvatarColor(g.name);
     const completedCount = state.lessons.filter(l => l.type === 'group' && l.refId === g.id && l.status === 'completed').length;
     
+    const cardFlex = viewMode === 'grid' ? 'flex-direction: column; text-align: center;' : 'flex-direction: row; align-items: center;';
+    const actionFlex = viewMode === 'grid' ? 'width: 100%; justify-content: center; margin-top: auto;' : 'flex-shrink: 0;';
+
     return `
-      <div class="premium-card person-card hover-lift" data-group-id="${g.id}" style="padding: 18px 24px; border-top: none; border-left: 4px solid ${avatarColor}; display:flex; align-items:center; gap: 16px; cursor: pointer; background: white; margin-bottom: 12px; border-radius: 16px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); transition: all 0.3s;">
+      <div class="premium-card person-card hover-lift" data-group-id="${g.id}" style="padding: 18px 24px; border-top: none; border-left: 4px solid ${avatarColor}; display:flex; ${cardFlex} gap: 16px; cursor: pointer; background: white; margin-bottom: 0px; border-radius: 16px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); transition: all 0.3s; height: 100%; box-sizing: border-box;">
         <div class="person-avatar" style="background:${avatarColor}; width: 52px; height: 52px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); font-size: 18px; color:white; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-weight: 800;">
           ${getGroupInitials(g.name)}
         </div>
-        <div style="flex:1; min-width:0;">
+        <div style="flex:1; min-width:0; width: 100%;">
           <div class="person-name" style="font-size: 16px; font-weight: 800; color: var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
             ${escHtml(g.name)}
           </div>
           <div class="person-sub" style="font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-top: 2px;">
-            ${g.grade} • ${days[g.dayOfWeek]} ${g.time}
+            ${g.grade} • ${g.dayOfWeek != null ? days[g.dayOfWeek] : ''} ${g.time || ''}
           </div>
-          <div style="display:flex; gap:6px; margin-top: 8px; flex-wrap:wrap; align-items: center;">
+          <div style="display:flex; gap:6px; margin-top: 8px; flex-wrap:wrap; align-items: center; ${viewMode === 'grid' ? 'justify-content: center;' : ''}">
             <span class="badge" style="background: rgba(124, 106, 255, 0.1); color: #7c6aff; font-size: 11px; padding: 4px 10px; border-radius: 8px; font-weight: 700; border: 1px solid rgba(124, 106, 255, 0.15);">
               ${formatCurrency(g.rate)}/saat
             </span>
@@ -222,7 +249,7 @@ function renderGroupCards(groups, state) {
             </span>
           </div>
         </div>
-        <div style="display:flex; gap:6px; flex-shrink:0;" onclick="event.stopPropagation()">
+        <div style="display:flex; gap:6px; ${actionFlex}" onclick="event.stopPropagation()">
           ${g.status === 'passive' ? `
             <button class="btn btn-ghost btn-sm btn-icon hover-scale" data-activate-group="${g.id}" title="Aktife Al" style="color:#10b981; border-radius: 8px; width: 32px; height: 32px; border: 1px solid rgba(16,185,129,0.3); background: rgba(16,185,129,0.08); display:flex; align-items:center; justify-content:center;">
               ${icon('check', 14)}
@@ -247,6 +274,11 @@ function renderGroupCards(groups, state) {
 function initStudentsAndGroups(container, navigate) {
   let currentStudentTab = 'active';
   let currentGroupTab = 'active';
+  
+  let studentViewMode = 'list';
+  let groupViewMode = 'list';
+  let studentSort = 'calendar';
+  let groupSort = 'calendar';
 
   // Tabs for students
   container.querySelectorAll('.student-tab').forEach(btn => {
@@ -267,6 +299,64 @@ function initStudentsAndGroups(container, navigate) {
       refreshGroupList();
     });
   });
+  
+  // View mode bindings
+  container.querySelectorAll('.student-view').forEach(btn => {
+    btn.addEventListener('click', () => {
+      container.querySelectorAll('.student-view').forEach(b => {
+        b.classList.remove('active');
+        b.style.background = 'transparent';
+        b.style.boxShadow = 'none';
+        b.style.color = 'var(--text-muted)';
+      });
+      btn.classList.add('active');
+      btn.style.background = 'white';
+      btn.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05)';
+      btn.style.color = 'var(--brand-green)';
+      studentViewMode = btn.dataset.view;
+      
+      const grid = container.querySelector('#students-grid');
+      if (grid) {
+        grid.style.gridTemplateColumns = studentViewMode === 'grid' ? 'repeat(auto-fill, minmax(220px, 1fr))' : '1fr';
+      }
+      refreshStudentList();
+    });
+  });
+  
+  container.querySelectorAll('.group-view').forEach(btn => {
+    btn.addEventListener('click', () => {
+      container.querySelectorAll('.group-view').forEach(b => {
+        b.classList.remove('active');
+        b.style.background = 'transparent';
+        b.style.boxShadow = 'none';
+        b.style.color = 'var(--text-muted)';
+      });
+      btn.classList.add('active');
+      btn.style.background = 'white';
+      btn.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05)';
+      btn.style.color = '#4f46e5';
+      groupViewMode = btn.dataset.view;
+      
+      const grid = container.querySelector('#groups-grid');
+      if (grid) {
+        grid.style.gridTemplateColumns = groupViewMode === 'grid' ? 'repeat(auto-fill, minmax(220px, 1fr))' : '1fr';
+      }
+      refreshGroupList();
+    });
+  });
+
+  // Sort bindings
+  const studentSortEl = container.querySelector('#student-sort');
+  studentSortEl?.addEventListener('change', (e) => {
+    studentSort = e.target.value;
+    refreshStudentList();
+  });
+  
+  const groupSortEl = container.querySelector('#group-sort');
+  groupSortEl?.addEventListener('change', (e) => {
+    groupSort = e.target.value;
+    refreshGroupList();
+  });
 
   // Search
   const studentSearchInp = container.querySelector('#student-search');
@@ -275,20 +365,47 @@ function initStudentsAndGroups(container, navigate) {
   const groupSearchInp = container.querySelector('#group-search');
   groupSearchInp?.addEventListener('input', () => refreshGroupList());
 
+  function sortData(list, sortType) {
+    if (sortType === 'calendar') {
+      return list.sort((a, b) => {
+        const getFirstSch = (ent) => {
+          let schs = ent.schedules && ent.schedules.length > 0 ? ent.schedules : (ent.dayOfWeek != null ? [{dayOfWeek: ent.dayOfWeek, time: ent.time}] : []);
+          if (schs.length === 0) return { day: 8, time: '23:59' };
+          let best = { day: 8, time: '23:59' };
+          for (let sch of schs) {
+            let d = sch.dayOfWeek === 0 ? 7 : (sch.dayOfWeek || 8);
+            let t = sch.time || '23:59';
+            if (d < best.day || (d === best.day && t < best.time)) {
+              best = { day: d, time: t };
+            }
+          }
+          return best;
+        };
+        let schA = getFirstSch(a);
+        let schB = getFirstSch(b);
+        if (schA.day !== schB.day) return schA.day - schB.day;
+        return schA.time.localeCompare(schB.time);
+      });
+    }
+    return list;
+  }
+
   function refreshStudentList() {
-    const q = studentSearchInp.value.toLowerCase();
+    const q = studentSearchInp ? studentSearchInp.value.toLowerCase() : '';
     const state = getState();
     const grid = container.querySelector('#students-grid');
     const empty = container.querySelector('#students-empty');
     if (!grid) return;
 
-    const filtered = state.students.filter(s => {
+    let filtered = state.students.filter(s => {
       const matchStatus = (s.status || 'active') === currentStudentTab;
-      const matchSearch = s.name.toLowerCase().includes(q) || s.grade.toLowerCase().includes(q);
+      const matchSearch = s.name.toLowerCase().includes(q) || (s.grade && s.grade.toLowerCase().includes(q));
       return matchStatus && matchSearch;
     });
 
-    grid.innerHTML = renderStudentCards(filtered, state);
+    filtered = sortData(filtered, studentSort);
+
+    grid.innerHTML = renderStudentCards(filtered, state, studentViewMode);
     if (empty) {
       empty.style.display = filtered.length === 0 ? 'flex' : 'none';
       empty.querySelector('h3').textContent = currentStudentTab === 'active' ? 'Henüz aktif öğrenci eklenmedi' : 'Pasif öğrenci bulunamadı';
@@ -297,19 +414,21 @@ function initStudentsAndGroups(container, navigate) {
   }
 
   function refreshGroupList() {
-    const q = groupSearchInp.value.toLowerCase();
+    const q = groupSearchInp ? groupSearchInp.value.toLowerCase() : '';
     const state = getState();
     const grid = container.querySelector('#groups-grid');
     const empty = container.querySelector('#groups-empty');
     if (!grid) return;
 
-    const filtered = state.groups.filter(g => {
+    let filtered = state.groups.filter(g => {
       const matchStatus = (g.status || 'active') === currentGroupTab;
-      const matchSearch = g.name.toLowerCase().includes(q) || g.grade.toLowerCase().includes(q);
+      const matchSearch = g.name.toLowerCase().includes(q) || (g.grade && g.grade.toLowerCase().includes(q));
       return matchStatus && matchSearch;
     });
 
-    grid.innerHTML = renderGroupCards(filtered, state);
+    filtered = sortData(filtered, groupSort);
+
+    grid.innerHTML = renderGroupCards(filtered, state, groupViewMode);
     if (empty) {
       empty.style.display = filtered.length === 0 ? 'flex' : 'none';
       empty.querySelector('h3').textContent = currentGroupTab === 'active' ? 'Henüz aktif grup eklenmedi' : 'Pasif grup bulunamadı';
@@ -323,11 +442,11 @@ function initStudentsAndGroups(container, navigate) {
 
   // Add buttons
   container.querySelector('#btn-add-student')?.addEventListener('click', () => {
-    import('./modals/AddStudentModal.js').then(m => m.openAddStudentModal(() => navigate('studentsAndGroups')));
+    import('./modals/AddStudentModal.js').then(m => m.openAddStudentModal(() => navigate('studentsAndGroups', true)));
   });
 
   container.querySelector('#btn-add-group')?.addEventListener('click', () => {
-    import('./modals/AddGroupModal.js').then(m => m.openAddGroupModal(() => navigate('studentsAndGroups')));
+    import('./modals/AddGroupModal.js').then(m => m.openAddGroupModal(() => navigate('studentsAndGroups', true)));
   });
 }
 
@@ -343,7 +462,7 @@ function initStudentCardEvents(container, navigate) {
   container.querySelectorAll('[data-edit-student]').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      import('./modals/AddStudentModal.js').then(m => m.openAddStudentModal(() => navigate('studentsAndGroups'), btn.dataset.editStudent));
+      import('./modals/AddStudentModal.js').then(m => m.openAddStudentModal(() => navigate('studentsAndGroups', true), btn.dataset.editStudent));
     });
   });
 
@@ -360,7 +479,7 @@ function initStudentCardEvents(container, navigate) {
         type: 'success',
         onConfirm: () => {
           updateStudent(id, { status: 'active' });
-          navigate('studentsAndGroups');
+          navigate('studentsAndGroups', true);
         },
       });
     });
@@ -382,7 +501,7 @@ function initStudentCardEvents(container, navigate) {
         type: 'danger',
         onConfirm: () => { 
           deleteStudent(id); 
-          navigate('studentsAndGroups'); 
+          navigate('studentsAndGroups', true); 
         },
       });
     });
@@ -401,7 +520,7 @@ function initGroupCardEvents(container, navigate) {
   container.querySelectorAll('[data-edit-group]').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      import('./modals/AddGroupModal.js').then(m => m.openAddGroupModal(() => navigate('studentsAndGroups'), btn.dataset.editGroup));
+      import('./modals/AddGroupModal.js').then(m => m.openAddGroupModal(() => navigate('studentsAndGroups', true), btn.dataset.editGroup));
     });
   });
 
@@ -418,7 +537,7 @@ function initGroupCardEvents(container, navigate) {
         type: 'success',
         onConfirm: () => {
           updateGroup(id, { status: 'active' });
-          navigate('studentsAndGroups');
+          navigate('studentsAndGroups', true);
         },
       });
     });
@@ -440,7 +559,7 @@ function initGroupCardEvents(container, navigate) {
         type: 'danger',
         onConfirm: () => { 
           deleteGroup(id); 
-          navigate('studentsAndGroups'); 
+          navigate('studentsAndGroups', true); 
         },
       });
     });

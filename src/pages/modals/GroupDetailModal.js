@@ -272,7 +272,7 @@ export function openGroupDetail(groupId, navigate) {
         import('./AddGroupModal.js').then(m => {
           closeModal();
           m.openAddGroupModal(() => {
-             if (navigate) navigate('studentsAndGroups');
+             if (navigate) navigate('studentsAndGroups', true);
           }, group.id);
         });
       });

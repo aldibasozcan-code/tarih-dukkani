@@ -32,7 +32,7 @@ export function openStudentDetail(studentId, navigate) {
         import('./AddStudentModal.js').then(m => {
           closeModal();
           m.openAddStudentModal(() => {
-            if (navigate) navigate('studentsAndGroups');
+            if (navigate) navigate('studentsAndGroups', true);
           }, studentId);
         });
       });

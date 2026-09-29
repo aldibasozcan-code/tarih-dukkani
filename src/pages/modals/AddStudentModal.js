@@ -170,31 +170,28 @@ export function openAddStudentModal(onSave, editId = null) {
           <div class="pm-sec">
             <div class="pm-sec-hdr">
               <div class="pm-sec-ico" style="background:rgba(124,106,255,0.1);color:#7c6aff;">${icon('clock', 14)}</div>
-              <span class="pm-sec-ttl">Ders Programı</span>
+              <span class="pm-sec-ttl">Ders Programı (Çoklu Gün/Saat)</span>
             </div>
             <div class="pm-sec-body">
-              <div class="pm-grid-3" style="margin-bottom:12px;">
-                <div class="pm-field">
-                  <label class="pm-label">Gün</label>
-                  <select id="s-day" class="pm-select">
-                    <option value="">Opsiyonel</option>
-                    ${DAYS.map((d, i) => `<option value="${i}" ${student?.dayOfWeek === i ? 'selected' : ''}>${d}</option>`).join('')}
-                  </select>
-                </div>
-                <div class="pm-field">
-                  <label class="pm-label">Saat</label>
-                  <input type="time" id="s-time" class="pm-input" value="${student?.time || '14:00'}">
-                </div>
+              
+              <div id="s-schedules-container" style="display:flex; flex-direction:column; gap:10px; margin-bottom:12px;">
+                <!-- schedules will be injected here via JS -->
+              </div>
+              <button type="button" id="s-add-schedule-btn" style="background:rgba(16,185,129,0.1); color:var(--brand-green); border:1px solid rgba(16,185,129,0.2); border-radius:8px; padding:6px 12px; font-size:12px; font-weight:700; cursor:pointer; width:100%; margin-bottom:12px;">+ Yeni Gün/Saat Ekle</button>
+
+              <div class="pm-grid-2" style="margin-bottom:12px;">
                 <div class="pm-field">
                   <label class="pm-label">Süre (dk)</label>
                   <input type="number" id="s-duration" class="pm-input" value="${student?.duration || 60}" min="10" step="5">
                 </div>
-              </div>
-              <div class="pm-dur-chips" id="s-dur-chips">
-                <span class="pm-dur-chip" data-min="30">30 dk</span>
-                <span class="pm-dur-chip active" data-min="60">60 dk</span>
-                <span class="pm-dur-chip" data-min="90">90 dk</span>
-                <span class="pm-dur-chip" data-min="120">2 saat</span>
+                <div class="pm-field" style="justify-content: flex-end;">
+                    <div class="pm-dur-chips" id="s-dur-chips" style="margin-top:0;">
+                    <span class="pm-dur-chip" data-min="30">30 dk</span>
+                    <span class="pm-dur-chip active" data-min="60">60 dk</span>
+                    <span class="pm-dur-chip" data-min="90">90 dk</span>
+                    <span class="pm-dur-chip" data-min="120">2 sa</span>
+                  </div>
+                </div>
               </div>
               <div class="pm-grid-2" style="margin-top:12px;">
                 <div class="pm-field">
@@ -360,8 +357,12 @@ export function openAddStudentModal(onSave, editId = null) {
       meetLink: fmtHidden.value === 'meet' ? linkInp.value.trim() : '',
       notes: document.getElementById('s-notes').value.trim(),
       status: document.getElementById('s-status').value,
-      dayOfWeek: document.getElementById('s-day').value !== '' ? parseInt(document.getElementById('s-day').value) : null,
-      time: document.getElementById('s-time').value,
+      schedules: Array.from(document.querySelectorAll('.s-schedule-row')).map(row => ({
+        dayOfWeek: row.querySelector('.s-sch-day').value !== '' ? parseInt(row.querySelector('.s-sch-day').value) : null,
+        time: row.querySelector('.s-sch-time').value
+      })).filter(sch => sch.dayOfWeek !== null && sch.time !== ''),
+      dayOfWeek: Array.from(document.querySelectorAll('.s-schedule-row')).length > 0 ? (Array.from(document.querySelectorAll('.s-schedule-row'))[0].querySelector('.s-sch-day').value !== '' ? parseInt(Array.from(document.querySelectorAll('.s-schedule-row'))[0].querySelector('.s-sch-day').value) : null) : null,
+      time: Array.from(document.querySelectorAll('.s-schedule-row')).length > 0 ? Array.from(document.querySelectorAll('.s-schedule-row'))[0].querySelector('.s-sch-time').value : null,
       startDate: document.getElementById('s-start').value,
       endDate: document.getElementById('s-end').value,
       duration: parseInt(durInput.value) || 60,

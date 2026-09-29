@@ -527,61 +527,66 @@ export function addPlannedStudent(data, plannedLessons) {
 }
 
 function _generateRecurringLessons(entity, type) {
-  if (entity.dayOfWeek === null || entity.dayOfWeek === undefined) return { lessons: [], transactions: [] };
+  let schedules = entity.schedules;
+  if (!schedules || schedules.length === 0) {
+    if (entity.dayOfWeek === null || entity.dayOfWeek === undefined) return { lessons: [], transactions: [] };
+    schedules = [{ dayOfWeek: entity.dayOfWeek, time: entity.time || '14:00' }];
+  }
 
   const start = new Date((entity.startDate || todayStr()) + 'T00:00:00');
   const end = new Date((entity.endDate || todayStr()) + 'T23:59:59');
   const today = todayStr();
-
-  const iterDate = new Date(start);
   
-  // Align to the entity's dayOfWeek
-  const dayDiff = (entity.dayOfWeek - iterDate.getDay() + 7) % 7;
-  iterDate.setDate(iterDate.getDate() + dayDiff);
-
   const newLessons = [];
   const newTransactions = [];
 
-  while (iterDate <= end) {
-    const dateStr = getLocalDateStr(iterDate);
-    const isPast = dateStr < today;
-    const lessonId = generateId();
+  for (const schedule of schedules) {
+    const iterDate = new Date(start);
+    const dayDiff = (schedule.dayOfWeek - iterDate.getDay() + 7) % 7;
+    iterDate.setDate(iterDate.getDate() + dayDiff);
 
-    newLessons.push({
-      id: lessonId,
-      type: type,
-      refId: entity.id,
-      title: entity.name,
-      date: dateStr,
-      startTime: entity.time || '14:00',
-      endTime: _addMinutes(entity.time || '14:00', entity.duration || 60),
-      status: isPast ? 'completed' : 'upcoming',
-      subject: _getSubjectForGrade(entity.grade, getState().profile.branches || []),
-      grade: entity.grade,
-      unitId: null,
-      topicId: null,
-      homework: null,
-      notes: isPast ? 'Geçmiş ders kaydı (Otomatik oluşturuldu)' : '',
-      fee: entity.rate || 0,
-      lessonFormat: entity.lessonFormat || (type === 'student' ? 'meet' : 'zoom'),
-      lessonLink: entity.lessonLink || entity.meetLink || entity.zoomLink || '',
-    });
+    while (iterDate <= end) {
+      const dateStr = getLocalDateStr(iterDate);
+      const isPast = dateStr < today;
+      const lessonId = generateId();
 
-    if (isPast && (entity.rate || 0) > 0) {
-      newTransactions.push({
-        id: generateId(),
-        type: 'income',
-        amount: entity.rate,
-        description: `${entity.name} - ${dateStr} Dersi (Geçmiş Kayıt)`,
-        date: dateStr,
+      newLessons.push({
+        id: lessonId,
+        type: type,
         refId: entity.id,
-        refType: type,
-        lessonId: lessonId
+        title: entity.name,
+        date: dateStr,
+        startTime: schedule.time || '14:00',
+        endTime: _addMinutes(schedule.time || '14:00', entity.duration || 60),
+        status: isPast ? 'completed' : 'upcoming',
+        subject: _getSubjectForGrade(entity.grade, getState().profile.branches || []),
+        grade: entity.grade,
+        unitId: null,
+        topicId: null,
+        homework: null,
+        notes: isPast ? 'Geçmiş ders kaydı (Otomatik oluşturuldu)' : '',
+        fee: entity.rate || 0,
+        lessonFormat: entity.lessonFormat || (type === 'student' ? 'meet' : 'zoom'),
+        lessonLink: entity.lessonLink || entity.meetLink || entity.zoomLink || '',
       });
-    }
 
-    iterDate.setDate(iterDate.getDate() + 7);
+      if (isPast && (entity.rate || 0) > 0) {
+        newTransactions.push({
+          id: generateId(),
+          type: 'income',
+          amount: entity.rate,
+          description: `${entity.name} - ${dateStr} Dersi (Geçmiş Kayıt)`,
+          date: dateStr,
+          refId: entity.id,
+          refType: type,
+          lessonId: lessonId
+        });
+      }
+
+      iterDate.setDate(iterDate.getDate() + 7);
+    }
   }
+
   return { lessons: newLessons, transactions: newTransactions };
 }
 
@@ -594,6 +599,7 @@ export function updateGroup(id, data) {
     const gradeChanged = data.grade && data.grade !== groupToUpdate.grade;
     const scheduleChanged = (data.dayOfWeek !== undefined && data.dayOfWeek !== groupToUpdate.dayOfWeek) ||
                             (data.time && data.time !== groupToUpdate.time) ||
+                            (data.schedules && JSON.stringify(data.schedules) !== JSON.stringify(groupToUpdate.schedules)) ||
                             (data.duration !== undefined && data.duration !== groupToUpdate.duration) ||
                             (data.startDate && data.startDate !== groupToUpdate.startDate) ||
                             (data.endDate && data.endDate !== groupToUpdate.endDate);

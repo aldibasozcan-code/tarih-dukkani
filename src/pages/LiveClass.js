@@ -26,8 +26,8 @@ export function renderLiveClass(navigate) {
               <span style="color:#1a73e8;">●</span> Jitsi Meet - Bireysel Dersler
             </h3>
           </div>
-          ${state.students.length === 0 ? `<div class="empty-state">${icon('video', 32)}<p>Öğrenci yok</p></div>` : ''}
-          ${state.students.map(s => {
+          ${state.students.filter(s => (s.status || 'active') === 'active').length === 0 ? `<div class="empty-state">${icon('video', 32)}<p>Aktif öğrenci yok</p></div>` : ''}
+          ${state.students.filter(s => (s.status || 'active') === 'active').map(s => {
             const roomName = `TarihDukkani-${s.id.replace(/[^a-zA-Z0-9]/g, '')}`;
             const roomUrl = `https://meet.jit.si/${roomName}`;
             return `
@@ -64,8 +64,8 @@ export function renderLiveClass(navigate) {
               <span style="color:#2d8cff;">●</span> Zoom - Kunduz Akademi Grupları
             </h3>
           </div>
-          ${state.groups.length === 0 ? `<div class="empty-state">${icon('video', 32)}<p>Grup yok</p></div>` : ''}
-          ${state.groups.map(g => {
+          ${state.groups.filter(g => (g.status || 'active') === 'active').length === 0 ? `<div class="empty-state">${icon('video', 32)}<p>Aktif grup yok</p></div>` : ''}
+          ${state.groups.filter(g => (g.status || 'active') === 'active').map(g => {
             const days = ['Paz','Pzt','Sal','Çar','Per','Cum','Cmt'];
             return `
               <div class="card" style="margin-bottom:10px;">
@@ -75,7 +75,14 @@ export function renderLiveClass(navigate) {
                   </div>
                   <div style="flex:1;">
                     <div style="font-weight:600;">${escHtml(g.name)}</div>
-                    <div style="font-size:12px;color:var(--text-muted);">${g.grade} • ${days[g.dayOfWeek]} ${g.time}</div>
+                    <div style="font-size:12px;color:var(--text-muted);">${g.grade} ${(() => {
+                      let schStr = '';
+                      const schs = g.schedules && g.schedules.length > 0 ? g.schedules : (g.dayOfWeek != null ? [{dayOfWeek: g.dayOfWeek, time: g.time}] : []);
+                      if (schs.length > 0) {
+                        schStr = '• ' + schs.map(sch => `${days[sch.dayOfWeek]} ${sch.time || ''}`).join(', ');
+                      }
+                      return schStr;
+                    })()}</div>
                   </div>
                   <div style="display:flex;gap:8px;align-items:center;">
                     ${g.zoomLink ? `

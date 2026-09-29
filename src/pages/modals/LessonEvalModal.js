@@ -162,7 +162,7 @@ export function openLessonEvalModal(lessonId, navigate) {
   document.getElementById('btn-edit-lesson')?.addEventListener('click', () => {
     closeModal();
     openEditLessonModal(lessonId, () => {
-      if (navigate) navigate(window.location.hash.replace('#','') || 'calendar');
+      if (navigate) navigate(window.location.hash.replace('#','') || 'calendar', true);
     });
   });
 
@@ -178,7 +178,7 @@ export function openLessonEvalModal(lessonId, navigate) {
       onConfirm: () => {
         deleteLesson(lessonId);
         closeModal();
-        if (navigate) navigate(window.location.hash.replace('#','') || 'calendar');
+        if (navigate) navigate(window.location.hash.replace('#','') || 'calendar', true);
       }
     });
   });
@@ -232,10 +232,10 @@ export function openLessonEvalModal(lessonId, navigate) {
             cancelText: 'Hayır',
             onConfirm: () => {
               addNextWeekLesson(lesson);
-              if (navigate) navigate(window.location.hash.replace('#','') || 'dashboard');
+              if (navigate) navigate(window.location.hash.replace('#','') || 'dashboard', true);
             },
             onCancel: () => {
-              if (navigate) navigate(window.location.hash.replace('#','') || 'dashboard');
+              if (navigate) navigate(window.location.hash.replace('#','') || 'dashboard', true);
             }
           });
         }
@@ -249,10 +249,10 @@ export function openLessonEvalModal(lessonId, navigate) {
         cancelText: 'Hayır',
         onConfirm: () => {
           addNextWeekLesson(lesson);
-          if (navigate) navigate(window.location.hash.replace('#','') || 'dashboard');
+          if (navigate) navigate(window.location.hash.replace('#','') || 'dashboard', true);
         },
         onCancel: () => {
-          if (navigate) navigate(window.location.hash.replace('#','') || 'dashboard');
+          if (navigate) navigate(window.location.hash.replace('#','') || 'dashboard', true);
         }
       });
     }
@@ -265,7 +265,7 @@ export function openLessonEvalModal(lessonId, navigate) {
     postponeLesson(lessonId, newDate, newTime);
     addNotification({ type: 'warning', text: `${lesson.title} dersi ${newDate} tarihine ertelendi.`, link: 'calendar' });
     closeModal();
-    if (navigate) navigate(window.location.hash.replace('#','') || 'dashboard');
+    if (navigate) navigate(window.location.hash.replace('#','') || 'dashboard', true);
   });
 }
 

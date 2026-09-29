@@ -251,7 +251,7 @@ export function renderChat(navigate) {
 
 function buildContacts(state) {
   const contacts = [];
-  state.students.forEach(s => {
+  state.students.filter(s => (s.status || 'active') === 'active').forEach(s => {
     contacts.push({
       id: s.id,
       name: s.name,
@@ -267,7 +267,7 @@ function buildContacts(state) {
       type: 'student',
     });
   });
-  state.groups.forEach(g => {
+  state.groups.filter(g => (g.status || 'active') === 'active').forEach(g => {
     contacts.push({
       id: g.id,
       name: g.name,
