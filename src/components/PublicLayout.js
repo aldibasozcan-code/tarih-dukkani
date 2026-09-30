@@ -5,13 +5,13 @@ export function renderPublicLayout(currentPage, navigate) {
     <div class="public-container">
       <nav class="public-nav">
         <div class="nav-links">
-          <a href="#" class="nav-logo" data-nav="home" style="text-decoration:none; display:flex; align-items:center; gap:10px;">
+          <a href="#" class="nav-logo" data-nav="dashboard" style="text-decoration:none; display:flex; align-items:center; gap:10px;">
             <div style="background:var(--brand-green); color:white; width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:18px;">B</div>
             <span style="font-weight:800; font-size:22px; color:var(--brand-green); letter-spacing:-1px;">bitika.app</span>
           </a>
           <div style="width:1px; height:24px; background:var(--border); margin:0 10px;"></div>
-          <a href="#home" class="nav-link ${currentPage === 'home' ? 'active' : ''}" data-nav="home">Anasayfa</a>
-          <a href="#forum" class="nav-link ${currentPage === 'forum' ? 'active' : ''}" data-nav="forum">Öğretmen Forumu</a>
+
+
           <a href="#blog" class="nav-link ${currentPage === 'blog' ? 'active' : ''}" data-nav="blog">Eğitim Bloğu</a>
           <a href="#sozluk" class="nav-link ${currentPage === 'sozluk' ? 'active' : ''}" data-nav="sozluk">Sözlük</a>
         </div>
@@ -57,8 +57,8 @@ export function renderPublicLayout(currentPage, navigate) {
           </div>
           <div>
             <h4 style="margin-bottom:20px; font-weight:700;">Platform</h4>
-            <a href="#" class="footer-link" data-nav="home">Anasayfa</a>
-            <a href="#" class="footer-link" data-nav="forum">Forum</a>
+
+
             <a href="#" class="footer-link" data-nav="blog">Blog</a>
             <a href="#" class="footer-link" data-nav="sozluk">Sözlük</a>
           </div>

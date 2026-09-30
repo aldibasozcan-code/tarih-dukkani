@@ -13,7 +13,7 @@ import { icon } from './components/icons.js';
 let currentPage = '';
 let currentLayout = null; // Forces initial layout render
 
-const PUBLIC_PAGES = ['home', 'forum', 'blog', 'sozluk', 'post-detail', 'privacy', 'terms-of-service'];
+const PUBLIC_PAGES = ['blog', 'sozluk', 'post-detail', 'privacy', 'terms-of-service'];
 const DASHBOARD_PAGES = ['dashboard', 'curriculum', 'studentsAndGroups', 'assignments', 'finance', 'calendar', 'chat', 'liveClass', 'publish', 'settings', 'profile', 'notifications', 'admin'];
 
 // ─── Navigate function ───
@@ -25,7 +25,7 @@ async function navigate(page, force = false) {
 
   // Normalize page
   if (!PUBLIC_PAGES.includes(page) && !DASHBOARD_PAGES.includes(page)) {
-    page = 'home';
+    page = 'dashboard';
   }
 
   const state = getState();
@@ -216,7 +216,7 @@ async function init() {
   subscribeToAuth(async (user) => {
     // Determine start page from hash or default
     const hash = window.location.hash.replace('#', '');
-    const startPage = hash || (user ? 'dashboard' : 'home');
+    const startPage = hash || 'dashboard';
 
     if (user) {
       if (!_appInitialized) {
@@ -321,7 +321,7 @@ async function handleLogout(btn) {
   btn.innerHTML = '<div class="spinner" style="width:16px;height:16px;"></div>';
   const { logoutUser } = await import('./lib/auth.js');
   await logoutUser();
-  window.location.hash = 'home';
+  window.location.hash = 'dashboard';
   window.location.reload(); 
 }
 
