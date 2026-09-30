@@ -59,7 +59,7 @@ export function renderPublicLayout(currentPage, navigate) {
             <h4 style="margin-bottom:20px; font-weight:700;">Platform</h4>
 
 
-            <a href="#" class="footer-link" data-nav="blog">Blog</a>
+            <a href="#" class="footer-link" data-nav="blog">Eğitim Bloğu</a>
             <a href="#" class="footer-link" data-nav="sozluk">Sözlük</a>
           </div>
           <div>
