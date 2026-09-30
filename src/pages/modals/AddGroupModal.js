@@ -144,24 +144,17 @@ export function openAddGroupModal(onSave, editId = null) {
               <span class="pm-sec-ttl">Ders Programı <span class="pm-req">*</span></span>
             </div>
             <div class="pm-sec-body">
-              <div class="pm-field" style="margin-bottom:12px;">
-                <label class="pm-label">Gün Seçimi</label>
-                <div class="pm-day-grid" id="g-day-grid">
-                  ${DAY_SHORT.map((d, i) => `
-                    <div class="pm-day-btn ${currentDay === i ? 'active' : ''}" data-day="${i}">${d}</div>
-                  `).join('')}
-                </div>
-                <input type="hidden" id="g-day" value="${currentDay}">
+              <div id="g-schedules-container" style="display:flex; flex-direction:column; gap:10px; margin-bottom:12px;">
+                <!-- schedules will be injected here via JS -->
               </div>
-              <div class="pm-grid-3" style="margin-bottom:10px;">
-                <div class="pm-field" style="grid-column:1/3;">
-                  <label class="pm-label">Ders Saati <span class="pm-req">*</span></label>
-                  <input type="time" id="g-time" class="pm-input" value="${group?.time || '14:00'}">
-                </div>
+              <button type="button" id="g-add-schedule-btn" style="background:rgba(16,185,129,0.1); color:var(--brand-green); border:1px solid rgba(16,185,129,0.2); border-radius:8px; padding:6px 12px; font-size:12px; font-weight:700; cursor:pointer; width:100%; margin-bottom:12px;">+ Yeni Gün/Saat Ekle</button>
+
+              <div class="pm-grid-2" style="margin-bottom:10px;">
                 <div class="pm-field">
                   <label class="pm-label">Süre (dk)</label>
                   <input type="number" id="g-duration" class="pm-input" value="${group?.duration || 60}" min="10" step="5">
                 </div>
+                <div class="pm-field"></div>
               </div>
               <div class="pm-dur-chips" id="g-dur-chips">
                 <span class="pm-dur-chip" data-min="30">30 dk</span>
@@ -322,8 +315,12 @@ export function openAddGroupModal(onSave, editId = null) {
 
     const data = {
       name, grade,
-      dayOfWeek: parseInt(dayHidden.value),
-      time: document.getElementById('g-time').value,
+      schedules: Array.from(document.querySelectorAll('.g-schedule-row')).map(row => ({
+        dayOfWeek: row.querySelector('.g-sch-day').value !== '' ? parseInt(row.querySelector('.g-sch-day').value) : null,
+        time: row.querySelector('.g-sch-time').value
+      })).filter(sch => sch.dayOfWeek !== null && sch.time !== ''),
+      dayOfWeek: Array.from(document.querySelectorAll('.g-schedule-row')).length > 0 ? (Array.from(document.querySelectorAll('.g-schedule-row'))[0].querySelector('.g-sch-day').value !== '' ? parseInt(Array.from(document.querySelectorAll('.g-schedule-row'))[0].querySelector('.g-sch-day').value) : null) : null,
+      time: Array.from(document.querySelectorAll('.g-schedule-row')).length > 0 ? Array.from(document.querySelectorAll('.g-schedule-row'))[0].querySelector('.g-sch-time').value : null,
       duration: parseInt(durInput.value) || 60,
       rate: parseFloat(document.getElementById('g-rate').value) || 0,
       lessonFormat: formatVal,

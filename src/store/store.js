@@ -319,11 +319,22 @@ export function addStudent(data) {
 
 export function updateStudent(id, data) {
   setState(s => {
+    let studentToUpdate = s.students.find(st => st.id === id);
+    if (!studentToUpdate) return s;
+
+    const nameChanged = data.name && data.name !== studentToUpdate.name;
+    const gradeChanged = data.grade && data.grade !== studentToUpdate.grade;
+    const scheduleChanged = (data.dayOfWeek !== undefined && data.dayOfWeek !== studentToUpdate.dayOfWeek) ||
+                            (data.time && data.time !== studentToUpdate.time) ||
+                            (data.schedules && JSON.stringify(data.schedules) !== JSON.stringify(studentToUpdate.schedules)) ||
+                            (data.duration !== undefined && data.duration !== studentToUpdate.duration) ||
+                            (data.startDate && data.startDate !== studentToUpdate.startDate) ||
+                            (data.endDate && data.endDate !== studentToUpdate.endDate);
+
     const students = s.students.map(st => {
       if (st.id === id) {
         let updated = { ...st, ...data };
-        // If grade changed, recalculate curriculum
-        if (data.grade && data.grade !== st.grade) {
+        if (gradeChanged) {
           const activeSubjects = getSubjectsForBranches(s.profile.branches || []);
           updated.curriculum = activeSubjects.map(subj => ({
             subject: subj,
@@ -337,8 +348,36 @@ export function updateStudent(id, data) {
     });
 
     let lessons = s.lessons;
+
+    if (nameChanged) {
+      lessons = lessons.map(l => (l.type === 'student' && l.refId === id) ? { ...l, title: data.name } : l);
+    }
+
+    if (gradeChanged) {
+      lessons = lessons.map(l => {
+        if (l.type === 'student' && l.refId === id && l.status === 'upcoming') {
+          return { 
+            ...l, 
+            grade: data.grade,
+            subject: _getSubjectForGrade(data.grade, s.profile.branches || []) 
+          };
+        }
+        return l;
+      });
+    }
+
+    if (scheduleChanged) {
+      const updatedStudent = { ...studentToUpdate, ...data };
+      const todayShort = todayStr();
+      
+      lessons = lessons.filter(l => !(l.type === 'student' && l.refId === id && l.status === 'upcoming' && l.date >= todayShort));
+      
+      const { lessons: newUpcoming } = _generateRecurringLessons(updatedStudent, 'student');
+      lessons = [...lessons, ...newUpcoming];
+    }
+
     if (data.status) {
-      lessons = s.lessons.map(l => {
+      lessons = lessons.map(l => {
         if (l.type === 'student' && l.refId === id) {
           if (data.status === 'passive' && l.status === 'upcoming') return { ...l, status: 'passive' };
           if (data.status === 'active' && l.status === 'passive') return { ...l, status: 'upcoming' };

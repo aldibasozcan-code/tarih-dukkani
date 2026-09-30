@@ -69,7 +69,10 @@ export function openGroupDetail(groupId, navigate) {
                 <h2 style="font-size: 32px; font-weight: 800; color: #fff; letter-spacing: -1px; margin: 0;">${escHtml(group.name)}</h2>
                 <span class="badge" style="background: rgba(255,255,255,0.15); color: #fff; backdrop-filter: blur(4px); padding: 6px 14px; border-radius: 10px; font-size: 14px;">${group.grade}</span>
               </div>
-              <p style="color: rgba(255,255,255,0.8); font-size: 16px; margin-bottom: 24px; font-weight: 500;">Grup Eğitim Profili • ${DAYS_TR[group.dayOfWeek]} ${group.time}</p>
+              <p style="color: rgba(255,255,255,0.8); font-size: 16px; margin-bottom: 24px; font-weight: 500;">Grup Eğitim Profili • ${(() => {
+                let schs = group.schedules && group.schedules.length > 0 ? group.schedules : (group.dayOfWeek != null ? [{dayOfWeek: group.dayOfWeek, time: group.time}] : []);
+                return schs.map(s => DAYS_TR[s.dayOfWeek] + ' ' + s.time).join(', ');
+              })()}</p>
               
               <div style="display: flex; gap: 12px; flex-wrap: wrap;">
                 <button class="btn" id="btn-edit-group-detail" style="background: #fff; color: ${primaryColor}; padding: 10px 20px; border-radius: 12px; font-weight: 700; box-shadow: 0 10px 20px rgba(0,0,0,0.1);">
