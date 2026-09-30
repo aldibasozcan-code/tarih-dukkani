@@ -115,7 +115,7 @@ function renderTopbar(state, unreadCount) {
     </div>
     <div class="topbar-actions">
       <div class="desktop-only" style="align-items:center; gap:8px; margin-right:16px; padding-right:16px; border-right:1px solid var(--border);">
-        <button class="btn btn-ghost btn-sm" data-nav="blog" style="font-weight:700;">${icon('book', 15)} Blog (Eğitim Bloğu)</button>
+        <button class="btn btn-ghost btn-sm" data-nav="blog" style="font-weight:700;">${icon('book', 15)} Blog</button>
         <button class="btn btn-ghost btn-sm" data-nav="sozluk" style="font-weight:700;">${icon('book', 15)} Sözlük</button>
       </div>
       <button class="icon-btn" id="notif-btn" data-tooltip="Bildirimler">
