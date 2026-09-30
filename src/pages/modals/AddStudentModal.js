@@ -338,6 +338,48 @@ export function openAddStudentModal(onSave, editId = null) {
     if (syncHidden) syncHidden.value = syncChecked ? '1' : '0';
   });
 
+  
+  // ─── SCHEDULES LOGIC ───
+  const schedulesContainer = document.getElementById('s-schedules-container');
+  const addScheduleBtn = document.getElementById('s-add-schedule-btn');
+  
+  function createScheduleRow(dayOfWeek = '', time = '') {
+    const row = document.createElement('div');
+    row.className = 's-schedule-row pm-grid-2';
+    row.style.marginBottom = '6px';
+    row.innerHTML = `
+      <div class="pm-field" style="flex:1;">
+        <select class="pm-input s-sch-day">
+          <option value="">-- Gün Seç --</option>
+          <option value="1" ${dayOfWeek === 1 ? 'selected' : ''}>Pazartesi</option>
+          <option value="2" ${dayOfWeek === 2 ? 'selected' : ''}>Salı</option>
+          <option value="3" ${dayOfWeek === 3 ? 'selected' : ''}>Çarşamba</option>
+          <option value="4" ${dayOfWeek === 4 ? 'selected' : ''}>Perşembe</option>
+          <option value="5" ${dayOfWeek === 5 ? 'selected' : ''}>Cuma</option>
+          <option value="6" ${dayOfWeek === 6 ? 'selected' : ''}>Cumartesi</option>
+          <option value="0" ${dayOfWeek === 0 ? 'selected' : ''}>Pazar</option>
+        </select>
+      </div>
+      <div class="pm-field" style="flex:1; display:flex; flex-direction:row; align-items:center; gap:8px;">
+        <input type="time" class="pm-input s-sch-time" value="${time}">
+        <button type="button" class="s-sch-remove-btn" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:16px;">×</button>
+      </div>
+    `;
+    row.querySelector('.s-sch-remove-btn').addEventListener('click', () => row.remove());
+    schedulesContainer.appendChild(row);
+  }
+
+  // Init schedules
+  if (student && student.schedules && student.schedules.length > 0) {
+    student.schedules.forEach(sch => createScheduleRow(sch.dayOfWeek, sch.time));
+  } else if (student && student.dayOfWeek != null) {
+    createScheduleRow(student.dayOfWeek, student.time);
+  } else {
+    createScheduleRow();
+  }
+
+  addScheduleBtn?.addEventListener('click', () => createScheduleRow());
+
   // ─── CANCEL / SAVE ───
   document.getElementById('s-cancel')?.addEventListener('click', closeModal);
   document.getElementById('s-save')?.addEventListener('click', () => {

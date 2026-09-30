@@ -263,15 +263,7 @@ export function openAddGroupModal(onSave, editId = null) {
     });
   });
 
-  // ─── DAY BUTTONS ───
-  const dayHidden = document.getElementById('g-day');
-  document.querySelectorAll('.pm-day-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.pm-day-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      dayHidden.value = btn.dataset.day;
-    });
-  });
+
 
   // ─── FORMAT BUTTONS ───
   const fmtHidden = document.getElementById('g-format');
