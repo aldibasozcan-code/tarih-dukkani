@@ -11,11 +11,13 @@ export function renderStudentsAndGroups(navigate) {
   const activeStudents = state.students.filter(s => (s.status || 'active') === 'active');
   const activeGroups = state.groups.filter(g => (g.status || 'active') === 'active');
   
-  const hourlyCapacity = activeStudents.reduce((acc, s) => acc + (s.rate || 0), 0)
-    + activeGroups.reduce((acc, g) => acc + (g.rate || 0), 0);
+  const getScheduleCount = (ent) => ent.schedules && ent.schedules.length > 0 ? ent.schedules.length : (ent.dayOfWeek != null ? 1 : 0);
 
-  const weeklyLessonHours = activeStudents.filter(s => s.dayOfWeek !== null && s.dayOfWeek !== undefined).length
-    + activeGroups.length;
+  const hourlyCapacity = activeStudents.reduce((acc, s) => acc + (s.rate || 0) * getScheduleCount(s), 0)
+    + activeGroups.reduce((acc, g) => acc + (g.rate || 0) * getScheduleCount(g), 0);
+
+  const weeklyLessonHours = activeStudents.reduce((acc, s) => acc + getScheduleCount(s), 0)
+    + activeGroups.reduce((acc, g) => acc + getScheduleCount(g), 0);
 
   const html = `
     <div class="fade-in">
@@ -62,7 +64,7 @@ export function renderStudentsAndGroups(navigate) {
           </div>
           <div>
             <div class="kpi-value" style="font-size: 22px; font-weight: 800;">${formatCurrency(hourlyCapacity)}</div>
-            <div class="kpi-label" style="font-size: 12px;">Saatlik Kazanç Kapasitesi</div>
+            <div class="kpi-label" style="font-size: 12px;">Haftalık Kazanç Kapasitesi</div>
           </div>
         </div>
         <div class="kpi-card hover-lift" style="border-left: 4px solid #ff5a65; background: rgba(255, 255, 255, 0.7); padding: 16px 20px;">
