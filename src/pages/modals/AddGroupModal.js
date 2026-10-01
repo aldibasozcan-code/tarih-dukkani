@@ -290,6 +290,46 @@ export function openAddGroupModal(onSave, editId = null) {
   const initDur = parseInt(durInput.value);
   document.querySelectorAll('#g-dur-chips .pm-dur-chip').forEach(c => c.classList.toggle('active', parseInt(c.dataset.min) === initDur));
 
+  // ─── SCHEDULES LOGIC ───
+  const schedulesContainer = document.getElementById('g-schedules-container');
+  const addScheduleBtn = document.getElementById('g-add-schedule-btn');
+  
+  function createScheduleRow(dayOfWeek = '', time = '') {
+    const row = document.createElement('div');
+    row.className = 'g-schedule-row pm-grid-2';
+    row.style.marginBottom = '6px';
+    row.innerHTML = `
+      <div class="pm-field" style="flex:1;">
+        <select class="pm-input g-sch-day">
+          <option value="">-- Gün Seç --</option>
+          <option value="1" ${dayOfWeek === 1 ? 'selected' : ''}>Pazartesi</option>
+          <option value="2" ${dayOfWeek === 2 ? 'selected' : ''}>Salı</option>
+          <option value="3" ${dayOfWeek === 3 ? 'selected' : ''}>Çarşamba</option>
+          <option value="4" ${dayOfWeek === 4 ? 'selected' : ''}>Perşembe</option>
+          <option value="5" ${dayOfWeek === 5 ? 'selected' : ''}>Cuma</option>
+          <option value="6" ${dayOfWeek === 6 ? 'selected' : ''}>Cumartesi</option>
+          <option value="0" ${dayOfWeek === 0 ? 'selected' : ''}>Pazar</option>
+        </select>
+      </div>
+      <div class="pm-field" style="flex:1; display:flex; flex-direction:row; align-items:center; gap:8px;">
+        <input type="time" class="pm-input g-sch-time" value="${time || '14:00'}">
+        <button type="button" class="g-sch-remove-btn" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:16px;">×</button>
+      </div>
+    `;
+    row.querySelector('.g-sch-remove-btn').addEventListener('click', () => row.remove());
+    schedulesContainer.appendChild(row);
+  }
+
+  if (group && group.schedules && group.schedules.length > 0) {
+    group.schedules.forEach(sch => createScheduleRow(sch.dayOfWeek, sch.time));
+  } else if (group && group.dayOfWeek != null) {
+    createScheduleRow(group.dayOfWeek, group.time);
+  } else {
+    createScheduleRow();
+  }
+
+  addScheduleBtn?.addEventListener('click', () => createScheduleRow());
+
   const errorAlert = document.getElementById('g-error-alert');
   const saveBtn = document.getElementById('g-save');
 
