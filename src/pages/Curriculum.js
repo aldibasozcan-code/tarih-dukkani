@@ -971,12 +971,9 @@ function initCurriculumButtons(el, refresh, navigate) {
     header.addEventListener('click', () => {
       const uId = header.dataset.toggleUnit;
       window._expandedUnits = window._expandedUnits || {};
-      window._expandedUnits[uId] = !window._expandedUnits[uId];
-      // Note: default was true if not set, so !undefined becomes true? 
-      // Actually window._expandedUnits[uId] !== false means default is true.
-      // Let's refine the toggle logic:
+      
       if (window._expandedUnits[uId] === undefined) {
-        window._expandedUnits[uId] = false; // Toggle to closed if it was open (default)
+        window._expandedUnits[uId] = false;
       } else {
         window._expandedUnits[uId] = !window._expandedUnits[uId];
       }
