@@ -5,6 +5,7 @@ import { initStore, getState, subscribe, getPendingLessons, getLessonStatus } fr
 import { renderLayout, toggleNotifPanel, closeNotifPanel, refreshTopbar, refreshSidebar, toggleSidebar, closeSidebar, applyTheme } from './components/Layout.js';
 import { subscribeToAuth } from './lib/auth.js';
 import { icon } from './components/icons.js';
+import { initMobileApp } from './lib/mobile.js';
 
 // ─── Initialize ───
 // state initialization moved to init()
@@ -211,6 +212,9 @@ let _appInitialized = false;
 async function init() {
   const app = document.getElementById('app');
   if (!app) return;
+
+  // Initialize native mobile services (Status Bar, Splash Screen, Back Button)
+  initMobileApp(navigate);
 
   app.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100vh;"><div class="spinner"></div></div>';
 
