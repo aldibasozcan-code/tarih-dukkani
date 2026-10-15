@@ -81,6 +81,7 @@ async function navigate(page, force = false) {
   const containerId = currentLayout === 'dashboard' ? 'page-content' : 'public-content';
   const content = document.getElementById(containerId);
   if (!content) return;
+  content.classList.remove('page-content-calendar');
 
   content.innerHTML = '<div style="display:flex;justify-content:center;padding:100px;"><div class="spinner"></div></div>';
 

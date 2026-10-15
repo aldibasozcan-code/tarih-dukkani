@@ -1,5 +1,5 @@
 // ═════════════════════════════════════════════════
-// CALENDAR PAGE — Enhanced
+// CALENDAR PAGE — Premium Fit-to-Screen & Modern Aesthetics
 // ═════════════════════════════════════════════════
 import { getState, getLessonStatus, getWeekLessons, getLessonsInRange } from '../store/store.js';
 import { icon } from '../components/icons.js';
@@ -8,16 +8,20 @@ import { getMonthDays, addDays, getLocalDateStr, escHtml } from '../utils/helper
 
 // Color palette per lesson status
 const STATUS_COLORS = {
-  completed:  { bg: '#10b981', light: '#d1fae5', text: '#065f46', label: 'Tamamlandı' },
-  upcoming:   { bg: '#6366f1', light: '#e0e7ff', text: '#3730a3', label: 'Planlandı' },
-  ongoing:    { bg: '#f59e0b', light: '#fef3c7', text: '#92400e', label: 'Devam Ediyor' },
-  postponed:  { bg: '#ef4444', light: '#fee2e2', text: '#991b1b', label: 'Ertelendi' },
-  default:    { bg: '#8b5cf6', light: '#ede9fe', text: '#5b21b6', label: 'Diğer' },
+  completed:  { bg: '#10b981', light: 'rgba(16, 185, 129, 0.12)', text: '#065f46', label: 'Tamamlandı' },
+  upcoming:   { bg: '#6366f1', light: 'rgba(99, 102, 241, 0.12)', text: '#3730a3', label: 'Planlandı' },
+  ongoing:    { bg: '#f59e0b', light: 'rgba(245, 158, 11, 0.15)', text: '#92400e', label: 'Devam Ediyor' },
+  postponed:  { bg: '#ef4444', light: 'rgba(239, 68, 68, 0.12)', text: '#991b1b', label: 'Ertelendi' },
+  default:    { bg: '#8b5cf6', light: 'rgba(139, 92, 246, 0.12)', text: '#5b21b6', label: 'Diğer' },
 };
 
-function getStatusColor(lesson) {
+function getStatusInfo(lesson) {
   const s = getLessonStatus(lesson);
-  return STATUS_COLORS[s] || STATUS_COLORS.default;
+  const colorData = STATUS_COLORS[s] || STATUS_COLORS.default;
+  return {
+    statusKey: s,
+    ...colorData
+  };
 }
 
 export async function renderCalendar(navigate) {
@@ -26,6 +30,7 @@ export async function renderCalendar(navigate) {
   let viewYear  = now.getFullYear();
   let viewMonth = now.getMonth();
   let viewSelection = localStorage.getItem('_cal_view') || 'week';
+  let density = localStorage.getItem('_cal_density') || 'fit';
   let monday = _getMonday(now);
   let lessons = [];
 
@@ -41,77 +46,122 @@ export async function renderCalendar(navigate) {
   const weekTotal   = weekLessons.length;
   const weekDone    = weekLessons.filter(l => l.status === 'completed').length;
   const weekUpcoming = weekLessons.filter(l => l.status === 'upcoming').length;
+  const weekRate    = weekTotal > 0 ? Math.round(weekDone / weekTotal * 100) : 0;
+
+  const weekEnd = addDays(monday, 6);
+  const initialRangeTitle = viewSelection === 'month'
+    ? `${MONTHS_TR[viewMonth]} ${viewYear}`
+    : `${monday.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })} – ${weekEnd.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+
+  const initialBadge = viewSelection === 'month'
+    ? `${viewYear}`
+    : `${MONTHS_TR[monday.getMonth()]} ${monday.getFullYear()}`;
 
   const html = `
-    <div class="fade-in">
-      <!-- Premium Header -->
-      <div class="page-header" style="background: linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(16,185,129,0.04) 100%); padding: 32px 24px; border-radius: 20px; margin-bottom: 28px; border: 1px solid rgba(99,102,241,0.12); box-shadow: 0 10px 30px rgba(0,0,0,0.02);">
-        <div>
-          <h2 style="font-size: 32px; font-weight: 800; color: #6366f1; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; letter-spacing: -0.5px;">
-            ${icon('calendar', 32)} Takvim
-          </h2>
-          <p style="color: var(--text-secondary); font-size: 16px; font-weight: 500;">Ders takvimini görüntüleyin, düzenleyin ve yönetin</p>
+    <div class="calendar-page-container fade-in">
+      <!-- 1. Sleek Compact Header Toolbar -->
+      <div class="cal-toolbar">
+        <!-- Title & Active Range -->
+        <div class="cal-title-section">
+          <div class="cal-icon-box">
+            ${icon('calendar', 20)}
+          </div>
+          <div>
+            <div class="cal-page-title">
+              Ders Takvimi
+              <span class="cal-date-badge" id="cal-date-badge">${initialBadge}</span>
+            </div>
+            <div class="cal-range-text" id="cal-title">${initialRangeTitle}</div>
+          </div>
         </div>
-        <div style="display:flex;gap:10px; align-items: center; flex-wrap: wrap;">
-          <!-- View Toggle -->
-          <div class="tabs" style="padding: 4px; background: var(--bg-secondary); border-radius: var(--radius-md); display:inline-flex;">
-            <button class="tab-btn ${viewSelection === 'month' ? 'active' : ''}" data-view="month" style="padding: 6px 16px; font-size: 13px; font-weight: 700; border-radius: 8px; display:flex; align-items:center; gap:5px;">
-              ${icon('calendar', 13)} Ay
+
+        <!-- Center Controls: Navigator & View Segment -->
+        <div class="cal-nav-group">
+          <!-- Prev / Today / Next -->
+          <div class="cal-btn-group">
+            <button class="cal-icon-btn hover-scale" id="cal-prev" title="Önceki (Hafta/Ay)">
+              ${icon('chevronLeft', 16)}
             </button>
-            <button class="tab-btn ${viewSelection === 'week' ? 'active' : ''}" data-view="week" style="padding: 6px 16px; font-size: 13px; font-weight: 700; border-radius: 8px; display:flex; align-items:center; gap:5px;">
+            <button class="cal-today-btn" id="cal-today" title="Bugüne Git">
+              <span class="cal-today-dot"></span>
+              Bugün
+            </button>
+            <button class="cal-icon-btn hover-scale" id="cal-next" title="Sonraki (Hafta/Ay)">
+              ${icon('chevronRight', 16)}
+            </button>
+          </div>
+
+          <!-- View Switch Tabs -->
+          <div class="cal-view-tabs">
+            <button class="cal-tab-btn ${viewSelection === 'week' ? 'active' : ''}" data-view="week" title="Haftalık Görünüm">
               ${icon('clock', 13)} Hafta
             </button>
+            <button class="cal-tab-btn ${viewSelection === 'month' ? 'active' : ''}" data-view="month" title="Aylık Görünüm">
+              ${icon('calendar', 13)} Ay
+            </button>
           </div>
-          <!-- Navigation -->
-          <div style="display:flex; align-items:center; gap:6px; background: var(--bg-secondary); padding: 4px; border-radius: 12px;">
-            <button class="btn btn-ghost btn-sm btn-icon hover-scale" id="cal-prev" style="width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center;">${icon('chevronLeft', 16)}</button>
-            <span id="cal-title" style="font-weight:700; min-width:160px; text-align:center; font-size:14px; color:var(--text-primary);">Haftalık Görünüm</span>
-            <button class="btn btn-ghost btn-sm btn-icon hover-scale" id="cal-next" style="width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center;">${icon('chevronRight', 16)}</button>
-          </div>
-          <button class="btn btn-secondary hover-lift" id="cal-today" style="font-weight:700; font-size:13px; padding:7px 16px; border-radius:10px;">Bugün</button>
-          <button class="btn btn-primary hover-lift" id="btn-add-lesson" style="box-shadow: 0 8px 20px rgba(99,102,241,0.3); padding: 9px 20px; font-weight: 700; font-size: 14px; background: #6366f1; border-color: #6366f1;">
-            ${icon('plus', 16)} Ders Ekle
+        </div>
+
+        <!-- Right: Density Toggle & Add Lesson Action -->
+        <div class="cal-actions-group">
+          <button class="cal-density-btn" id="cal-density-toggle" title="Görünüm modu: Ekrana Sığdır veya Genişlet">
+            <svg style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              ${density === 'fit'
+                ? '<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>'
+                : '<path d="M4 14h6m0 0v6m0-6L3 21m17-7h-6m0 0v6m0-6l7 7M10 4v6m0 0H4m6 0L3 3m10 7h6m-6 0V4m0 6l7-7"/>'}
+            </svg>
+            <span id="cal-density-label">${density === 'fit' ? 'Ekrana Sığdır' : 'Genişletilmiş'}</span>
+          </button>
+
+          <button class="btn btn-primary cal-add-btn hover-lift" id="btn-add-lesson">
+            ${icon('plus', 16)} <span>Ders Ekle</span>
           </button>
         </div>
       </div>
 
-      <!-- KPI Stats Row -->
-      <div class="grid grid-4 fade-in-up stagger-1" style="margin-bottom: 28px; gap: 16px;">
-        <div class="kpi-card hover-lift" style="border-left: 4px solid #6366f1; background: rgba(255,255,255,0.8); padding: 16px 20px;">
-          <div class="kpi-icon" style="background: rgba(99,102,241,0.1); color:#6366f1; width:42px; height:42px; border-radius:10px;">${icon('calendar', 20)}</div>
-          <div>
-            <div class="kpi-value" style="font-size:24px;">${weekTotal}</div>
-            <div class="kpi-label" style="font-size:12px;">Bu Hafta Ders</div>
+      <!-- 2. Slim KPI & Quick Legend Ribbon -->
+      <div class="cal-ribbon">
+        <!-- KPI Pills -->
+        <div class="cal-stats-pills">
+          <div class="cal-stat-pill" title="Bu hafta planlanan toplam ders">
+            <span class="cal-stat-dot" style="background:#004526;"></span>
+            <span style="color:var(--text-muted);">Bu Hafta:</span>
+            <strong id="kpi-total" style="color:var(--text-primary);">${weekTotal} Ders</strong>
+          </div>
+          <div class="cal-stat-pill pill-success" title="Bu hafta tamamlanan dersler">
+            <span class="cal-stat-dot" style="background:#10b981;"></span>
+            <span>Tamamlandı:</span>
+            <strong id="kpi-done">${weekDone}</strong>
+          </div>
+          <div class="cal-stat-pill pill-upcoming" title="Bu hafta planlanan dersler">
+            <span class="cal-stat-dot" style="background:#6366f1;"></span>
+            <span>Planlandı:</span>
+            <strong id="kpi-upcoming">${weekUpcoming}</strong>
+          </div>
+          <div class="cal-stat-pill pill-warning" title="Haftalık tamamlanma oranı">
+            <span class="cal-stat-dot" style="background:#f59e0b;"></span>
+            <span>Tamamlanma:</span>
+            <strong id="kpi-rate">%${weekRate}</strong>
           </div>
         </div>
-        <div class="kpi-card hover-lift" style="border-left: 4px solid var(--brand-green); background: rgba(255,255,255,0.8); padding: 16px 20px;">
-          <div class="kpi-icon" style="background: rgba(16,185,129,0.1); color:var(--brand-green); width:42px; height:42px; border-radius:10px;">${icon('checkCircle', 20)}</div>
-          <div>
-            <div class="kpi-value" style="font-size:24px;">${weekDone}</div>
-            <div class="kpi-label" style="font-size:12px;">Tamamlandı</div>
-          </div>
-        </div>
-        <div class="kpi-card hover-lift" style="border-left: 4px solid #6366f1; background: rgba(255,255,255,0.8); padding: 16px 20px;">
-          <div class="kpi-icon" style="background: rgba(99,102,241,0.1); color:#6366f1; width:42px; height:42px; border-radius:10px;">${icon('clock', 20)}</div>
-          <div>
-            <div class="kpi-value" style="font-size:24px;">${weekUpcoming}</div>
-            <div class="kpi-label" style="font-size:12px;">Planlandı</div>
-          </div>
-        </div>
-        <div class="kpi-card hover-lift" style="border-left: 4px solid #f59e0b; background: rgba(255,255,255,0.8); padding: 16px 20px;">
-          <div class="kpi-icon" style="background: rgba(245,158,11,0.1); color:#f59e0b; width:42px; height:42px; border-radius:10px;">${icon('zap', 20)}</div>
-          <div>
-            <div class="kpi-value" style="font-size:24px;">${weekTotal > 0 ? Math.round(weekDone / weekTotal * 100) : 0}%</div>
-            <div class="kpi-label" style="font-size:12px;">Tamamlanma Oranı</div>
+
+        <!-- Legend -->
+        <div class="cal-legend-group">
+          <div class="cal-legend-item"><span class="cal-legend-dot" style="background:#10b981;"></span> Tamamlandı</div>
+          <div class="cal-legend-item"><span class="cal-legend-dot" style="background:#6366f1;"></span> Planlandı</div>
+          <div class="cal-legend-item"><span class="cal-legend-dot" style="background:#f59e0b;"></span> Devam Eden</div>
+          <div class="cal-legend-item"><span class="cal-legend-dot" style="background:#ef4444;"></span> Ertelendi</div>
+          <div class="cal-legend-tip" title="Dersi taşımak için sürükleyip bırakabilirsiniz. Boş bir saate tıklayarak yeni ders oluşturabilirsiniz.">
+            ${icon('alertCircle', 12)} <span style="font-weight:600;">Sürükle-bırak destekli</span>
           </div>
         </div>
       </div>
 
-      <!-- Calendar View -->
-      <div id="calendar-view" class="fade-in-up stagger-2">
+      <!-- 3. Main Calendar Body View -->
+      <div id="calendar-view" class="cal-main-card">
         ${viewSelection === 'month'
           ? renderMonthView(getState(), viewYear, viewMonth, lessons)
-          : renderWeekView(getState(), monday, lessons)
+          : renderWeekView(getState(), monday, lessons, density)
         }
       </div>
     </div>
@@ -120,16 +170,25 @@ export async function renderCalendar(navigate) {
   return {
     html,
     init: (el, nav) => {
-      let _year = viewYear, _month = viewMonth, _view = viewSelection;
+      let _year = viewYear;
+      let _month = viewMonth;
+      let _view = viewSelection;
+      let _density = density;
       let _weekStart = monday;
+
+      // Add fit-to-screen class to page-content container
+      el.classList.add('page-content-calendar');
 
       async function refresh() {
         const calView = el.querySelector('#calendar-view');
         const title   = el.querySelector('#cal-title');
+        const badge   = el.querySelector('#cal-date-badge');
 
-        // Add loading shimmer
-        calView.style.opacity = '0.5';
-        calView.style.transition = 'opacity 0.2s';
+        if (!calView) return;
+
+        // Smooth subtle loading fade
+        calView.style.opacity = '0.6';
+        calView.style.transition = 'opacity 0.15s ease';
 
         try {
           if (_view === 'month') {
@@ -138,13 +197,45 @@ export async function renderCalendar(navigate) {
             const end   = days[days.length - 1].date;
             const lessons = await getLessonsInRange(start, end);
             calView.innerHTML = renderMonthView(getState(), _year, _month, lessons);
-            title.textContent = `${MONTHS_TR[_month]} ${_year}`;
+            if (title) title.textContent = `${MONTHS_TR[_month]} ${_year}`;
+            if (badge) badge.textContent = `${_year}`;
           } else {
             const lessons = await getWeekLessons(_weekStart);
-            calView.innerHTML = renderWeekView(getState(), _weekStart, lessons);
+            calView.innerHTML = renderWeekView(getState(), _weekStart, lessons, _density);
             const weekEnd = addDays(_weekStart, 6);
-            title.textContent = `${_weekStart.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })} – ${weekEnd.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+            if (title) {
+              title.textContent = `${_weekStart.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })} – ${weekEnd.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+            }
+            if (badge) {
+              badge.textContent = `${MONTHS_TR[_weekStart.getMonth()]} ${_weekStart.getFullYear()}`;
+            }
+
+            // Auto-scroll to current hour if expanded
+            if (_density === 'expanded') {
+              const currentHourCell = calView.querySelector('.cal-now-line')?.closest('.cal-hour-row');
+              if (currentHourCell) {
+                currentHourCell.scrollIntoView({ block: 'center', behavior: 'smooth' });
+              }
+            }
           }
+
+          // Update KPI stats
+          const currentWeekLessons = await getWeekLessons(_getMonday(new Date()));
+          const total = currentWeekLessons.length;
+          const done = currentWeekLessons.filter(l => l.status === 'completed').length;
+          const upcoming = currentWeekLessons.filter(l => l.status === 'upcoming').length;
+          const rate = total > 0 ? Math.round(done / total * 100) : 0;
+
+          const kpiTotal = el.querySelector('#kpi-total');
+          const kpiDone = el.querySelector('#kpi-done');
+          const kpiUpcoming = el.querySelector('#kpi-upcoming');
+          const kpiRate = el.querySelector('#kpi-rate');
+
+          if (kpiTotal) kpiTotal.textContent = `${total} Ders`;
+          if (kpiDone) kpiDone.textContent = `${done}`;
+          if (kpiUpcoming) kpiUpcoming.textContent = `${upcoming}`;
+          if (kpiRate) kpiRate.textContent = `%${rate}`;
+
           calView.style.opacity = '1';
           initCalendarEvents(el, nav);
           initCalendarDragDrop(el, nav);
@@ -152,17 +243,18 @@ export async function renderCalendar(navigate) {
           console.error('Calendar refresh error:', err);
           calView.style.opacity = '1';
           calView.innerHTML = `
-            <div class="empty-state" style="padding:48px;">
-              ${icon('alertCircle', 48)}
-              <h3 style="margin-top:16px;">Takvim yüklenirken hata oluştu</h3>
-              <p>Lütfen sayfayı yenileyiniz</p>
-              <button class="btn btn-secondary btn-sm" onclick="location.reload()" style="margin-top:12px;">Sayfayı Yenile</button>
+            <div class="empty-state" style="padding:48px; text-align:center;">
+              ${icon('alertCircle', 40)}
+              <h3 style="margin-top:16px; font-weight:800;">Takvim yüklenirken hata oluştu</h3>
+              <p style="color:var(--text-secondary); margin-top:4px;">Lütfen sayfayı yenileyiniz</p>
+              <button class="btn btn-secondary btn-sm" id="cal-reload-btn" style="margin-top:14px;">Sayfayı Yenile</button>
             </div>
           `;
+          el.querySelector('#cal-reload-btn')?.addEventListener('click', () => refresh());
         }
       }
 
-      // View toggle
+      // View toggle (Week / Month)
       el.querySelectorAll('[data-view]').forEach(btn => {
         btn.addEventListener('click', () => {
           _view = btn.dataset.view;
@@ -173,26 +265,47 @@ export async function renderCalendar(navigate) {
         });
       });
 
-      // Navigation
+      // Density toggle (Fit to Screen / Expanded)
+      el.querySelector('#cal-density-toggle')?.addEventListener('click', () => {
+        _density = _density === 'fit' ? 'expanded' : 'fit';
+        localStorage.setItem('_cal_density', _density);
+        const label = el.querySelector('#cal-density-label');
+        if (label) label.textContent = _density === 'fit' ? 'Ekrana Sığdır' : 'Genişletilmiş';
+        refresh();
+      });
+
+      // Navigation: Prev
       el.querySelector('#cal-prev')?.addEventListener('click', () => {
-        if (_view === 'month') { _month--; if (_month < 0) { _month = 11; _year--; } }
-        else { _weekStart = addDays(_weekStart, -7); }
+        if (_view === 'month') {
+          _month--;
+          if (_month < 0) { _month = 11; _year--; }
+        } else {
+          _weekStart = addDays(_weekStart, -7);
+        }
         refresh();
       });
 
+      // Navigation: Next
       el.querySelector('#cal-next')?.addEventListener('click', () => {
-        if (_view === 'month') { _month++; if (_month > 11) { _month = 0; _year++; } }
-        else { _weekStart = addDays(_weekStart, 7); }
+        if (_view === 'month') {
+          _month++;
+          if (_month > 11) { _month = 0; _year++; }
+        } else {
+          _weekStart = addDays(_weekStart, 7);
+        }
         refresh();
       });
 
+      // Navigation: Today
       el.querySelector('#cal-today')?.addEventListener('click', () => {
         const n = new Date();
-        _year = n.getFullYear(); _month = n.getMonth();
+        _year = n.getFullYear();
+        _month = n.getMonth();
         _weekStart = _getMonday(n);
         refresh();
       });
 
+      // Add Lesson Button
       el.querySelector('#btn-add-lesson')?.addEventListener('click', () => {
         import('./modals/AddLessonModal.js').then(m => m.openAddLessonModal(() => nav('calendar', true)));
       });
@@ -220,16 +333,16 @@ function renderMonthView(state, year, month, lessons = []) {
   const dayNames = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
 
   return `
-    <div class="card" style="padding: 0; border-radius: 20px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.04);">
+    <div class="cal-month-wrap">
       <!-- Day Headers -->
-      <div style="display:grid; grid-template-columns: repeat(7,1fr); background: linear-gradient(135deg, rgba(99,102,241,0.06) 0%, rgba(16,185,129,0.03) 100%); border-bottom: 1px solid var(--border);">
+      <div class="cal-month-headers">
         ${dayNames.map((d, i) => `
-          <div style="padding: 14px 0; text-align:center; font-size: 12px; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; color: ${i >= 5 ? '#ef4444' : 'var(--text-secondary)'};">${d}</div>
+          <div class="cal-month-hdr-cell ${i >= 5 ? 'is-weekend' : ''}">${d}</div>
         `).join('')}
       </div>
 
       <!-- Day Grid -->
-      <div class="calendar-grid" style="gap:0; border:none; border-radius:0; box-shadow:none; background: var(--bg-card);">
+      <div class="cal-month-grid">
         ${days.map(({ date, currentMonth }) => {
           const dateStr = getLocalDateStr(date);
           const isToday = dateStr === today;
@@ -239,45 +352,39 @@ function renderMonthView(state, year, month, lessons = []) {
           const isWeekend = date.getDay() === 0 || date.getDay() === 6;
 
           return `
-            <div class="cal-day cal-drop-zone ${isToday ? 'today' : ''} ${!currentMonth ? 'other-month' : ''}"
-                 data-date="${dateStr}"
-                 style="min-height: 110px; padding: 10px; border-right: 1px solid var(--border-light); border-bottom: 1px solid var(--border-light); background: ${!currentMonth ? '#f8fafc' : isWeekend ? '#fafbff' : '#ffffff'}; transition: background 0.2s; position: relative;">
+            <div class="cal-month-day cal-drop-zone ${isToday ? 'is-today' : ''} ${!currentMonth ? 'other-month' : ''} ${isWeekend ? 'is-weekend' : ''}"
+                 data-date="${dateStr}">
 
               <!-- Day Number -->
-              <div style="margin-bottom: 6px;">
-                <span style="
-                  display: inline-flex; align-items: center; justify-content: center;
-                  width: ${isToday ? '28px' : 'auto'}; height: ${isToday ? '28px' : 'auto'};
-                  border-radius: ${isToday ? '50%' : '0'};
-                  background: ${isToday ? '#6366f1' : 'transparent'};
-                  color: ${isToday ? '#ffffff' : !currentMonth ? '#9ca3af' : isWeekend ? '#ef4444' : 'var(--text-primary)'};
-                  font-size: 13px; font-weight: ${isToday ? '800' : currentMonth ? '700' : '500'};
-                  padding: ${isToday ? '0' : '0'};">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <span class="cal-month-num ${isToday ? 'is-today' : ''}">
                   ${date.getDate()}
                 </span>
+                ${dayLessons.length > 0 ? `
+                  <span style="font-size:9px; font-weight:700; color:var(--text-muted);">${dayLessons.length} ders</span>
+                ` : ''}
               </div>
 
               <!-- Lesson Pills -->
-              <div style="display: flex; flex-direction: column; gap: 2px;">
+              <div class="cal-month-pills">
                 ${visible.map(l => {
-                  const sc = getStatusColor(l);
+                  const sInfo = getStatusInfo(l);
                   const isDone = l.status === 'completed';
                   const name = l.refName || l.title;
                   return `
-                    <div class="cal-lesson-card" draggable="true" data-id="${l.id}" data-start-time="${l.startTime}"
-                         title="${escHtml(name)} — ${l.startTime}"
-                         style="font-size: 10px; padding: 3px 6px; border-radius: 5px;
-                                background: ${isDone ? sc.bg : sc.light};
-                                color: ${isDone ? '#ffffff' : sc.text};
-                                border-left: 3px solid ${sc.bg};
-                                cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-                                font-weight: 700; line-height: 1.4; transition: all 0.15s;">
-                      <span style="opacity: 0.85;">${l.startTime}</span> ${escHtml(name)}
+                    <div class="cal-lesson-card status-${sInfo.statusKey} cal-month-pill"
+                         draggable="true"
+                         data-id="${l.id}"
+                         data-start-time="${l.startTime}"
+                         title="${escHtml(name)} — ${l.startTime} (${sInfo.label})">
+                      <span style="width:5px; height:5px; border-radius:50%; background:${sInfo.bg}; flex-shrink:0;"></span>
+                      <span style="opacity:0.85; font-size:9.5px;">${l.startTime}</span>
+                      <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escHtml(name)}</span>
                     </div>
                   `;
                 }).join('')}
                 ${more > 0 ? `
-                  <div style="font-size: 9px; color: #6366f1; font-weight: 700; padding-left: 3px; margin-top: 1px;">+${more} daha</div>
+                  <div style="font-size:9px; color:#004526; font-weight:800; padding-left:4px; margin-top:1px;">+${more} daha</div>
                 ` : ''}
               </div>
             </div>
@@ -289,94 +396,141 @@ function renderMonthView(state, year, month, lessons = []) {
 }
 
 // ─── Week View ────────────────────────────────────────────────────────────────
-function renderWeekView(state, weekStart, lessons = []) {
+function renderWeekView(state, weekStart, lessons = [], density = 'fit') {
   const today = getLocalDateStr();
-  const hours = Array.from({ length: 15 }, (_, i) => i + 8); // 08:00 to 22:00
+  const now = new Date();
+  const nowH = now.getHours();
+  const nowM = now.getMinutes();
+
+  // Smart hour range: covers all scheduled lessons, default 08:00 to 21:00
+  let minH = 8;
+  let maxH = 21;
+  lessons.forEach(l => {
+    if (l.startTime) {
+      const sh = parseInt(l.startTime);
+      if (!isNaN(sh) && sh < minH) minH = Math.max(0, sh);
+    }
+    if (l.endTime) {
+      const eh = parseInt(l.endTime);
+      if (!isNaN(eh) && eh > maxH) maxH = Math.min(23, eh);
+    }
+  });
+
+  const hours = Array.from({ length: maxH - minH + 1 }, (_, i) => i + minH);
   const days  = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
-  const DAYS_TR_SHORT = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
+  const DAYS_TR_SHORT = ['PAZ', 'PZT', 'SAL', 'ÇAR', 'PER', 'CUM', 'CMT'];
 
   return `
-    <div class="card" style="padding:0; border-radius: 20px; box-shadow: 0 4px 24px rgba(0,0,0,0.04);">
+    <div style="display:flex; flex-direction:column; height:100%; min-height:0; overflow:hidden;">
       <!-- Column Headers -->
-      <div style="display:grid; grid-template-columns: 72px repeat(7, 1fr); background: linear-gradient(135deg, rgba(99,102,241,0.06) 0%, rgba(16,185,129,0.03) 100%); border-bottom: 2px solid var(--border); position: sticky; top: 0; z-index: 20;">
+      <div class="cal-week-header">
         <!-- Time column label -->
-        <div style="padding: 16px 8px; border-right: 1px solid var(--border); display:flex; align-items:center; justify-content:center; background: linear-gradient(135deg, rgba(99,102,241,0.06) 0%, rgba(16,185,129,0.03) 100%);">
-          <span style="font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">Saat</span>
+        <div class="cal-week-header-time-col">
+          <span>Saat</span>
         </div>
+
         ${days.map(d => {
           const ds = getLocalDateStr(d);
           const isToday = ds === today;
           const isWeekend = d.getDay() === 0 || d.getDay() === 6;
           const dayLessonCount = lessons.filter(l => l.date === ds).length;
+
           return `
-            <div style="padding: 14px 8px; text-align: center; border-right: 1px solid var(--border); position:relative;
-                        background: ${isToday ? 'rgba(99,102,241,0.08)' : 'transparent'};">
-              <div style="font-size: 10px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; color: ${isToday ? '#6366f1' : isWeekend ? '#ef4444' : 'var(--text-muted)'}; margin-bottom: 4px;">
+            <div class="cal-week-header-cell ${isToday ? 'is-today' : ''} ${isWeekend ? 'is-weekend' : ''}">
+              <div class="cal-day-abbr">
                 ${DAYS_TR_SHORT[d.getDay()]}
               </div>
-              <div style="font-size: 22px; font-weight: 800; color: ${isToday ? '#6366f1' : 'var(--text-primary)'}; line-height: 1;">
+              <div class="cal-day-date-circle ${isToday ? 'is-today' : ''}">
                 ${d.getDate()}
               </div>
               ${dayLessonCount > 0 ? `
-                <div style="margin-top: 4px;">
-                  <span style="display: inline-block; background: ${isToday ? '#6366f1' : 'var(--border)'}; color: ${isToday ? '#fff' : 'var(--text-secondary)'}; border-radius: 10px; font-size: 9px; font-weight: 700; padding: 1px 6px;">${dayLessonCount} ders</span>
+                <div style="line-height:1;">
+                  <span class="cal-day-count-badge">${dayLessonCount} ders</span>
                 </div>
               ` : ''}
-              ${isToday ? `<div style="position:absolute; bottom:0; left:20%; right:20%; height:3px; background:#6366f1; border-radius:3px 3px 0 0;"></div>` : ''}
+              ${isToday ? `<div class="cal-week-today-bar"></div>` : ''}
             </div>
           `;
         }).join('')}
       </div>
 
       <!-- Time Grid -->
-      <div style="background: var(--bg-card); position:relative;">
+      <div class="cal-week-body ${density === 'fit' ? 'density-fit' : 'density-expanded'}"
+           ${density === 'fit' ? `style="grid-template-rows: repeat(${hours.length}, 1fr);"` : ''}>
         ${hours.map(h => `
-          <div style="display:grid; grid-template-columns: 72px repeat(7, 1fr); min-height: 80px; border-bottom: 1px solid var(--border-light);">
+          <div class="cal-hour-row">
             <!-- Hour Label -->
-            <div style="padding: 10px 6px; border-right: 1px solid var(--border); display:flex; align-items:flex-start; justify-content:flex-end; flex-shrink:0;">
-              <span style="font-size: 11px; font-weight: 700; color: var(--text-muted);">${String(h).padStart(2,'0')}:00</span>
+            <div class="cal-hour-label-cell">
+              <span>${String(h).padStart(2, '0')}:00</span>
             </div>
+
+            <!-- 7 Day Columns for this hour -->
             ${days.map(d => {
               const ds = getLocalDateStr(d);
               const isToday = ds === today;
               const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+              const isCurrentHour = isToday && nowH === h;
               const dayHourLessons = lessons.filter(l => l.date === ds && parseInt(l.startTime) === h);
-              return `
-                <div class="cal-drop-zone" data-date="${ds}" data-hour="${h}"
-                     style="border-right: 1px solid var(--border-light); position:relative; overflow:visible;
-                            background: ${isToday ? 'rgba(99,102,241,0.02)' : isWeekend ? 'rgba(239,68,68,0.01)' : 'transparent'};
-                            cursor: pointer; transition: background 0.15s;">
-                  ${dayHourLessons.map(l => {
-                    const sc = getStatusColor(l);
-                    const isDone = l.status === 'completed';
-                    const name   = l.refName || l.title;
+              const lessonCount = dayHourLessons.length;
 
-                    const [sH, sM] = l.startTime.split(':').map(Number);
+              return `
+                <div class="cal-drop-zone cal-drop-cell ${isToday ? 'is-today' : ''} ${isWeekend ? 'is-weekend' : ''}"
+                     data-date="${ds}"
+                     data-hour="${h}"
+                     title="${ds} ${String(h).padStart(2,'0')}:00 — Yeni ders eklemek için tıklayın">
+
+                  <!-- 30-minute guideline -->
+                  <div class="cal-half-line"></div>
+
+                  <!-- Live current time line -->
+                  ${isCurrentHour ? `
+                    <div class="cal-now-line" style="top: ${(nowM / 60) * 100}%;">
+                      <span class="cal-now-dot"></span>
+                      <span class="cal-now-tag">${String(nowH).padStart(2,'0')}:${String(nowM).padStart(2,'0')}</span>
+                    </div>
+                  ` : ''}
+
+                  <!-- Lessons for this slot -->
+                  ${dayHourLessons.map((l, idx) => {
+                    const sInfo = getStatusInfo(l);
+                    const name  = l.refName || l.title;
+
+                    const [sH, sM] = (l.startTime || '00:00').split(':').map(Number);
                     const [eH, eM] = (l.endTime || `${sH+1}:00`).split(':').map(Number);
-                    const duration = (eH * 60 + eM) - (sH * 60 + sM);
-                    const topOffset = (sM / 60) * 80;
-                    const heightVal = Math.max((duration / 60) * 80 - 8, 28);
+                    const rawDur = (eH * 60 + eM) - (sH * 60 + sM);
+                    const duration = rawDur > 0 ? rawDur : 60;
+                    const topPercent = (sM / 60) * 100;
+                    const heightPercent = (duration / 60) * 100;
+
+                    // Side-by-side positioning if multiple lessons at same hour
+                    const widthPercent = 100 / lessonCount;
+                    const leftPercent  = idx * widthPercent;
 
                     return `
-                      <div class="cal-lesson-card" draggable="true"
-                           data-id="${l.id}" data-start-time="${l.startTime}"
-                           style="position:absolute; left:4px; right:4px; top:${topOffset}px; height:${heightVal}px;
-                                  z-index:5; background:${isDone ? sc.bg : sc.light};
-                                  border-left: 4px solid ${sc.bg}; border-radius: 8px; padding: 7px 8px;
-                                  cursor:pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.07); overflow:hidden;
-                                  transition: all 0.2s;">
-                        <div style="font-size:10px; font-weight:800; color:${isDone ? 'rgba(255,255,255,0.9)' : sc.bg}; margin-bottom:2px; display:flex; justify-content:space-between; align-items:center;">
-                          <span>${l.startTime}–${l.endTime || ''}</span>
-                          <span style="color:${isDone ? 'rgba(255,255,255,0.7)' : sc.bg}; opacity:0.7;">${icon('dragHandle', 10)}</span>
-                        </div>
-                        <div style="font-size: 12px; font-weight:800; color:${isDone ? '#ffffff' : 'var(--text-primary)'}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; line-height:1.3;">
-                          ${escHtml(name)}
-                        </div>
-                        ${heightVal > 44 ? `
-                          <div style="font-size:10px; color:${isDone ? 'rgba(255,255,255,0.75)' : sc.text}; margin-top:3px; display:flex; gap:3px; align-items:center; white-space:nowrap; overflow:hidden;">
-                            ${icon('book', 9)} ${escHtml(l.subject || '')}
+                      <div class="cal-lesson-card status-${sInfo.statusKey}"
+                           draggable="true"
+                           data-id="${l.id}"
+                           data-start-time="${l.startTime}"
+                           title="${escHtml(name)} (${l.startTime} – ${l.endTime || ''}) — ${sInfo.label}"
+                           style="top: ${topPercent}%;
+                                  left: calc(${leftPercent}% + 2px);
+                                  width: calc(${widthPercent}% - 4px);
+                                  height: calc(${heightPercent}% - 3px);
+                                  min-height: 24px;">
+
+                        <div class="cal-card-inner">
+                          <div class="cal-card-top">
+                            <span class="cal-card-time">${l.startTime}–${l.endTime || ''}</span>
+                            <span class="cal-card-drag-icon">${icon('dragHandle', 10)}</span>
                           </div>
-                        ` : ''}
+                          <div class="cal-card-title">${escHtml(name)}</div>
+                          ${l.subject ? `
+                            <div class="cal-card-sub">
+                              <span style="width:4px;height:4px;border-radius:50%;background:${sInfo.bg};flex-shrink:0;"></span>
+                              <span>${escHtml(l.subject)}</span>
+                            </div>
+                          ` : ''}
+                        </div>
                       </div>
                     `;
                   }).join('')}
@@ -397,16 +551,16 @@ function initCalendarDragDrop(el, navigate) {
   el.querySelectorAll('.cal-lesson-card').forEach(card => {
     card.addEventListener('dragstart', e => {
       draggedLessonId = card.dataset.id;
-      card.style.opacity = '0.45';
-      card.style.transform = 'scale(0.95)';
+      card.style.opacity = '0.4';
+      card.style.transform = 'scale(0.96)';
       e.dataTransfer.setData('text/plain', draggedLessonId);
-      e.dataTransfer.setData('application/start-time', card.dataset.startTime);
+      e.dataTransfer.setData('application/start-time', card.dataset.startTime || '14:00');
       e.dataTransfer.effectAllowed = 'move';
     });
 
     card.addEventListener('dragend', () => {
       card.style.opacity = '1';
-      card.style.transform = 'scale(1)';
+      card.style.transform = '';
       el.querySelectorAll('.cal-drop-zone').forEach(z => {
         z.style.background = '';
         z.style.boxShadow = '';
@@ -418,8 +572,8 @@ function initCalendarDragDrop(el, navigate) {
     zone.addEventListener('dragover', e => {
       e.preventDefault();
       e.dataTransfer.dropEffect = 'move';
-      zone.style.background = 'rgba(99,102,241,0.08)';
-      zone.style.boxShadow = 'inset 0 0 0 2px rgba(99,102,241,0.3)';
+      zone.style.background = 'rgba(0, 69, 38, 0.08)';
+      zone.style.boxShadow = 'inset 0 0 0 2px rgba(5, 150, 105, 0.4)';
     });
 
     zone.addEventListener('dragleave', () => {
@@ -432,11 +586,11 @@ function initCalendarDragDrop(el, navigate) {
       zone.style.background = '';
       zone.style.boxShadow = '';
       const id = e.dataTransfer.getData('text/plain');
-      const originalStartTime = e.dataTransfer.getData('application/start-time');
+      const originalStartTime = e.dataTransfer.getData('application/start-time') || '14:00';
       const newDate = zone.dataset.date;
       const newHour = zone.dataset.hour;
       const originalMins = originalStartTime.split(':')[1] || '00';
-      const newStartTime = newHour
+      const newStartTime = newHour !== undefined
         ? `${String(newHour).padStart(2, '0')}:${originalMins}`
         : originalStartTime;
 
@@ -456,41 +610,22 @@ function initCalendarEvents(el, navigate) {
     card.addEventListener('click', e => {
       e.stopPropagation();
       const id = card.dataset.id;
-      import('./modals/LessonEvalModal.js').then(m => m.openLessonEvalModal(id, navigate));
-    });
-
-    // Hover glow effect
-    card.addEventListener('mouseenter', () => {
-      card.style.transform = 'translateY(-1px)';
-      card.style.boxShadow = '0 6px 16px rgba(0,0,0,0.12)';
-      card.style.zIndex = '20';
-    });
-    card.addEventListener('mouseleave', () => {
-      card.style.transform = '';
-      card.style.boxShadow = '';
-      card.style.zIndex = '';
+      if (id) {
+        import('./modals/LessonEvalModal.js').then(m => m.openLessonEvalModal(id, navigate));
+      }
     });
   });
 
   // Drop zone click → add lesson
   el.querySelectorAll('.cal-drop-zone').forEach(zone => {
     zone.addEventListener('click', e => {
-      if (e.target !== zone) return;
+      if (e.target.closest('.cal-lesson-card')) return;
       const date = zone.dataset.date;
       const hour = zone.dataset.hour;
-      const startTime = hour ? `${String(hour).padStart(2, '0')}:00` : '14:00';
+      const startTime = hour !== undefined ? `${String(hour).padStart(2, '0')}:00` : '14:00';
       import('./modals/AddLessonModal.js').then(m => {
         m.openAddLessonModal(() => navigate('calendar', true), { date, startTime });
       });
-    });
-
-    // Hover style on empty zones
-    zone.addEventListener('mouseenter', e => {
-      if (e.target !== zone) return;
-      zone.style.background = 'rgba(99,102,241,0.04)';
-    });
-    zone.addEventListener('mouseleave', () => {
-      zone.style.background = '';
     });
   });
 }
