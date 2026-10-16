@@ -3,12 +3,18 @@ import { addNotification } from '../store/store.js';
 import { icon } from '../components/icons.js';
 import { openModal, closeModal, showConfirm } from '../components/modal.js';
 
+import { auth } from '../lib/firebase.js';
+
 let pendingPosts = [];
 let approvedPosts = [];
 let currentTab = 'pending'; // 'pending' or 'approved'
 let isLoading = false;
 
 export async function renderAdmin(navigate) {
+  if (auth.currentUser?.email !== 'aldibasozcan@gmail.com') {
+    if (typeof navigate === 'function') navigate('dashboard');
+    return { html: '<div class="empty-state"><h3>Yetkisiz Erişim</h3><p>Bu sayfaya erişim yetkiniz bulunmamaktadır.</p></div>' };
+  }
   // Shell HTML
   const html = `
     <div id="admin-dashboard-container" class="fade-in" style="padding:24px; max-width:1200px; margin:0 auto;">

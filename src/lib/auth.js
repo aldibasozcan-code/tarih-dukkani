@@ -37,6 +37,7 @@ export const loginWithGoogle = async () => {
 
 // Çıkış
 export const logoutUser = async () => {
+    localStorage.removeItem('_is_admin');
     return await signOut(auth);
 };
 

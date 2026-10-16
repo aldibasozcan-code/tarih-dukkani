@@ -11,7 +11,6 @@ export async function submitPost(data) {
   if (!auth.currentUser) throw new Error("Giriş yapmanız gerekiyor.");
   
   const isAdmin = auth.currentUser.email === 'aldibasozcan@gmail.com';
-  if (isAdmin) localStorage.setItem('_is_admin', 'true');
 
   const post = {
     ...data,
