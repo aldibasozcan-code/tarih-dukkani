@@ -1110,6 +1110,97 @@ export function importCurriculumFromExcel(subjectId, rows) {
   });
 }
 
+// ─── Müfredatı toptan değiştirme (ilerleme korunarak) ───
+
+const _normTopic = (n = '') =>
+  n.toLocaleLowerCase('tr').replace(/^\s*(konu\s*\d+\s*[:.]|\d+\s*[.)])\s*/u, '').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+
+/**
+ * Bir ders-sınıfın müfredatını yenisiyle değiştirme planı (kuru çalıştırma).
+ * Aynı adlı konuların kimlikleri korunur; böylece ilerleme ve ders bağlantıları taşınır.
+ * units: [{ name, topics: [konu adı] }]
+ */
+export function planCurriculumReplace(subject, grade, units) {
+  const s = getState();
+  const old = s.curriculum?.[subject]?.[grade] || [];
+  const oldUnitByName = new Map(old.map(u => [_normTopic(u.name), u]));
+  const oldTopicByName = new Map();
+  for (const u of old) for (const t of u.topics || []) {
+    const k = _normTopic(t.name);
+    if (!oldTopicByName.has(k)) oldTopicByName.set(k, { unitId: u.id, topicId: t.id });
+  }
+  const keyMap = new Map(); // eski anahtar → yeni anahtar
+  const used = new Set();
+  const newUnits = units.map(u => {
+    const ou = oldUnitByName.get(_normTopic(u.name));
+    const unitId = ou && !used.has('u:' + ou.id) ? ou.id : 'u_' + generateId();
+    used.add('u:' + unitId);
+    return {
+      id: unitId,
+      name: u.name,
+      topics: u.topics.map(name => {
+        const ot = oldTopicByName.get(_normTopic(name));
+        const topicId = ot && !used.has('t:' + ot.topicId) ? ot.topicId : 't_' + generateId();
+        used.add('t:' + topicId);
+        if (ot) keyMap.set(`${subject}|${grade}|${ot.unitId}|${ot.topicId}`, `${subject}|${grade}|${unitId}|${topicId}`);
+        return { id: topicId, name };
+      }),
+    };
+  });
+  // bu ders-sınıfı takip eden gruplar/öğrencilerde kaç konunun ilerlemesi taşınacak / kaybolacak
+  let kept = 0, dropped = 0;
+  const prefix = `${subject}|${grade}|`;
+  for (const e of [...s.groups, ...s.students]) {
+    const prog = applyProgress(e, [], null, flatTopics(s, e)).topicProgress;
+    for (const k of Object.keys(prog)) if (k.startsWith(prefix)) (keyMap.has(k) ? kept++ : dropped++);
+  }
+  return {
+    oldUnits: old.length,
+    oldTopics: old.reduce((n, u) => n + (u.topics?.length || 0), 0),
+    newUnits, keyMap, kept, dropped,
+    newTopics: newUnits.reduce((n, u) => n + u.topics.length, 0),
+  };
+}
+
+/** Planı uygular: müfredatı değiştirir, ilerlemeyi ve ders bağlantılarını yeni kimliklere taşır */
+export function replaceCurriculum(subject, grade, units) {
+  const plan = planCurriculumReplace(subject, grade, units);
+  const prefix = `${subject}|${grade}|`;
+  const remapProgress = (s, e) => {
+    const migrated = applyProgress(e, [], null, flatTopics(s, e)).topicProgress; // eski bitti listesi dahil
+    const next = {};
+    for (const [k, v] of Object.entries(migrated)) {
+      // karşılığı olmayan konuların kaydı silinmez; sadece yeni müfredatta görünmez
+      if (!k.startsWith(prefix) || !plan.keyMap.has(k)) next[k] = v;
+      else next[plan.keyMap.get(k)] = v;
+    }
+    return { topicProgress: next, completedTopics: [...new Set(Object.keys(next).filter(k => next[k].s === 'done').map(k => k.split('|')[3]))] };
+  };
+  const newTopicIds = new Map(); // eski "ünite|konu" → yeni {unitId, topicId}
+  for (const [o, n] of plan.keyMap) {
+    const [, , ou, ot] = o.split('|');
+    const [, , nu, nt] = n.split('|');
+    newTopicIds.set(`${ou}|${ot}`, { unitId: nu, topicId: nt });
+  }
+  setState(s => ({
+    curriculum: { ...s.curriculum, [subject]: { ...(s.curriculum?.[subject] || {}), [grade]: plan.newUnits } },
+    groups: s.groups.map(e => ({ ...e, ...remapProgress(s, e) })),
+    students: s.students.map(e => ({ ...e, ...remapProgress(s, e) })),
+    lessons: s.lessons.map(l => {
+      let out = l;
+      if (l.subject === subject && l.grade === grade && l.topicId) {
+        const m = newTopicIds.get(`${l.unitId}|${l.topicId}`);
+        if (m) out = { ...out, ...m }; // eşleşmeyen eski bağlantı olduğu gibi kalır
+      }
+      if (l.coveredTopics?.some(c => c.key?.startsWith(prefix))) {
+        out = { ...out, coveredTopics: l.coveredTopics.map(c => (plan.keyMap.has(c.key) ? { ...c, key: plan.keyMap.get(c.key) } : c)) };
+      }
+      return out;
+    }),
+  }));
+  return plan;
+}
+
 export function updateSettings(data) {
   setState(s => ({ settings: { ...s.settings, ...data } }));
 }

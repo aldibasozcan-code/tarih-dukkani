@@ -1,7 +1,8 @@
 // ═════════════════════════════════════════════════
 // COURSES PAGE - Curriculum Management
 // ═════════════════════════════════════════════════
-import { getState, addMaterial, deleteMaterial, addUnit, updateUnit, deleteUnit, addTopic, updateTopic, deleteTopic, reorderTopics } from '../store/store.js';
+import { getState, addMaterial, deleteMaterial, addUnit, updateUnit, deleteUnit, addTopic, updateTopic, deleteTopic, reorderTopics, planCurriculumReplace, replaceCurriculum } from '../store/store.js';
+import { CURRICULUM_PRESETS, PRESET_LABEL } from '../data/curriculumPresets.js';
 import { icon } from '../components/icons.js';
 import { SUBJECTS, ALL_GRADES, CONTENT_TYPES, SUBJECT_GRADES, getSubjectsForBranches } from '../data/curriculum.js';
 import { escHtml, getYoutubeVideoId, isYoutubeUrl, getGoogleDrivePreviewUrl, isGoogleDriveUrl } from '../utils/helpers.js';
@@ -356,6 +357,10 @@ function renderCurriculumContent(state, grade) {
       html += `
         <div style="text-align:center; padding:20px 0;">
           <button class="btn hover-lift" data-add-unit="${subject}" data-grade="${grade}" style="padding:11px 28px; font-size:14px; font-weight:700; border-radius:12px; background:white; border:2px dashed rgba(16,185,129,0.4); color:var(--brand-green); display:inline-flex; align-items:center; gap:8px; transition:all 0.2s;">${icon('plus', 15)} Yeni Ünite Ekle</button>
+          <div style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap; margin-top:12px;">
+            ${CURRICULUM_PRESETS[subject + '|' + grade] ? `<button class="btn btn-sm" data-preset-curr="${subject}" data-grade="${grade}" style="border-radius:10px; font-weight:700; background:var(--brand-green-soft); color:var(--brand-green); border:1px solid rgba(16,185,129,0.3);">${icon('refresh', 13)} Güncel müfredatla değiştir (${PRESET_LABEL})</button>` : ''}
+            <button class="btn btn-sm" data-text-curr="${subject}" data-grade="${grade}" style="border-radius:10px; font-weight:700; background:white; border:1px solid var(--border); color:var(--text-secondary);">${icon('fileText', 13)} Metinden değiştir</button>
+          </div>
         </div>
       `;
     }
@@ -981,6 +986,76 @@ function initCurriculumButtons(el, refresh, navigate) {
     });
   });
 
+  // ─── Müfredatı toptan değiştir (güncel müfredat ya da yapıştırılan metin) ───
+  const confirmReplace = (subject, grade, units, sourceLabel) => {
+    const plan = planCurriculumReplace(subject, grade, units);
+    const sInfo = SUBJECTS.find(x => x.id === subject);
+    openModal({
+      title: 'Müfredatı değiştir',
+      size: 'lg',
+      body: `
+        <div style="font-size:14px; line-height:1.6;">
+          <p><b>${escHtml(sInfo?.name || subject)} · ${escHtml(grade)}</b> müfredatı <b>${escHtml(sourceLabel)}</b> ile değiştirilecek.</p>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:14px 0;">
+            <div style="padding:12px; border-radius:12px; background:var(--bg-secondary);"><div style="font-size:12px; color:var(--text-muted); font-weight:700;">ŞU AN</div><b>${plan.oldUnits}</b> ünite · <b>${plan.oldTopics}</b> konu</div>
+            <div style="padding:12px; border-radius:12px; background:var(--brand-green-soft);"><div style="font-size:12px; color:var(--brand-green-light); font-weight:700;">YENİ</div><b>${plan.newUnits.length}</b> ünite · <b>${plan.newTopics}</b> konu</div>
+          </div>
+          <div style="max-height:260px; overflow:auto; border:1px solid var(--border); border-radius:12px; padding:10px 14px; font-size:13px;">
+            ${plan.newUnits.map(u => `<div style="font-weight:800; margin-top:6px;">${escHtml(u.name)}</div><ul style="margin:2px 0 6px 18px;">${u.topics.map(t => `<li>${escHtml(t.name)}</li>`).join('')}</ul>`).join('')}
+          </div>
+          <p style="margin-top:12px;">Grup ve öğrencilerdeki konu ilerlemesi: aynı adlı <b style="color:var(--success);">${plan.kept}</b> konunun ilerlemesi yeni müfredata taşınacak${plan.dropped ? `; yeni müfredatta karşılığı olmayan <b style="color:var(--warning);">${plan.dropped}</b> konunun eski kaydı saklanacak ama listede görünmeyecek` : ''}.
+            Hiçbir veri silinmez: materyaller, ders kayıtları ve eski ilerleme kayıtları yerinde kalır.</p>
+          <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px;">
+            <button class="btn btn-secondary" id="rc-cancel">Vazgeç</button>
+            <button class="btn btn-primary" id="rc-ok" style="background:var(--brand-green); color:#fff;">${icon('check', 14)} Müfredatı değiştir</button>
+          </div>
+        </div>`,
+    });
+    document.getElementById('rc-cancel')?.addEventListener('click', closeModal);
+    document.getElementById('rc-ok')?.addEventListener('click', () => {
+      replaceCurriculum(subject, grade, units);
+      closeModal();
+      refresh();
+    });
+  };
+
+  el.querySelectorAll('[data-preset-curr]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const subject = btn.dataset.presetCurr, grade = btn.dataset.grade;
+      confirmReplace(subject, grade, CURRICULUM_PRESETS[subject + '|' + grade], PRESET_LABEL + ' müfredatı');
+    });
+  });
+
+  el.querySelectorAll('[data-text-curr]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const subject = btn.dataset.textCurr, grade = btn.dataset.grade;
+      openModal({
+        title: 'Müfredatı metinden değiştir',
+        size: 'lg',
+        body: `
+          <p style="font-size:13px; color:var(--text-secondary);">Ünite satırları <b>Ünite</b> / <b>Öğrenme Alanı</b> / <b>Bölüm</b> ile, konu satırları <b>*</b>, <b>-</b> ya da numara (<b>1.</b>) ile başlasın. Google Doc'tan kopyala-yapıştır çalışır.</p>
+          <textarea id="rc-text" rows="14" style="width:100%; font-family:monospace; font-size:13px; padding:10px; border-radius:10px; border:1px solid var(--border);" placeholder="Ünite 1: Geçmişin İnşası Sürecinde Tarih\n* Konu 1: Tarih Öğrenmenin Faydaları\n* Konu 2: Tarihin Doğası"></textarea>
+          <div id="rc-preview" style="font-size:13px; color:var(--text-muted); margin-top:6px;"></div>
+          <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:12px;">
+            <button class="btn btn-secondary" id="rc-t-cancel">Vazgeç</button>
+            <button class="btn btn-primary" id="rc-t-next" style="background:var(--brand-green); color:#fff;" disabled>Devam</button>
+          </div>`,
+      });
+      const ta = document.getElementById('rc-text');
+      const next = document.getElementById('rc-t-next');
+      const prev = document.getElementById('rc-preview');
+      let parsed = [];
+      ta.addEventListener('input', () => {
+        parsed = parseCurriculumText(ta.value);
+        const n = parsed.reduce((a, u) => a + u.topics.length, 0);
+        prev.textContent = parsed.length ? `Önizleme: ${parsed.length} ünite, ${n} konu` : 'Ünite / konu bulunamadı';
+        next.disabled = !parsed.length || !n;
+      });
+      document.getElementById('rc-t-cancel').addEventListener('click', closeModal);
+      next.addEventListener('click', () => confirmReplace(subject, grade, parsed, 'yapıştırılan metin'));
+    });
+  });
+
   // Add Unit
   el.querySelectorAll('[data-add-unit]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1149,3 +1224,22 @@ function initTopicDragAndDrop(el, refresh) {
   });
 }
 
+
+
+/** Yapıştırılan müfredat metnini üniteler ve konulara ayırır */
+function parseCurriculumText(text) {
+  const UNIT = /^(ünite|öğrenme alanı|bölüm|tema)(?=[\s:.\d]|$)/iu;
+  const BULLET = /^[*\-•–]\s*/;
+  const NUM = /^\d+[.)]\s+/;
+  const units = [];
+  for (const raw of text.replace(/^\uFEFF/, '').split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line) continue;
+    if (UNIT.test(line)) units.push({ name: line, topics: [] });
+    else if (BULLET.test(line) || NUM.test(line)) {
+      if (!units.length) units.push({ name: 'Konular', topics: [] });
+      units[units.length - 1].topics.push(line.replace(BULLET, '').trim());
+    }
+  }
+  return units.filter(u => u.topics.length);
+}
