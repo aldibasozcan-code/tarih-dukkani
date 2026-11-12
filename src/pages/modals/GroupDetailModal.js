@@ -7,6 +7,7 @@ import { openModal, closeModal } from '../../components/modal.js';
 import { escHtml, getAvatarColor, getInitials, getGroupInitials, formatCurrency, formatDate, formatDateShort } from '../../utils/helpers.js';
 import { SUBJECTS, getSubjectsForBranches, CONTENT_TYPES, DAYS_TR } from '../../data/curriculum.js';
 import { openMonthlySummary } from './MonthlySummaryModal.js';
+import { topicState, nextTopic, isAssessment, STATUS } from '../../lib/progress.js';
 
 export function openGroupDetail(groupId, navigate) {
   const state = getState();
@@ -34,6 +35,8 @@ export function openGroupDetail(groupId, navigate) {
   });
 
   const remainingTopics = totalTopics - totalCompletedTopics;
+  const partialCount = Object.values(group.topicProgress || {}).filter(p => p.s === 'partial').length;
+  const next = nextTopic(state, group);
   const overallPct = totalTopics > 0 ? Math.round((totalCompletedTopics / totalTopics) * 100) : 0;
 
   // Circular progress helper
@@ -121,7 +124,7 @@ export function openGroupDetail(groupId, navigate) {
           <div class="premium-card card-sm" style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 24px;">
             <div style="font-size: 13px; font-weight: 700; color: var(--text-muted); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px;">Kalan Konu</div>
             <div style="font-size: 32px; font-weight: 800; color: var(--warning);">${remainingTopics}</div>
-            <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px; font-weight: 600;">Toplam: ${totalTopics}</div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px; font-weight: 600;">Toplam: ${totalTopics}${partialCount ? ` • <span style="color:${STATUS.partial.color};">◐ ${partialCount} yarım</span>` : ''}</div>
           </div>
         </div>
 
@@ -212,6 +215,16 @@ export function openGroupDetail(groupId, navigate) {
             </div>
             
             <div style="display: flex; flex-direction: column; gap: 24px;">
+              ${next ? `
+                <div class="premium-card" style="padding: 16px 20px; background: ${next.s === 'partial' ? STATUS.partial.soft : 'var(--brand-green-soft)'}; border: 1px solid ${next.s === 'partial' ? STATUS.partial.color : 'var(--border-light)'};">
+                  <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; color: ${next.s === 'partial' ? STATUS.partial.color : 'var(--brand-green-light)'};">
+                    ${next.s === 'partial' ? '◐ Devam edilecek konu' : '→ Sıradaki konu'}
+                  </div>
+                  <div style="font-size: 16px; font-weight: 800; color: var(--text-primary); margin-top: 2px;">${escHtml(next.name)}</div>
+                  <div style="font-size: 12px; color: var(--text-muted); font-weight: 600;">${escHtml(next.unitName)}</div>
+                  ${next.s === 'partial' && next.note ? `<div style="font-size: 13px; margin-top: 4px;"><b>Kaldığın yer:</b> ${escHtml(next.note)}</div>` : ''}
+                </div>` : (totalTopics > 0 ? `<div class="premium-card" style="padding: 16px 20px; font-weight: 800; color: var(--success);">Müfredat tamamlandı 🎉</div>` : '')}
+              <div style="font-size: 12px; color: var(--text-muted);">Konunun yanındaki kutuya tıklayarak durumunu değiştir: ○ işlenmedi → ✓ bitti → ◐ yarım kaldı.</div>
               ${subjects.map(({ subject, grade }) => {
                 const units = state.curriculum[subject]?.[grade] || [];
                 let sinfo = SUBJECTS.find(s => s.id === subject);
@@ -233,16 +246,25 @@ export function openGroupDetail(groupId, navigate) {
                       </div>
                       <div style="padding: 12px;">
                         ${unit.topics.map(topic => {
-                          const done = completedSet.has(topic.id);
+                          const st = topicState(group, topic.id);
+                          const done = st.s === 'done';
+                          const partial = st.s === 'partial';
+                          const isNext = next && next.topicId === topic.id;
                           const topicMaterials = materials.filter(m => m.unitId === unit.id && m.topicId === topic.id);
                           return `
-                            <div class="list-item-hover" style="display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 12px; margin-bottom: 2px;">
-                              <button style="width: 26px; height: 26px; border-radius: 8px; background: ${done ? 'var(--success)' : '#fff'}; border: 2px solid ${done ? 'var(--success)' : 'var(--border)'}; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"
-                                data-toggle-group-topic="${topic.id}" data-group-id="${group.id}">
-                                ${done ? icon('check', 12, '#fff') : ''}
+                            <div class="list-item-hover" data-topic-row="${topic.id}" style="display: flex; align-items: flex-start; gap: 12px; padding: 10px; border-radius: 12px; margin-bottom: 2px; ${isNext ? `background: ${partial ? STATUS.partial.soft : 'var(--brand-green-soft)'};` : ''}">
+                              <button title="Durumu değiştir" style="width: 26px; height: 26px; border-radius: 8px; background: ${done ? STATUS.done.color : partial ? STATUS.partial.soft : '#fff'}; border: 2px solid ${done ? STATUS.done.color : partial ? STATUS.partial.color : 'var(--border)'}; color: ${partial ? STATUS.partial.color : '#fff'}; font-weight: 800; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"
+                                data-cycle-group-topic="${topic.id}" data-state="${st.s}" data-group-id="${group.id}">
+                                ${done ? icon('check', 12, '#fff') : partial ? '◐' : ''}
                               </button>
-                              <div style="flex: 1;">
-                                <div style="font-size: 13px; font-weight: 600; ${done ? 'text-decoration: line-through; color: var(--text-muted);' : 'color: var(--text-primary);'}">${escHtml(topic.name)}</div>
+                              <div style="flex: 1; min-width: 0;">
+                                <div style="font-size: 13px; font-weight: 600; ${done ? 'text-decoration: line-through; color: var(--text-muted);' : partial ? `color: ${STATUS.partial.color};` : 'color: var(--text-primary);'}">
+                                  ${escHtml(topic.name)}
+                                  ${isAssessment(topic.name) ? `<span style="font-size:10px;font-weight:700;background:#ede9fe;color:#6d28d9;padding:1px 6px;border-radius:6px;text-decoration:none;display:inline-block;">değerlendirme</span>` : ''}
+                                  ${isNext ? `<span style="font-size:11px;font-weight:700;color:var(--brand-green-light);text-decoration:none;"> ← şu an burada</span>` : ''}
+                                </div>
+                                <input type="text" data-note-group-topic="${topic.id}" placeholder="Nerede kaldım?" value="${escHtml(st.note || '')}"
+                                  style="margin-top: 6px; width: 100%; font-size: 12px; padding: 6px 8px; ${partial ? '' : 'display: none;'}">
                                 <div style="display: flex; gap: 6px; margin-top: 4px;">
                                   ${topicMaterials.map(m => `
                                     <a href="${escHtml(m.link)}" target="_blank" style="text-decoration: none; font-size: 10px; font-weight: 700; color: ${primaryColor}; background: ${primaryColor}15; padding: 2px 8px; border-radius: 6px; display: flex; align-items: center; gap: 4px;">
@@ -307,20 +329,29 @@ export function openGroupDetail(groupId, navigate) {
       });
     });
 
-    document.querySelectorAll('[data-toggle-group-topic]').forEach(btn => {
+    // ○ işlenmedi → ✓ bitti → ◐ yarım kaldı → ○
+    const NEXT_STATE = { none: 'done', done: 'partial', partial: 'none' };
+    document.querySelectorAll('[data-cycle-group-topic]').forEach(btn => {
       btn.addEventListener('click', () => {
-        const topicId = btn.dataset.toggleGroupTopic;
-        const gId = btn.dataset.groupId;
+        const topicId = btn.dataset.cycleGroupTopic;
+        const s2 = NEXT_STATE[btn.dataset.state] || 'done';
+        const noteInput = document.querySelector(`[data-note-group-topic="${topicId}"]`);
         import('../../store/store.js').then(m => {
-          const g = m.getState().groups.find(x => x.id === gId);
-          if (!g) return;
-          const c = g.completedTopics || [];
-          m.updateGroup(gId, {
-            completedTopics: c.includes(topicId) ? c.filter(id => id !== topicId) : [...c, topicId]
-          });
-          btn.style.background = !c.includes(topicId) ? 'var(--success)' : '#fff';
-          btn.style.borderColor = !c.includes(topicId) ? 'var(--success)' : 'var(--border)';
-          btn.innerHTML = !c.includes(topicId) ? icon('check', 12, '#fff') : '';
+          m.setEntityTopics('group', group.id, [{ topicId, s: s2, note: noteInput?.value || '' }]);
+          // sıradaki konu ve sayılar yeniden hesaplansın; kaydırma konumu korunur
+          const sels = ['.modal-overlay', '.modal', '.modal-body'];
+          const scrolls = sels.map(q => document.querySelector(q)?.scrollTop || 0);
+          openGroupDetail(group.id, navigate);
+          sels.forEach((q, i) => { const el = document.querySelector(q); if (el) el.scrollTop = scrolls[i]; });
+          if (s2 === 'partial') setTimeout(() => document.querySelector(`[data-note-group-topic="${topicId}"]`)?.focus(), 150);
+        });
+      });
+    });
+
+    document.querySelectorAll('[data-note-group-topic]').forEach(inp => {
+      inp.addEventListener('change', () => {
+        import('../../store/store.js').then(m => {
+          m.setEntityTopics('group', group.id, [{ topicId: inp.dataset.noteGroupTopic, s: 'partial', note: inp.value }]);
         });
       });
     });

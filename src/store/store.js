@@ -4,6 +4,7 @@
 import { DEFAULT_CURRICULUM, CONTENT_TYPES, getSubjectsForBranches, SUBJECT_GRADES } from '../data/curriculum.js';
 import { todayStr, getLocalDateStr, addDays } from '../utils/helpers.js';
 import { db, auth } from '../lib/firebase.js';
+import { applyProgress } from '../lib/progress.js';
 import { doc, getDoc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { deleteUser } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
@@ -828,6 +829,38 @@ export function completeLesson(lessonId, extraOpts = {}) {
   if (extraOpts.homework) {
     addHomeworkNotification(lesson, extraOpts.homework);
   }
+}
+
+// ─── Konu ilerlemesi (grup / öğrenci) ───
+
+/**
+ * Bir grubun ya da öğrencinin konu durumlarını günceller.
+ * items: [{ topicId, s: 'done' | 'partial' | 'none', note? }]
+ */
+export function setEntityTopics(type, refId, items, date = todayStr()) {
+  const key = type === 'student' ? 'students' : 'groups';
+  setState(s => ({
+    [key]: s[key].map(e => (e.id === refId ? { ...e, ...applyProgress(e, items, date) } : e)),
+  }));
+}
+
+/**
+ * Bir derste işlenen konuları kaydeder: dersin üzerine yazar ve
+ * grubun/öğrencinin konu ilerlemesini günceller.
+ */
+export function recordLessonTopics(lessonId, items) {
+  const lesson = getState().lessons.find(l => l.id === lessonId);
+  if (!lesson) return;
+  const covered = items.filter(it => it.s !== 'none').map(it => ({
+    topicId: it.topicId,
+    s: it.s,
+    ...(it.s === 'partial' && it.note ? { note: it.note.trim() } : {}),
+  }));
+  const key = lesson.type === 'student' ? 'students' : 'groups';
+  setState(s => ({
+    lessons: s.lessons.map(l => (l.id === lessonId ? { ...l, coveredTopics: covered } : l)),
+    [key]: s[key].map(e => (e.id === lesson.refId ? { ...e, ...applyProgress(e, covered, lesson.date) } : e)),
+  }));
 }
 
 export function deleteLesson(id) {

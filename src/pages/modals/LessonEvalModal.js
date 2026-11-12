@@ -1,7 +1,9 @@
 // ═════════════════════════════════════════════════
 // LESSON EVALUATION MODAL
 // ═════════════════════════════════════════════════
-import { getState, completeLesson, postponeLesson, addNextWeekLesson, addNotification, deleteLesson, getLessonUnitDetails } from '../../store/store.js';
+import { getState, completeLesson, postponeLesson, addNextWeekLesson, addNotification, deleteLesson, getLessonUnitDetails, recordLessonTopics } from '../../store/store.js';
+import { renderTopicPicker, initTopicPicker } from '../../components/topicPicker.js';
+import { topicsWithState } from '../../lib/progress.js';
 import { icon } from '../../components/icons.js';
 import { openModal, closeModal, showConfirm } from '../../components/modal.js';
 import { escHtml, todayStr } from '../../utils/helpers.js';
@@ -24,6 +26,12 @@ export function openLessonEvalModal(lessonId, navigate) {
     : state.groups.find(g => g.id === lesson.refId);
 
   const hasPhone = ref?.phone || ref?.parentPhone;
+  // müfredattan konu seçici (grup ya da öğrencinin müfredatı varsa)
+  const pickerHtml = ref ? renderTopicPicker(state, ref, { preselectTopicId: lesson.topicId }) : '';
+  const donePickerHtml = ref && lesson.status === 'completed'
+    ? renderTopicPicker(state, ref, { existing: lesson.coveredTopics || [] })
+    : '';
+
   const materials = Object.values(state.materials).filter(m =>
     m.subject === lesson.subject && m.grade === lesson.grade
   );
@@ -66,6 +74,13 @@ export function openLessonEvalModal(lessonId, navigate) {
               ${icon('checkCircle', 20)}
               <div style="font-size:14px; font-weight:600;">Bu ders daha önce onaylandı olarak işaretlendi.</div>
             </div>
+            ${donePickerHtml ? `
+              <div id="done-topics-form" style="margin-top:16px;">
+                ${donePickerHtml}
+                <div style="display:flex;justify-content:flex-end;margin-top:8px;">
+                  <button class="btn btn-success" id="btn-save-done-topics">${icon('check', 14)} Konuları Kaydet</button>
+                </div>
+              </div>` : ''}
           `;
         }
         
@@ -96,10 +111,11 @@ export function openLessonEvalModal(lessonId, navigate) {
       <div id="completion-form" style="display:none;">
         <hr class="divider">
         <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;">Ders Notları</h3>
+        ${pickerHtml ? `<div class="form-group">${pickerHtml}</div>` : `
         <div class="form-group">
           <label>İşlenen Konu</label>
           <input type="text" id="l-topic-done" placeholder="Bu derste hangi konu işlendi?" value="${escHtml(lesson.notes || '')}">
-        </div>
+        </div>`}
         <div class="form-group">
           <label>Değerlendirme Notu</label>
           <textarea id="l-eval-notes" rows="2" placeholder="Ders değerlendirmesi..."></textarea>
@@ -153,6 +169,14 @@ export function openLessonEvalModal(lessonId, navigate) {
     `,
   });
 
+  const getPickedTopics = initTopicPicker(document.getElementById('completion-form') || document.createElement('div'));
+  const getDoneTopics = initTopicPicker(document.getElementById('done-topics-form') || document.createElement('div'));
+  document.getElementById('btn-save-done-topics')?.addEventListener('click', () => {
+    recordLessonTopics(lessonId, getDoneTopics());
+    closeModal();
+    if (navigate) navigate(window.location.hash.replace('#','') || 'calendar', true);
+  });
+
   document.getElementById('btn-completed')?.addEventListener('click', () => {
     document.getElementById('completion-form').style.display = '';
     document.getElementById('postpone-form').style.display = 'none';
@@ -191,6 +215,8 @@ export function openLessonEvalModal(lessonId, navigate) {
   document.getElementById('btn-post-cancel')?.addEventListener('click', closeModal);
 
   document.getElementById('btn-eval-confirm')?.addEventListener('click', () => {
+    // seçimleri pencere kapanmadan önce oku
+    const pickedNow = getPickedTopics();
     const hwSel = document.getElementById('l-homework-link');
     const hwLink = hwSel?.value || '';
     const hwTitle = hwSel?.options[hwSel.selectedIndex]?.dataset.title || '';
@@ -216,7 +242,8 @@ export function openLessonEvalModal(lessonId, navigate) {
         if (predefinedHw) desc = `Kayıtlı Ödev: ${predefinedHw}`;
         else if (hwTitle) desc = `Derste Önerilen: ${hwTitle}`;
 
-        const topicName = document.getElementById('l-topic-done')?.value || lesson.unitId || 'İşlenen Konu';
+        const firstPicked = ref ? topicsWithState(state, ref).find(t => pickedNow.some(p => p.topicId === t.topicId)) : null;
+        const topicName = document.getElementById('l-topic-done')?.value || firstPicked?.unitName || lesson.unitId || 'İşlenen Konu';
         m.addAssignment({
           id: 'asn_' + Date.now().toString(36),
           type: lesson.type,
@@ -238,6 +265,7 @@ export function openLessonEvalModal(lessonId, navigate) {
     };
 
     completeLesson(lessonId, extraOpts);
+    if (pickedNow.length) recordLessonTopics(lessonId, pickedNow);
 
     // Add homework to student if applicable
     if (hwLink && lesson.type === 'student' && ref) {
