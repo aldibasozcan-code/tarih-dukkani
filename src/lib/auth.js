@@ -5,7 +5,8 @@ import {
     signOut,
     onAuthStateChanged,
     GoogleAuthProvider,
-    signInWithPopup
+    signInWithPopup,
+    signInWithRedirect
 } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
 // Kullanıcı kayıt
@@ -26,8 +27,15 @@ export const loginWithGoogle = async () => {
         const result = await signInWithPopup(auth, provider);
         return result;
     } catch (error) {
+        // Bu adres Firebase'in izinli alan adları listesinde yok: yönlendirme de aynı sebeple çalışmaz
         if (error.code === 'auth/unauthorized-domain') {
-            console.error("Domain yetkisi hatası! Redirect yöntemine geçiliyor...", window.location.hostname);
+            console.error("Google girişi için yetkisiz alan adı:", window.location.hostname);
+            const e = new Error(`Bu adres (${window.location.hostname}) Google girişi için yetkili değil. E-posta ve şifreyle giriş yapın ya da adresi Firebase'de "Authorized domains" listesine ekleyin.`);
+            e.code = error.code;
+            throw e;
+        }
+        // Açılır pencere engellendi ya da bu ortamda desteklenmiyor (ör. mobil uygulama): yönlendirmeyle dene
+        if (['auth/popup-blocked', 'auth/operation-not-supported-in-this-environment', 'auth/cancelled-popup-request'].includes(error.code)) {
             localStorage.setItem('_auth_redirecting', 'true');
             return await signInWithRedirect(auth, provider);
         }
