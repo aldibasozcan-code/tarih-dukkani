@@ -2,9 +2,12 @@
 // KONU İLERLEMESİ (grup ve öğrenci)
 // ─────────────────────────────────────────────────
 // Her grup/öğrenci için konu bazında durum tutulur:
-//   entity.topicProgress = { [topicId]: { s: 'done' | 'partial', note?: string, date: 'YYYY-MM-DD' } }
-// Kaydı olmayan konu "işlenmedi" sayılır. Geriye dönük uyumluluk için
-// entity.completedTopics (bitti listesi) her zaman 'done' olanlarla senkron tutulur.
+//   entity.topicProgress = { [konuAnahtarı]: { s: 'done' | 'partial', note?: string, date: 'YYYY-MM-DD' } }
+// Konu anahtarı "ders|sınıf|ünite|konu" biçimindedir; çünkü müfredattaki konu kimlikleri
+// (t1_1 gibi) farklı dersler ve sınıflarda tekrar ediyor.
+// Kaydı olmayan konu "işlenmedi" sayılır.
+// Geriye dönük uyumluluk: topicProgress henüz yoksa eski entity.completedTopics (bitti listesi) okunur;
+// ilk değişiklikte o liste yeni yapıya taşınır ve sonrasında 'done' olanlarla senkron tutulur.
 // ═════════════════════════════════════════════════
 import { getSubjectsForBranches, SUBJECTS } from '../data/curriculum.js';
 
@@ -13,6 +16,9 @@ export const STATUS = {
   partial: { label: 'Yarım kaldı', color: '#f59e0b', soft: 'rgba(245,158,11,0.12)' },
   none: { label: 'İşlenmedi', color: '#94a3b8', soft: 'transparent' },
 };
+
+/** Bir konunun benzersiz anahtarı */
+export const topicKey = (subject, grade, unitId, topicId) => `${subject}|${grade}|${unitId}|${topicId}`;
 
 /**
  * Değerlendirme bölümleri ("Kendimi Değerlendiriyorum", "Ölçme ve Değerlendirme Soruları").
@@ -39,6 +45,7 @@ export function flatTopics(state, entity) {
     for (const unit of units) {
       for (const topic of unit.topics || []) {
         out.push({
+          key: topicKey(subject, grade, unit.id, topic.id),
           subject,
           subjectName,
           grade,
@@ -55,17 +62,20 @@ export function flatTopics(state, entity) {
   return out;
 }
 
-/** Bir konunun güncel durumu */
-export function topicState(entity, topicId) {
-  const p = entity?.topicProgress?.[topicId];
-  if (p) return { s: p.s, note: p.note || '', date: p.date || null };
-  if ((entity?.completedTopics || []).includes(topicId)) return { s: 'done', note: '', date: null };
+/** Bir konunun güncel durumu. t: { key, topicId } */
+export function topicState(entity, t) {
+  if (entity?.topicProgress) {
+    const p = entity.topicProgress[t.key];
+    return p ? { s: p.s, note: p.note || '', date: p.date || null } : { s: 'none', note: '', date: null };
+  }
+  // eski veri: sadece "bitti" listesi
+  if ((entity?.completedTopics || []).includes(t.topicId)) return { s: 'done', note: '', date: null };
   return { s: 'none', note: '', date: null };
 }
 
 /** Müfredat + durumlar */
 export function topicsWithState(state, entity) {
-  return flatTopics(state, entity).map((t) => ({ ...t, ...topicState(entity, t.topicId) }));
+  return flatTopics(state, entity).map((t) => ({ ...t, ...topicState(entity, t) }));
 }
 
 /** Sıradaki (ya da yarım kalmış) konu — değerlendirme bölümleri atlanır */
@@ -82,16 +92,27 @@ export function progressCounts(state, entity) {
 
 /**
  * Yeni ilerleme haritasını hesaplar (saf fonksiyon).
- * items: [{ topicId, s: 'done'|'partial'|'none', note? }]
+ * items: [{ key, s: 'done'|'partial'|'none', note? }]
+ * flat:  flatTopics(state, entity) — eski "bitti listesi"ni ilk kullanımda taşımak için
  */
-export function applyProgress(entity, items, date) {
-  const progress = { ...(entity.topicProgress || {}) };
-  // eski "bitti listesi"ndeki konuları da haritaya taşı (ilk kullanımda)
-  for (const id of entity.completedTopics || []) if (!progress[id]) progress[id] = { s: 'done', date: null };
-  for (const it of items) {
-    if (it.s === 'none') delete progress[it.topicId];
-    else progress[it.topicId] = { s: it.s, date, ...(it.s === 'partial' && it.note ? { note: it.note.trim() } : {}) };
+export function applyProgress(entity, items, date, flat = []) {
+  let progress;
+  if (entity.topicProgress) {
+    progress = { ...entity.topicProgress };
+    // geliştirme sırasında oluşmuş, ders bilgisi olmayan geçersiz anahtarları temizle
+    for (const k of Object.keys(progress)) if (!k.includes('|')) delete progress[k];
+  } else {
+    // ilk kullanım: eski bitti listesini yeni yapıya taşı
+    progress = {};
+    const legacy = new Set(entity.completedTopics || []);
+    for (const t of flat) if (legacy.has(t.topicId)) progress[t.key] = { s: 'done', date: null };
   }
-  const completedTopics = Object.keys(progress).filter((id) => progress[id].s === 'done');
+  for (const it of items) {
+    if (!it.key) continue;
+    if (it.s === 'none') delete progress[it.key];
+    else progress[it.key] = { s: it.s, date, ...(it.s === 'partial' && it.note ? { note: it.note.trim() } : {}) };
+  }
+  // eski ekranlar için "bitti listesi" (sadece konu kimlikleri)
+  const completedTopics = [...new Set(Object.keys(progress).filter((k) => progress[k].s === 'done').map((k) => k.split('|')[3]))];
   return { topicProgress: progress, completedTopics };
 }

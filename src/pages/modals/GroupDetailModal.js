@@ -7,7 +7,7 @@ import { openModal, closeModal } from '../../components/modal.js';
 import { escHtml, getAvatarColor, getInitials, getGroupInitials, formatCurrency, formatDate, formatDateShort } from '../../utils/helpers.js';
 import { SUBJECTS, getSubjectsForBranches, CONTENT_TYPES, DAYS_TR } from '../../data/curriculum.js';
 import { openMonthlySummary } from './MonthlySummaryModal.js';
-import { topicState, nextTopic, isAssessment, STATUS } from '../../lib/progress.js';
+import { topicState, topicKey, nextTopic, isAssessment, progressCounts, STATUS } from '../../lib/progress.js';
 
 export function openGroupDetail(groupId, navigate) {
   const state = getState();
@@ -18,24 +18,17 @@ export function openGroupDetail(groupId, navigate) {
   const subjects = (group.curriculum && group.curriculum.length > 0)
     ? group.curriculum
     : activeSubjects.map(s => ({ subject: s, grade: group.grade }));
-  const completedSet = new Set(group.completedTopics || []);
 
   // Calculate total lessons done (status === 'completed')
   const completedLessonsCount = state.lessons.filter(l => l.type === 'group' && l.refId === group.id && l.status === 'completed').length;
 
-  // Calculate overall curriculum progress
-  let totalTopics = 0;
-  let totalCompletedTopics = 0;
-  subjects.forEach(({ subject, grade }) => {
-    const units = state.curriculum[subject]?.[grade] || [];
-    units.forEach(u => {
-      totalTopics += u.topics.length;
-      totalCompletedTopics += u.topics.filter(t => completedSet.has(t.id)).length;
-    });
-  });
+  // Müfredat ilerlemesi (ders+sınıf+ünite+konu anahtarıyla)
+  const counts = progressCounts(state, group);
+  const totalTopics = counts.total;
+  const totalCompletedTopics = counts.done;
 
   const remainingTopics = totalTopics - totalCompletedTopics;
-  const partialCount = Object.values(group.topicProgress || {}).filter(p => p.s === 'partial').length;
+  const partialCount = counts.partial;
   const next = nextTopic(state, group);
   const overallPct = totalTopics > 0 ? Math.round((totalCompletedTopics / totalTopics) * 100) : 0;
 
@@ -232,7 +225,8 @@ export function openGroupDetail(groupId, navigate) {
                 const materials = Object.values(state.materials).filter(m => m.subject === subject && m.grade === grade);
 
                 return units.map(unit => {
-                  const unitProgress = Math.round((unit.topics.filter(t => completedSet.has(t.id)).length / unit.topics.length) * 100);
+                  const tk = (topic) => ({ key: topicKey(subject, grade, unit.id, topic.id), topicId: topic.id });
+                  const unitProgress = unit.topics.length ? Math.round((unit.topics.filter(t => topicState(group, tk(t)).s === 'done').length / unit.topics.length) * 100) : 0;
                   const isDone = unitProgress === 100;
 
                   return `
@@ -246,15 +240,16 @@ export function openGroupDetail(groupId, navigate) {
                       </div>
                       <div style="padding: 12px;">
                         ${unit.topics.map(topic => {
-                          const st = topicState(group, topic.id);
+                          const key = tk(topic).key;
+                          const st = topicState(group, tk(topic));
                           const done = st.s === 'done';
                           const partial = st.s === 'partial';
-                          const isNext = next && next.topicId === topic.id;
+                          const isNext = next && next.key === key;
                           const topicMaterials = materials.filter(m => m.unitId === unit.id && m.topicId === topic.id);
                           return `
-                            <div class="list-item-hover" data-topic-row="${topic.id}" style="display: flex; align-items: flex-start; gap: 12px; padding: 10px; border-radius: 12px; margin-bottom: 2px; ${isNext ? `background: ${partial ? STATUS.partial.soft : 'var(--brand-green-soft)'};` : ''}">
+                            <div class="list-item-hover" data-topic-row="${escHtml(key)}" style="display: flex; align-items: flex-start; gap: 12px; padding: 10px; border-radius: 12px; margin-bottom: 2px; ${isNext ? `background: ${partial ? STATUS.partial.soft : 'var(--brand-green-soft)'};` : ''}">
                               <button title="Durumu değiştir" style="width: 26px; height: 26px; border-radius: 8px; background: ${done ? STATUS.done.color : partial ? STATUS.partial.soft : '#fff'}; border: 2px solid ${done ? STATUS.done.color : partial ? STATUS.partial.color : 'var(--border)'}; color: ${partial ? STATUS.partial.color : '#fff'}; font-weight: 800; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"
-                                data-cycle-group-topic="${topic.id}" data-state="${st.s}" data-group-id="${group.id}">
+                                data-cycle-group-topic="${escHtml(key)}" data-state="${st.s}" data-group-id="${group.id}">
                                 ${done ? icon('check', 12, '#fff') : partial ? '◐' : ''}
                               </button>
                               <div style="flex: 1; min-width: 0;">
@@ -263,7 +258,7 @@ export function openGroupDetail(groupId, navigate) {
                                   ${isAssessment(topic.name) ? `<span style="font-size:10px;font-weight:700;background:#ede9fe;color:#6d28d9;padding:1px 6px;border-radius:6px;text-decoration:none;display:inline-block;">değerlendirme</span>` : ''}
                                   ${isNext ? `<span style="font-size:11px;font-weight:700;color:var(--brand-green-light);text-decoration:none;"> ← şu an burada</span>` : ''}
                                 </div>
-                                <input type="text" data-note-group-topic="${topic.id}" placeholder="Nerede kaldım?" value="${escHtml(st.note || '')}"
+                                <input type="text" data-note-group-topic="${escHtml(key)}" placeholder="Nerede kaldım?" value="${escHtml(st.note || '')}"
                                   style="margin-top: 6px; width: 100%; font-size: 12px; padding: 6px 8px; ${partial ? '' : 'display: none;'}">
                                 <div style="display: flex; gap: 6px; margin-top: 4px;">
                                   ${topicMaterials.map(m => `
@@ -333,17 +328,17 @@ export function openGroupDetail(groupId, navigate) {
     const NEXT_STATE = { none: 'done', done: 'partial', partial: 'none' };
     document.querySelectorAll('[data-cycle-group-topic]').forEach(btn => {
       btn.addEventListener('click', () => {
-        const topicId = btn.dataset.cycleGroupTopic;
+        const key = btn.dataset.cycleGroupTopic;
         const s2 = NEXT_STATE[btn.dataset.state] || 'done';
-        const noteInput = document.querySelector(`[data-note-group-topic="${topicId}"]`);
+        const noteInput = document.querySelector(`[data-note-group-topic="${CSS.escape(key)}"]`);
         import('../../store/store.js').then(m => {
-          m.setEntityTopics('group', group.id, [{ topicId, s: s2, note: noteInput?.value || '' }]);
+          m.setEntityTopics('group', group.id, [{ key, s: s2, note: noteInput?.value || '' }]);
           // sıradaki konu ve sayılar yeniden hesaplansın; kaydırma konumu korunur
           const sels = ['.modal-overlay', '.modal', '.modal-body'];
           const scrolls = sels.map(q => document.querySelector(q)?.scrollTop || 0);
           openGroupDetail(group.id, navigate);
           sels.forEach((q, i) => { const el = document.querySelector(q); if (el) el.scrollTop = scrolls[i]; });
-          if (s2 === 'partial') setTimeout(() => document.querySelector(`[data-note-group-topic="${topicId}"]`)?.focus(), 150);
+          if (s2 === 'partial') setTimeout(() => document.querySelector(`[data-note-group-topic="${CSS.escape(key)}"]`)?.focus(), 150);
         });
       });
     });
@@ -351,7 +346,7 @@ export function openGroupDetail(groupId, navigate) {
     document.querySelectorAll('[data-note-group-topic]').forEach(inp => {
       inp.addEventListener('change', () => {
         import('../../store/store.js').then(m => {
-          m.setEntityTopics('group', group.id, [{ topicId: inp.dataset.noteGroupTopic, s: 'partial', note: inp.value }]);
+          m.setEntityTopics('group', group.id, [{ key: inp.dataset.noteGroupTopic, s: 'partial', note: inp.value }]);
         });
       });
     });

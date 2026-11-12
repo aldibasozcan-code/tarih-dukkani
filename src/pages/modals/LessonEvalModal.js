@@ -27,7 +27,7 @@ export function openLessonEvalModal(lessonId, navigate) {
 
   const hasPhone = ref?.phone || ref?.parentPhone;
   // müfredattan konu seçici (grup ya da öğrencinin müfredatı varsa)
-  const pickerHtml = ref ? renderTopicPicker(state, ref, { preselectTopicId: lesson.topicId }) : '';
+  const pickerHtml = ref ? renderTopicPicker(state, ref, { preselect: { topicId: lesson.topicId, subject: lesson.subject } }) : '';
   const donePickerHtml = ref && lesson.status === 'completed'
     ? renderTopicPicker(state, ref, { existing: lesson.coveredTopics || [] })
     : '';
@@ -242,7 +242,7 @@ export function openLessonEvalModal(lessonId, navigate) {
         if (predefinedHw) desc = `Kayıtlı Ödev: ${predefinedHw}`;
         else if (hwTitle) desc = `Derste Önerilen: ${hwTitle}`;
 
-        const firstPicked = ref ? topicsWithState(state, ref).find(t => pickedNow.some(p => p.topicId === t.topicId)) : null;
+        const firstPicked = ref ? topicsWithState(state, ref).find(t => pickedNow.some(p => p.key === t.key)) : null;
         const topicName = document.getElementById('l-topic-done')?.value || firstPicked?.unitName || lesson.unitId || 'İşlenen Konu';
         m.addAssignment({
           id: 'asn_' + Date.now().toString(36),

@@ -10,34 +10,38 @@ const WINDOW = 4; // başta gösterilen konu sayısı
 /**
  * @param state  uygulama durumu
  * @param entity grup ya da öğrenci
- * @param opts   { preselectTopicId?, existing?: [{topicId, s, note}] }  existing: daha önce bu derse kaydedilmiş konular
+ * @param opts   { preselect?: {topicId, subject}, existing?: [{key, s, note}] }  existing: daha önce bu derse kaydedilmiş konular
  */
 export function renderTopicPicker(state, entity, opts = {}) {
   const topics = topicsWithState(state, entity);
   if (topics.length === 0) return '';
 
   const next = nextTopic(state, entity);
-  const existing = new Map((opts.existing || []).map((x) => [x.topicId, x]));
-  const preId = opts.preselectTopicId && topics.some((t) => t.topicId === opts.preselectTopicId) ? opts.preselectTopicId : next?.topicId;
-  const startIdx = Math.max(0, topics.findIndex((t) => t.topicId === preId));
+  const existing = new Map((opts.existing || []).filter((x) => x.key).map((x) => [x.key, x]));
+  const planned = opts.preselect?.topicId
+    ? topics.find((t) => t.topicId === opts.preselect.topicId && (!opts.preselect.subject || t.subject === opts.preselect.subject))
+    : null;
+  const preKey = planned ? planned.key : next?.key;
+  const startIdx = Math.max(0, topics.findIndex((t) => t.key === preKey));
 
-  const inWin = (t) => (t.index >= startIdx && t.index < startIdx + WINDOW) || existing.has(t.topicId);
+  const inWin = (t) => (t.index >= startIdx && t.index < startIdx + WINDOW) || existing.has(t.key);
   // bir ünitenin en az bir konusu görünürse başlığı da görünür
-  const visibleUnits = new Set(topics.filter(inWin).map((t) => t.unitId));
+  const visibleUnits = new Set(topics.filter(inWin).map((t) => t.subject + t.unitId));
+  const multi = new Set(topics.map((t) => t.subject)).size > 1;
 
   let lastUnit = '';
   const rows = topics
     .map((t) => {
-      const ex = existing.get(t.topicId);
-      const sel = ex ? ex.s : existing.size === 0 && t.topicId === preId ? 'done' : 'none';
+      const ex = existing.get(t.key);
+      const sel = ex ? ex.s : existing.size === 0 && t.key === preKey ? 'done' : 'none';
       const note = ex?.note || (t.s === 'partial' ? t.note : '');
       const inWindow = inWin(t);
-      const unitVisible = visibleUnits.has(t.unitId);
+      const unitVisible = visibleUnits.has(t.subject + t.unitId);
       const header =
-        t.unitName !== lastUnit
-          ? `<div class="tp-unit" data-tp-extra="${unitVisible ? '0' : '1'}" style="font-size:11px;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin:12px 0 6px;${unitVisible ? '' : 'display:none;'}">${escHtml(t.unitName)}</div>`
+        t.subject + t.unitId !== lastUnit
+          ? `<div class="tp-unit" data-tp-extra="${unitVisible ? '0' : '1'}" style="font-size:11px;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin:12px 0 6px;${unitVisible ? '' : 'display:none;'}">${multi ? `${escHtml(t.subjectName)} · ` : ''}${escHtml(t.unitName)}</div>`
           : '';
-      lastUnit = t.unitName;
+      lastUnit = t.subject + t.unitId;
       const was =
         t.s === 'done'
           ? `<span style="font-size:11px;color:${STATUS.done.color};font-weight:600;">(önceden bitti)</span>`
@@ -45,7 +49,7 @@ export function renderTopicPicker(state, entity, opts = {}) {
             ? `<span style="font-size:11px;color:${STATUS.partial.color};font-weight:600;">(yarım kalmıştı)</span>`
             : '';
       return `${header}
-        <div class="tp-row" data-topic-id="${t.topicId}" data-orig="${t.s}" data-sel="${sel}" data-tp-extra="${inWindow ? '0' : '1'}"
+        <div class="tp-row" data-key="${escHtml(t.key)}" data-orig="${t.s}" data-sel="${sel}" data-tp-extra="${inWindow ? '0' : '1'}"
              style="${inWindow ? '' : 'display:none;'}border:1px solid var(--border);border-radius:12px;padding:10px 12px;margin-bottom:8px;transition:background .15s;">
           <div style="font-size:13px;font-weight:600;color:var(--text-primary);display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
             ${escHtml(t.name)} ${was}
@@ -129,5 +133,5 @@ export function initTopicPicker(root) {
   return () =>
     [...picker.querySelectorAll('.tp-row')]
       .filter((r) => r.dataset.sel !== 'none' || (r.dataset.touched && r.dataset.orig !== 'none'))
-      .map((r) => ({ topicId: r.dataset.topicId, s: r.dataset.sel, note: r.querySelector('.tp-note')?.value || '' }));
+      .map((r) => ({ key: r.dataset.key, s: r.dataset.sel, note: r.querySelector('.tp-note')?.value || '' }));
 }
