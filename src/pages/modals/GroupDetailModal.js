@@ -217,6 +217,23 @@ export function openGroupDetail(groupId, navigate) {
                   <div style="font-size: 12px; color: var(--text-muted); font-weight: 600;">${escHtml(next.unitName)}</div>
                   ${next.s === 'partial' && next.note ? `<div style="font-size: 13px; margin-top: 4px;"><b>Kaldığın yer:</b> ${escHtml(next.note)}</div>` : ''}
                 </div>` : (totalTopics > 0 ? `<div class="premium-card" style="padding: 16px 20px; font-weight: 800; color: var(--success);">Müfredat tamamlandı 🎉</div>` : '')}
+              ${(() => {
+                // bu sınıf için müfredatı olan dersler (ör. 12. Sınıf / Mezun: Tarih, TYT, AYT, İnkılap)
+                const candidates = [...new Set([...activeSubjects, ...subjects.map(x => x.subject)])]
+                  .filter(subj => (state.curriculum[subj]?.[group.grade] || []).length > 0);
+                if (candidates.length < 2) return '';
+                const on = new Set(subjects.map(x => x.subject));
+                return `
+                  <div class="premium-card" style="padding: 12px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px;">
+                    <span style="font-size: 12px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Takip edilen dersler</span>
+                    ${candidates.map(subj => `
+                      <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; text-transform: none; letter-spacing: 0; padding: 4px 10px; border-radius: 8px; border: 1px solid var(--border); cursor: pointer;">
+                        <input type="checkbox" data-group-subject="${subj}" ${on.has(subj) ? 'checked' : ''} style="accent-color: var(--brand-green);">
+                        ${escHtml(SUBJECTS.find(x => x.id === subj)?.name || subj)}
+                      </label>`).join('')}
+                    <button class="btn btn-sm" id="btn-save-group-subjects" style="margin-left: auto; display: none; background: var(--brand-green); color: #fff; border-radius: 8px;">Kaydet</button>
+                  </div>`;
+              })()}
               <div style="font-size: 12px; color: var(--text-muted);">Konunun yanındaki kutuya tıklayarak durumunu değiştir: ○ işlenmedi → ✓ bitti → ◐ yarım kaldı.</div>
               ${subjects.map(({ subject, grade }) => {
                 const units = state.curriculum[subject]?.[grade] || [];
@@ -321,6 +338,22 @@ export function openGroupDetail(groupId, navigate) {
         import('./LessonEvalModal.js').then(m => {
           m.openLessonEvalModal(lessonId, navigate);
         });
+      });
+    });
+
+    // Takip edilen dersler
+    const subjBoxes = document.querySelectorAll('[data-group-subject]');
+    const saveSubj = document.getElementById('btn-save-group-subjects');
+    subjBoxes.forEach(cb => cb.addEventListener('change', () => {
+      const any = [...subjBoxes].some(x => x.checked);
+      if (saveSubj) saveSubj.style.display = any ? '' : 'none';
+    }));
+    saveSubj?.addEventListener('click', () => {
+      const chosen = [...subjBoxes].filter(x => x.checked).map(x => x.dataset.groupSubject);
+      if (!chosen.length) return;
+      import('../../store/store.js').then(m => {
+        m.setEntitySubjects('group', group.id, chosen);
+        openGroupDetail(group.id, navigate);
       });
     });
 

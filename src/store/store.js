@@ -1110,10 +1110,51 @@ export function importCurriculumFromExcel(subjectId, rows) {
   });
 }
 
+// ─── Bir grubun / öğrencinin takip ettiği dersler ───
+
+/**
+ * Grubun/öğrencinin takip ettiği dersleri değiştirir (ör. YKS grubu: sadece AYT).
+ * Çıkarılan derslerdeki konu işaretleri, kalan derslerde aynı adlı konu varsa oraya taşınır;
+ * eski kayıtlar silinmez.
+ * subjects: ['ayt', ...]  (sınıf, grubun kendi sınıfıdır)
+ */
+export function setEntitySubjects(type, refId, subjects) {
+  const key = type === 'student' ? 'students' : 'groups';
+  setState(s => {
+    const list = s[key].map(e => {
+      if (e.id !== refId) return e;
+      const before = flatTopics(s, e);
+      const prog = { ...applyProgress(e, [], null, before).topicProgress };
+      const next = { ...e, curriculum: subjects.map(subj => ({ subject: subj, grade: e.grade })) };
+      const after = flatTopics(s, next);
+      const keptSubjects = new Set(subjects);
+      // çıkarılan derslerin işaretlerini aynı adlı konulara taşı
+      const byName = new Map();
+      for (const t of after) { const n = _normTopic(t.name); if (!byName.has(n)) byName.set(n, []); byName.get(n).push(t); }
+      for (const t of before) {
+        if (keptSubjects.has(t.subject)) continue;
+        const p = prog[t.key];
+        if (!p) continue;
+        for (const target of byName.get(_normTopic(t.name)) || []) {
+          const cur = prog[target.key];
+          // bitti > yarım > işlenmedi: daha ileri olan durum kazanır
+          if (!cur || (cur.s === 'partial' && p.s === 'done')) prog[target.key] = p;
+        }
+      }
+      return {
+        ...next,
+        topicProgress: prog,
+        completedTopics: [...new Set(Object.keys(prog).filter(k => prog[k].s === 'done').map(k => k.split('|')[3]))],
+      };
+    });
+    return { [key]: list };
+  });
+}
+
 // ─── Müfredatı toptan değiştirme (ilerleme korunarak) ───
 
 const _normTopic = (n = '') =>
-  n.toLocaleLowerCase('tr').replace(/^\s*(konu\s*\d+\s*[:.]|\d+\s*[.)])\s*/u, '').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+  n.toLocaleLowerCase('tr').replace(/^\s*(konu\s*\d+\s*[:.]|\d+\s*[.)])\s*/u, '').replace(/['’‘`´]/g, '').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
 
 /**
  * Bir ders-sınıfın müfredatını yenisiyle değiştirme planı (kuru çalıştırma).
