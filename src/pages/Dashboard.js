@@ -5,6 +5,72 @@ import { getState, subscribe, getTodayLessons, getPendingLessons, getMonthlyStat
 import { icon } from '../components/icons.js';
 import { formatCurrency, formatDate, formatDateShort, formatTime, getLessonStatusInfo, getAvatarColor, getInitials, getLocalDateStr, escHtml } from '../utils/helpers.js';
 import { openModal } from '../components/modal.js';
+import { nextTopic, progressCounts, STATUS } from '../lib/progress.js';
+
+// ─── Ana sayfa istatistik yardımcıları ───
+const minutesOf = (l) => {
+  const [sh, sm] = String(l.startTime || '0:0').split(':').map(Number);
+  const [eh, em] = String(l.endTime || '0:0').split(':').map(Number);
+  return Math.max(0, (eh * 60 + em) - (sh * 60 + sm));
+};
+const fmtHours = (min) => {
+  const h = Math.floor(min / 60), m = min % 60;
+  return h && m ? `${h} sa ${m} dk` : h ? `${h} saat` : `${m} dk`;
+};
+const daysBetween = (a, b) => Math.round((new Date(b + 'T00:00:00') - new Date(a + 'T00:00:00')) / 86400000);
+function relDay(dateStr, todayStr) {
+  if (!dateStr) return '—';
+  const d = daysBetween(todayStr, dateStr);
+  if (d === 0) return 'bugün';
+  if (d === 1) return 'yarın';
+  if (d === -1) return 'dün';
+  return d > 0 ? `${d} gün sonra` : `${-d} gün önce`;
+}
+function entityOf(state, lesson) {
+  if (lesson.type === 'group') return state.groups.find(g => g.id === lesson.refId) || null;
+  if (lesson.type === 'student') return state.students.find(x => x.id === lesson.refId) || null;
+  return null;
+}
+/** Bir grubun/öğrencinin son yapılan ve sıradaki dersi */
+function lessonTimeline(state, type, id, todayStr) {
+  const mine = state.lessons.filter(l => l.type === type && l.refId === id && l.status !== 'passive');
+  const last = mine.filter(l => l.status === 'completed' && l.date <= todayStr).sort((a, b) => b.date.localeCompare(a.date))[0] || null;
+  const next = mine.filter(l => l.status === 'upcoming' && l.date >= todayStr).sort((a, b) => (a.date + a.startTime).localeCompare(b.date + b.startTime))[0] || null;
+  return { last, next };
+}
+function computeDashStats(state, today) {
+  const todayStr = getLocalDateStr(today);
+  const y = today.getFullYear(), m = today.getMonth();
+  const monthPrefix = `${y}-${String(m + 1).padStart(2, '0')}`;
+  const prev = new Date(y, m - 1, 1);
+  const prevPrefix = `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}`;
+  // geçen ayın aynı gününe kadarki gelir (adil karşılaştırma)
+  const dayOfMonth = String(today.getDate()).padStart(2, '0');
+  const income = (pref, uptoDay) => state.transactions
+    .filter(t => t.type === 'income' && t.date?.startsWith(pref) && (!uptoDay || t.date.slice(8, 10) <= uptoDay))
+    .reduce((a, t) => a + (Number(t.amount) || 0), 0);
+  const incomeNow = income(monthPrefix);
+  const incomePrevSamePeriod = income(prevPrefix, dayOfMonth);
+  const incomeDelta = incomePrevSamePeriod > 0 ? Math.round(((incomeNow - incomePrevSamePeriod) / incomePrevSamePeriod) * 100) : null;
+
+  // bu hafta (Pazartesi–Pazar)
+  const ws = new Date(today); const wd = ws.getDay();
+  ws.setDate(ws.getDate() - (wd === 0 ? 6 : wd - 1));
+  const weekStart = getLocalDateStr(ws);
+  const we = new Date(ws); we.setDate(ws.getDate() + 6);
+  const weekEnd = getLocalDateStr(we);
+  const weekLessons = state.lessons.filter(l => l.date >= weekStart && l.date <= weekEnd && l.status !== 'passive' && l.status !== 'postponed' && l.refId);
+  const groupMinutesWeek = weekLessons.filter(l => l.type === 'group').reduce((a, l) => a + minutesOf(l), 0);
+  const studentLessonsWeek = weekLessons.filter(l => l.type === 'student').length;
+  const weekDone = weekLessons.filter(l => l.status === 'completed').length;
+
+  // bu ay: bugüne kadar planlanan derslerin kaçı tamamlandı
+  const monthDue = state.lessons.filter(l => l.date?.startsWith(monthPrefix) && l.date <= todayStr && l.refId && !['passive', 'postponed'].includes(l.status));
+  const monthDone = monthDue.filter(l => l.status === 'completed').length;
+  const completionRate = monthDue.length ? Math.round((monthDone / monthDue.length) * 100) : null;
+
+  return { todayStr, incomeNow, incomeDelta, weekLessons, weekDone, groupMinutesWeek, studentLessonsWeek, monthDue: monthDue.length, completionRate };
+}
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -75,6 +141,10 @@ export async function renderDashboard(navigate) {
   const pastPendingLessons = pendingLessons.filter(l => l.date < todayDateStr);
   const combinedLessons = [...pastPendingLessons, ...todayLessons];
 
+  const ds = computeDashStats(state, today);
+  const nextUp = todayLessons.find(l => getLessonStatus(l) === 'upcoming') || null;
+  const nextUpIn = nextUp ? Math.max(0, Math.round((new Date(`${nextUp.date}T${nextUp.startTime}:00`) - today) / 60000)) : null;
+
   const completedThisMonth = state.lessons.filter(l => {
     const m = new Date().getMonth();
     const y = new Date().getFullYear();
@@ -122,6 +192,14 @@ export async function renderDashboard(navigate) {
           <p style="font-size:18px; opacity:0.9; margin-top:8px;" id="dashboard-lesson-count">
             Bugün ajandanızda <strong style="color:white;">${todayLessons.length} ders</strong> planlanmış, <strong style="color:white;">${todayLessons.filter(l => l.status === 'upcoming').length} ders</strong> kalmış görünüyor.
           </p>
+          ${nextUp ? `
+            <div data-lesson-id="${nextUp.id}" style="margin-top:16px; display:inline-flex; align-items:center; gap:10px; background:rgba(255,255,255,0.16); border:1px solid rgba(255,255,255,0.25); padding:10px 14px; border-radius:14px; cursor:pointer;">
+              ${icon('clock', 16)}
+              <span style="font-size:14px;">Sıradaki ders <strong>${nextUp.startTime}</strong> · ${escHtml(nextUp.refName || nextUp.title || '')}
+                <span style="opacity:0.8;">(${nextUpIn < 60 ? `${nextUpIn} dk sonra` : `${Math.floor(nextUpIn / 60)} sa ${nextUpIn % 60} dk sonra`})</span>
+              </span>
+            </div>
+          ` : ''}
           <button class="btn btn-primary" id="btn-add-lesson-banner" style="margin-top:24px; background:white; color:var(--brand-green); border:none; font-weight:700; padding:12px 24px; border-radius:12px; display:flex; align-items:center; gap:8px; box-shadow: 0 10px 20px rgba(0,0,0,0.15);">
             ${icon('plus', 18)} Yeni Ders Ekle
           </button>
@@ -146,7 +224,7 @@ export async function renderDashboard(navigate) {
           <div>
             <div class="kpi-value">${formatCurrency(stats.income)}</div>
             <div class="kpi-label">Bu Ay Toplam</div>
-            <div style="font-size:10px; color:var(--success); font-weight:700; margin-top:4px;">${icon('trendUp', 10)} Geçen aya göre +12%</div>
+            <div style="font-size:10px; color:${ds.incomeDelta == null ? 'var(--text-muted)' : ds.incomeDelta >= 0 ? 'var(--success)' : 'var(--danger)'}; font-weight:700; margin-top:4px;">${ds.incomeDelta == null ? 'Geçen ay aynı dönemde kayıt yok' : `${ds.incomeDelta >= 0 ? '▲' : '▼'} Geçen ayın aynı dönemine göre ${ds.incomeDelta >= 0 ? '+' : ''}${ds.incomeDelta}%`}</div>
           </div>
         </div>
         
@@ -157,7 +235,7 @@ export async function renderDashboard(navigate) {
           <div>
             <div class="kpi-value">${state.students.filter(s => (s.status || 'active') === 'active').length}</div>
             <div class="kpi-label">Aktif Öğrenci</div>
-            <div style="font-size:10px; color:var(--text-muted); font-weight:600; margin-top:4px;">Bu ay +2 yeni kayıt</div>
+            <div style="font-size:10px; color:var(--text-muted); font-weight:600; margin-top:4px;">Bu hafta ${ds.studentLessonsWeek} özel ders</div>
           </div>
         </div>
 
@@ -168,7 +246,7 @@ export async function renderDashboard(navigate) {
           <div>
             <div class="kpi-value">${state.groups.filter(g => (g.status || 'active') === 'active').length}</div>
             <div class="kpi-label">Aktif Grup</div>
-            <div style="font-size:10px; color:var(--text-muted); font-weight:600; margin-top:4px;">Haftalık 12 saat grup dersi</div>
+            <div style="font-size:10px; color:var(--text-muted); font-weight:600; margin-top:4px;">Bu hafta ${ds.groupMinutesWeek ? fmtHours(ds.groupMinutesWeek) : 'grup dersi yok'}${ds.groupMinutesWeek ? ' grup dersi' : ''}</div>
           </div>
         </div>
 
@@ -178,8 +256,8 @@ export async function renderDashboard(navigate) {
           </div>
           <div>
             <div class="kpi-value">${completedThisMonth}</div>
-            <div class="kpi-label">Tamamlanan Ders</div>
-            <div style="font-size:10px; color:var(--success); font-weight:700; margin-top:4px;">Aylık hedef: %85</div>
+            <div class="kpi-label">Bu Ay Tamamlanan</div>
+            <div style="font-size:10px; color:${ds.completionRate == null ? 'var(--text-muted)' : ds.completionRate >= 85 ? 'var(--success)' : 'var(--warning)'}; font-weight:700; margin-top:4px;">${ds.completionRate == null ? 'Bu ay henüz ders yok' : `Bu ayki ${ds.monthDue} dersin %${ds.completionRate}'i`}</div>
           </div>
         </div>
 
@@ -199,7 +277,7 @@ export async function renderDashboard(navigate) {
 
       <!-- Parse layout from localStorage with dynamic fallback -->
       ${(() => {
-        let layout = [['agenda'], ['performance', 'transactions'], ['students', 'groups', 'homework']];
+        let layout = [['agenda'], ['progress', 'performance', 'transactions'], ['students', 'groups', 'homework']];
         try {
           const saved = localStorage.getItem('dashboard_layout');
           if (saved) {
@@ -210,10 +288,12 @@ export async function renderDashboard(navigate) {
         }
 
         if (!Array.isArray(layout) || layout.length !== 3) {
-          layout = [['agenda'], ['performance', 'transactions'], ['students', 'groups', 'homework']];
+          layout = [['agenda'], ['progress', 'performance', 'transactions'], ['students', 'groups', 'homework']];
         }
+        // yeni eklenen "Konu İlerlemesi" kartı, kayıtlı eski düzenlerde orta sütunun başına gelsin
+        if (!layout.flat().includes('progress')) layout[1] = ['progress', ...(layout[1] || [])];
 
-        const allWidgets = ['agenda', 'performance', 'transactions', 'students', 'groups', 'homework'];
+        const allWidgets = ['agenda', 'progress', 'performance', 'transactions', 'students', 'groups', 'homework'];
         const flattened = layout.flat();
         const missing = allWidgets.filter(w => !flattened.includes(w));
         if (missing.length > 0) {
@@ -221,11 +301,12 @@ export async function renderDashboard(navigate) {
         }
 
         const widgetBuilders = {
-          agenda: () => renderAgendaWidget(combinedLessons, todayDateStr, tomorrowLessons),
+          agenda: () => renderAgendaWidget(combinedLessons, todayDateStr, tomorrowLessons, state),
+          progress: () => renderProgressWidget(state),
           performance: () => renderPerformanceWidget(state, dashWeekOffset),
           transactions: () => renderTransactionsWidget(recentTransactions),
-          students: () => renderStudentsWidget(state),
-          groups: () => renderGroupsWidget(state),
+          students: () => renderStudentsWidget(state, ds.todayStr),
+          groups: () => renderGroupsWidget(state, ds.todayStr),
           homework: () => renderHomeworkWidget(recentHomeworks),
         };
 
@@ -389,6 +470,14 @@ function initDashboard(el, navigate) {
     el2.addEventListener('click', () => navigate(el2.dataset.nav));
   });
 
+  // Grup/öğrenci ayrıntısı
+  el.querySelectorAll('[data-open-group]').forEach(n => n.addEventListener('click', () => {
+    import('./modals/GroupDetailModal.js').then(m => m.openGroupDetail(n.dataset.openGroup, navigate));
+  }));
+  el.querySelectorAll('[data-open-student]').forEach(n => n.addEventListener('click', () => {
+    import('./modals/StudentDetailModal.js').then(m => m.openStudentDetail(n.dataset.openStudent, navigate));
+  }));
+
   // Performance card click
   el.querySelector('#dash-perf-title')?.addEventListener('click', () => {
     import('./modals/WeeklyPerformanceModal.js').then(m => m.openWeeklyPerformanceModal());
@@ -505,7 +594,18 @@ function openLessonEvalModal(lessonId, navigate) {
 // WIDGET RENDERERS & DRAG-AND-DROP HELPERS
 // ═══════════════════════════════════════════════════
 
-function renderAgendaWidget(combinedLessons, todayDateStr, tomorrowLessons) {
+function topicLine(state, lesson) {
+  const ent = entityOf(state, lesson);
+  if (!ent) return '';
+  const nt = nextTopic(state, ent);
+  if (!nt) return '';
+  const partial = nt.s === 'partial';
+  return `<div style="font-size:12px; margin-top:4px; color:${partial ? STATUS.partial.color : 'var(--brand-green-light)'}; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escHtml(nt.unitName)} › ${escHtml(nt.name)}">
+    ${partial ? '◐ Devam' : '→ Sıradaki'}: ${escHtml(nt.name)}${partial && nt.note ? ` <span style="color:var(--text-muted); font-weight:500;">(${escHtml(nt.note)})</span>` : ''}
+  </div>`;
+}
+
+function renderAgendaWidget(combinedLessons, todayDateStr, tomorrowLessons, state) {
   return `
     <div class="dashboard-widget" data-widget-id="agenda" style="width: 100%;">
       <div class="card glass-card hover-lift" style="min-height:400px; border-top:none; border-bottom:4px solid var(--brand-green);">
@@ -548,6 +648,7 @@ function renderAgendaWidget(combinedLessons, todayDateStr, tomorrowLessons) {
                     <div style="display:flex; align-items:center; gap:4px; font-size:12px; color:var(--text-muted); margin-top:4px;">
                       ${icon('clock', 12)} ${isPast ? formatDateShort(lesson.date) + ' • ' : ''}${lesson.startTime} – ${lesson.endTime}
                     </div>
+                    ${status === 'completed' ? '' : topicLine(state, lesson)}
                   </div>
                   <div style="text-align:right;">
                     <span class="badge ${badgeClass}" style="border-radius:20px; font-size:10px;">${badgeLabel}</span>
@@ -574,8 +675,11 @@ function renderAgendaWidget(combinedLessons, todayDateStr, tomorrowLessons) {
             const displayTitle = lesson.refName ? `${lesson.refName} ${lesson.title ? ' - ' + lesson.title : ''}` : lesson.title;
             return `
               <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; background:rgba(255,255,255,0.3); border-radius:8px; margin-bottom:6px; border:1px solid var(--border);">
-                <div style="font-size:13px; font-weight:700; color:var(--text-primary);">${escHtml(displayTitle)}</div>
-                <div style="font-size:12px; color:var(--text-muted); font-weight:600;">${lesson.startTime}</div>
+                <div style="min-width:0; flex:1;">
+                  <div style="font-size:13px; font-weight:700; color:var(--text-primary);">${escHtml(displayTitle)}</div>
+                  ${topicLine(state, lesson)}
+                </div>
+                <div style="font-size:12px; color:var(--text-muted); font-weight:600; margin-left:8px;">${lesson.startTime}</div>
               </div>
             `;
           }).join('')}
@@ -629,48 +733,104 @@ function renderTransactionsWidget(recentTransactions) {
   `;
 }
 
-function renderStudentsWidget(state) {
+// Grup/öğrenci müfredat ilerlemesi: en az ilerleyen üstte
+function renderProgressWidget(state) {
+  const rows = [
+    ...state.groups.filter(g => (g.status || 'active') === 'active').map(g => ({ type: 'group', e: g })),
+    ...state.students.filter(x => (x.status || 'active') === 'active').map(x => ({ type: 'student', e: x })),
+  ].map(r => ({ ...r, c: progressCounts(state, r.e), nt: nextTopic(state, r.e) }))
+    .filter(r => r.c.total > 0)
+    .sort((a, b) => a.c.pct - b.c.pct);
+  const shown = rows.slice(0, 6);
+  return `
+    <div class="dashboard-widget" data-widget-id="progress" style="width: 100%;">
+      <div class="card glass-card" style="border-top:none; padding:20px; border-bottom:4px solid var(--brand-green);">
+        <div class="section-title" style="margin-bottom:12px;">
+          <h3 class="text-gradient" style="font-size:16px;">${icon('layers', 16)} Konu İlerlemesi</h3>
+          <a data-nav="tracking" style="background:var(--brand-green-soft); color:var(--brand-green); padding:5px 12px; border-radius:20px; font-size:12px; cursor:pointer;">Takip →</a>
+        </div>
+        ${shown.length === 0 ? `<p style="font-size:13px; color:var(--text-muted); font-style:italic;">Müfredatı tanımlı aktif grup ya da öğrenci yok.</p>` : `
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          ${shown.map(r => `
+            <div data-open-${r.type}="${r.e.id}" class="list-item-hover" style="cursor:pointer; padding:8px; border-radius:10px;">
+              <div style="display:flex; justify-content:space-between; align-items:baseline; gap:8px;">
+                <div style="font-size:13px; font-weight:700; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                  ${escHtml(r.e.name)} <span style="font-size:10px; font-weight:700; color:var(--text-muted);">${r.type === 'group' ? 'GRUP' : 'ÖĞRENCİ'}</span>
+                </div>
+                <div style="font-size:12px; font-weight:800; color:var(--brand-green); white-space:nowrap;">${r.c.done}/${r.c.total} · %${r.c.pct}</div>
+              </div>
+              <div style="height:8px; background:var(--bg-secondary); border-radius:6px; overflow:hidden; margin:6px 0 4px; display:flex;">
+                <div style="width:${r.c.total ? (r.c.done / r.c.total) * 100 : 0}%; background:${STATUS.done.color};"></div>
+                <div style="width:${r.c.total ? (r.c.partial / r.c.total) * 100 : 0}%; background:${STATUS.partial.color};"></div>
+              </div>
+              <div style="font-size:11px; color:${r.nt?.s === 'partial' ? STATUS.partial.color : 'var(--text-muted)'}; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                ${r.nt ? `${r.nt.s === 'partial' ? '◐ Devam' : '→ Sıradaki'}: ${escHtml(r.nt.name)}` : '✓ Müfredat tamamlandı'}
+              </div>
+            </div>
+          `).join('')}
+          ${rows.length > shown.length ? `<div style="text-align:center; font-size:11px; color:var(--text-muted);">+${rows.length - shown.length} daha — tümü Takip sayfasında</div>` : ''}
+        </div>`}
+      </div>
+    </div>
+  `;
+}
+
+// Öğrenci/grup kartı: son ders ve sıradaki ders; uzun süredir ders yapılmayanlar uyarılı
+function personRow(state, type, e, todayStr) {
+  const { last, next } = lessonTimeline(state, type, e.id, todayStr);
+  const idle = last ? daysBetween(last.date, todayStr) : null;
+  const warn = !next && (idle == null || idle >= 14);
+  return `
+    <div class="person-card" data-open-${type}="${e.id}" style="padding:10px; border:1px solid ${warn ? 'rgba(245,158,11,0.5)' : 'var(--border)'}; border-radius:10px; background:white; cursor:pointer;">
+      <div class="person-avatar" style="width:32px; height:32px; font-size:10px; ${type === 'group' ? 'background:rgba(124,106,255,0.1); color:var(--accent2);' : `background:${getAvatarColor(e.name)};`}">${getInitials(e.name)}</div>
+      <div style="flex:1; min-width:0;">
+        <div class="person-name" style="font-size:12px;">${escHtml(e.name)}</div>
+        <div class="person-sub" style="font-size:10px;">
+          ${next ? `Sıradaki: ${relDay(next.date, todayStr)} ${next.startTime}` : '<span style="color:var(--warning); font-weight:700;">Planlı ders yok</span>'}
+          ${last ? ` · Son: ${relDay(last.date, todayStr)}` : ''}
+        </div>
+      </div>
+    </div>`;
+}
+function sortPeople(state, type, list, todayStr) {
+  // önce planlı dersi olmayanlar (dikkat), sonra en yakın dersi olanlar
+  return list.map(e => ({ e, t: lessonTimeline(state, type, e.id, todayStr) }))
+    .sort((a, b) => (!!a.t.next - !!b.t.next) || ((a.t.next?.date || '') + (a.t.next?.startTime || '')).localeCompare((b.t.next?.date || '') + (b.t.next?.startTime || '')))
+    .map(x => x.e);
+}
+
+function renderStudentsWidget(state, todayStr) {
+  const active = state.students.filter(x => (x.status || 'active') === 'active');
+  const list = sortPeople(state, 'student', active, todayStr);
   return `
     <div class="dashboard-widget" data-widget-id="students" style="width: 100%;">
       <div class="card glass-card" style="padding:20px; border-top:none;">
         <div class="section-title" style="margin-bottom:12px;">
-           <h3 style="font-size:14px;">${icon('students', 14)} Son Öğrenciler</h3>
+           <h3 style="font-size:14px;">${icon('students', 14)} Öğrenciler</h3>
+           <a data-nav="studentsAndGroups" style="font-size:12px; color:var(--brand-green); cursor:pointer;">Tümü →</a>
         </div>
         <div style="display:flex; flex-direction:column; gap:8px;">
-           ${state.students.slice(0, 3).map(s => `
-             <div class="person-card" style="padding:10px; border:1px solid var(--border); border-radius:10px; background:white;">
-               <div class="person-avatar" style="width:32px; height:32px; font-size:10px; background:${getAvatarColor(s.name)}">${getInitials(s.name)}</div>
-               <div style="flex:1;">
-                 <div class="person-name" style="font-size:12px;">${s.name}</div>
-                 <div class="person-sub" style="font-size:10px;">${s.grade}</div>
-               </div>
-             </div>
-           `).join('')}
+           ${list.length === 0 ? '<p style="font-size:13px; color:var(--text-muted); font-style:italic;">Aktif öğrenci yok.</p>' : list.slice(0, 4).map(e => personRow(state, 'student', e, todayStr)).join('')}
+           ${list.length > 4 ? `<div style="text-align:center; font-size:11px; color:var(--text-muted);">+${list.length - 4} öğrenci daha</div>` : ''}
         </div>
       </div>
     </div>
   `;
 }
 
-function renderGroupsWidget(state) {
+function renderGroupsWidget(state, todayStr) {
+  const active = state.groups.filter(g => (g.status || 'active') === 'active');
+  const list = sortPeople(state, 'group', active, todayStr);
   return `
     <div class="dashboard-widget" data-widget-id="groups" style="width: 100%;">
       <div class="card glass-card" style="padding:20px; border-top:none;">
         <div class="section-title" style="margin-bottom:12px;">
            <h3 style="font-size:14px;">${icon('groups', 14)} Aktif Gruplar</h3>
+           <a data-nav="studentsAndGroups" style="font-size:12px; color:var(--brand-green); cursor:pointer;">Tümü →</a>
         </div>
         <div style="display:flex; flex-direction:column; gap:8px;">
-           ${state.groups.slice(0, 3).map(g => `
-             <div class="person-card" style="padding:10px; border:1px solid var(--border); border-radius:10px; background:white;">
-               <div class="person-avatar" style="width:32px; height:32px; font-size:10px; background:rgba(124,106,255,0.1); color:var(--accent2);">
-                 ${getInitials(g.name)}
-               </div>
-               <div style="flex:1;">
-                 <div class="person-name" style="font-size:12px;">${g.name}</div>
-                 <div class="person-sub" style="font-size:10px;">${g.grade}</div>
-               </div>
-             </div>
-           `).join('')}
+           ${list.length === 0 ? '<p style="font-size:13px; color:var(--text-muted); font-style:italic;">Aktif grup yok.</p>' : list.slice(0, 4).map(e => personRow(state, 'group', e, todayStr)).join('')}
+           ${list.length > 4 ? `<div style="text-align:center; font-size:11px; color:var(--text-muted);">+${list.length - 4} grup daha</div>` : ''}
         </div>
       </div>
     </div>
