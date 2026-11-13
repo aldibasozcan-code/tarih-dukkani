@@ -234,7 +234,7 @@ export function openGroupDetail(groupId, navigate) {
                     <button class="btn btn-sm" id="btn-save-group-subjects" style="margin-left: auto; display: none; background: var(--brand-green); color: #fff; border-radius: 8px;">Kaydet</button>
                   </div>`;
               })()}
-              <div style="font-size: 12px; color: var(--text-muted);">Konunun yanındaki kutuya tıklayarak durumunu değiştir: ○ işlenmedi → ✓ bitti → ◐ yarım kaldı.</div>
+              <div style="font-size: 12px; color: var(--text-muted);">Kutuya tıkla: ✓ bitti; tekrar tıkla: işaret kalkar. Yarım kalan konu için sağdaki ◐ düğmesini kullan.</div>
               ${subjects.map(({ subject, grade }) => {
                 const units = state.curriculum[subject]?.[grade] || [];
                 let sinfo = SUBJECTS.find(s => s.id === subject);
@@ -265,7 +265,7 @@ export function openGroupDetail(groupId, navigate) {
                           const topicMaterials = materials.filter(m => m.unitId === unit.id && m.topicId === topic.id);
                           return `
                             <div class="list-item-hover" data-topic-row="${escHtml(key)}" style="display: flex; align-items: flex-start; gap: 12px; padding: 10px; border-radius: 12px; margin-bottom: 2px; ${isNext ? `background: ${partial ? STATUS.partial.soft : 'var(--brand-green-soft)'};` : ''}">
-                              <button title="Durumu değiştir" style="width: 26px; height: 26px; border-radius: 8px; background: ${done ? STATUS.done.color : partial ? STATUS.partial.soft : '#fff'}; border: 2px solid ${done ? STATUS.done.color : partial ? STATUS.partial.color : 'var(--border)'}; color: ${partial ? STATUS.partial.color : '#fff'}; font-weight: 800; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"
+                              <button title="${done ? 'İşareti kaldır' : 'Bitti olarak işaretle'}" style="width: 26px; height: 26px; border-radius: 8px; background: ${done ? STATUS.done.color : partial ? STATUS.partial.soft : '#fff'}; border: 2px solid ${done ? STATUS.done.color : partial ? STATUS.partial.color : 'var(--border)'}; color: ${partial ? STATUS.partial.color : '#fff'}; font-weight: 800; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"
                                 data-cycle-group-topic="${escHtml(key)}" data-state="${st.s}" data-group-id="${group.id}">
                                 ${done ? icon('check', 12, '#fff') : partial ? '◐' : ''}
                               </button>
@@ -285,6 +285,8 @@ export function openGroupDetail(groupId, navigate) {
                                   `).join('')}
                                 </div>
                               </div>
+                              <button title="${partial ? 'Yarım işaretini kaldır' : 'Yarım kaldı olarak işaretle'}" data-partial-group-topic="${escHtml(key)}" data-state="${st.s}"
+                                style="flex-shrink: 0; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 8px; cursor: pointer; border: 1px solid ${partial ? STATUS.partial.color : 'var(--border)'}; background: ${partial ? STATUS.partial.soft : '#fff'}; color: ${partial ? STATUS.partial.color : 'var(--text-muted)'};">◐ Yarım</button>
                             </div>
                           `;
                         }).join('')}
@@ -357,22 +359,26 @@ export function openGroupDetail(groupId, navigate) {
       });
     });
 
-    // ○ işlenmedi → ✓ bitti → ◐ yarım kaldı → ○
-    const NEXT_STATE = { none: 'done', done: 'partial', partial: 'none' };
-    document.querySelectorAll('[data-cycle-group-topic]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const key = btn.dataset.cycleGroupTopic;
-        const s2 = NEXT_STATE[btn.dataset.state] || 'done';
+    // Kutu: ✓ bitti ↔ işaretsiz (yanlışlıkla konan tik tamamen kalkar; yarım konu tıklanınca bitti olur).
+    // "◐ Yarım" düğmesi: yarım kaldı ↔ işaretsiz.
+    const setTopic = (btn, key, s2) => {
         const noteInput = document.querySelector(`[data-note-group-topic="${CSS.escape(key)}"]`);
         import('../../store/store.js').then(m => {
           m.setEntityTopics('group', group.id, [{ key, s: s2, note: noteInput?.value || '' }]);
-          // sıradaki konu ve sayılar yeniden hesaplansın; kaydırma konumu korunur
           const sels = ['.modal-overlay', '.modal', '.modal-body'];
           const scrolls = sels.map(q => document.querySelector(q)?.scrollTop || 0);
           openGroupDetail(group.id, navigate);
           sels.forEach((q, i) => { const el = document.querySelector(q); if (el) el.scrollTop = scrolls[i]; });
           if (s2 === 'partial') setTimeout(() => document.querySelector(`[data-note-group-topic="${CSS.escape(key)}"]`)?.focus(), 150);
         });
+    };
+    document.querySelectorAll('[data-partial-group-topic]').forEach(btn => {
+      btn.addEventListener('click', () => setTopic(btn, btn.dataset.partialGroupTopic, btn.dataset.state === 'partial' ? 'none' : 'partial'));
+    });
+    document.querySelectorAll('[data-cycle-group-topic]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.cycleGroupTopic;
+        setTopic(btn, key, btn.dataset.state === 'done' ? 'none' : 'done');
       });
     });
 
