@@ -4,7 +4,7 @@
 import { DEFAULT_CURRICULUM, CONTENT_TYPES, getSubjectsForBranches, SUBJECT_GRADES } from '../data/curriculum.js';
 import { todayStr, getLocalDateStr, addDays } from '../utils/helpers.js';
 import { db, auth } from '../lib/firebase.js';
-import { applyProgress, flatTopics } from '../lib/progress.js';
+import { applyProgress, flatTopics, topicKey } from '../lib/progress.js';
 import { doc, getDoc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { deleteUser } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
@@ -809,10 +809,10 @@ export function completeLesson(lessonId, extraOpts = {}) {
   }
 
   // Mark topic as completed for student/group
-  if (lesson.topicId && lesson.type === 'student') {
+  if (lesson.topicId && lesson.subject && lesson.unitId && lesson.type === 'student') {
     updates.students = (updates.students || state.students).map(s =>
       s.id === lesson.refId
-        ? { ...s, completedTopics: [...new Set([...s.completedTopics, lesson.topicId])] }
+        ? { ...s, ...applyProgress(s, [{ key: topicKey(lesson.subject, lesson.grade, lesson.unitId, lesson.topicId), s: 'done' }], lesson.date, flatTopics(state, s)) }
         : s
     );
   }

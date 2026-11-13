@@ -7,6 +7,7 @@ import { openModal, closeModal } from '../../components/modal.js';
 import { escHtml, getAvatarColor, getInitials, formatCurrency, formatDate } from '../../utils/helpers.js';
 import { ALL_GRADES, SUBJECTS, getSubjectsForBranches, CONTENT_TYPES } from '../../data/curriculum.js';
 import { openMonthlySummary } from './MonthlySummaryModal.js';
+import { topicKey, topicState, nextTopic, isAssessment, STATUS } from '../../lib/progress.js';
 
 export function openStudentDetail(studentId, navigate) {
   const state = getState();
@@ -75,22 +76,20 @@ export function openStudentDetail(studentId, navigate) {
       });
     });
 
+    // Konu işaretleri grup/öğrenci için ortak kayda (topicProgress) yazılır; Takip sayfası da buradan okur.
+    // ○ işlenmedi → ✓ bitti → ○ (yanlışlıkla konan işaret tamamen kalkar); ◐ yarım kalmış konu tıklanınca ✓ olur.
     document.querySelectorAll('[data-toggle-topic]').forEach(btn => {
       btn.addEventListener('click', () => {
-        const topicId = btn.dataset.toggleTopic;
+        const key = btn.dataset.toggleTopic;
         const sId = btn.dataset.studentId;
+        const next = btn.dataset.state === 'done' ? 'none' : 'done';
         import('../../store/store.js').then(store => {
-          const s = store.getState().students.find(x => x.id === sId);
-          if (!s) return;
-          const completed = s.completedTopics || [];
-          const newCompleted = completed.includes(topicId)
-            ? completed.filter(id => id !== topicId)
-            : [...completed, topicId];
-          store.updateStudent(sId, { completedTopics: newCompleted });
-          // Refresh button locally
-          btn.style.background = newCompleted.includes(topicId) ? 'var(--success)' : 'rgba(255,255,255,0.05)';
-          btn.style.borderColor = newCompleted.includes(topicId) ? 'var(--success)' : 'var(--border)';
-          btn.innerHTML = newCompleted.includes(topicId) ? icon('check', 12) : '';
+          store.setEntityTopics('student', sId, [{ key, s: next }]);
+          // yüzdeler ve "şu an burada" yeniden hesaplansın; kaydırma konumu korunur
+          const sels = ['.modal-overlay', '.modal', '.modal-body'];
+          const scrolls = sels.map(q => document.querySelector(q)?.scrollTop || 0);
+          openStudentDetail(sId, navigate);
+          sels.forEach((q, i) => { const el = document.querySelector(q); if (el) el.scrollTop = scrolls[i]; });
         });
       });
     });
@@ -98,7 +97,11 @@ export function openStudentDetail(studentId, navigate) {
 }
 
 function buildDetailBody(student, subjects, state, activeSubjects) {
-  const completedSet = new Set(student.completedTopics || []);
+  // Konu durumu: Takip sayfası ve grup ekranıyla aynı kayıt (topicProgress)
+  const stOf = (subject, grade, unitId, topicId) =>
+    topicState(student, { key: topicKey(subject, grade, unitId, topicId), topicId }).s;
+  const isDone = (subject, grade, unitId, topicId) => stOf(subject, grade, unitId, topicId) === 'done';
+  const nextKey = nextTopic(state, student)?.key || null;
 
   // Calculate total lessons done (status === 'completed')
   const completedLessonsCount = state.lessons.filter(l => l.type === 'student' && l.refId === student.id && l.status === 'completed').length;
@@ -110,7 +113,7 @@ function buildDetailBody(student, subjects, state, activeSubjects) {
     const units = state.curriculum[subject]?.[grade] || [];
     units.forEach(u => {
       totalTopics += u.topics.length;
-      totalCompletedTopics += u.topics.filter(t => completedSet.has(t.id)).length;
+      totalCompletedTopics += u.topics.filter(t => isDone(subject, grade, u.id, t.id)).length;
     });
   });
 
@@ -317,7 +320,7 @@ function buildDetailBody(student, subjects, state, activeSubjects) {
               ${subjects.map(({ subject, grade }) => {
                 const units = state.curriculum[subject]?.[grade] || [];
                 const allTopics = units.flatMap(u => u.topics);
-                const completed = allTopics.filter(t => completedSet.has(t.id)).length;
+                const completed = units.reduce((n, u) => n + u.topics.filter(t => isDone(subject, grade, u.id, t.id)).length, 0);
                 const isStale = !activeSubjects.includes(subject);
                 const pct = allTopics.length > 0 ? Math.round((completed / allTopics.length) * 100) : 0;
                 
@@ -389,8 +392,9 @@ function buildDetailBody(student, subjects, state, activeSubjects) {
             const materials = Object.values(state.materials).filter(m => m.subject === subject && m.grade === grade);
 
             return units.map(unit => {
-              const unitCompleted = unit.topics.every(t => completedSet.has(t.id));
-              const unitProgress = Math.round((unit.topics.filter(t => completedSet.has(t.id)).length / unit.topics.length) * 100);
+              const unitDone = unit.topics.filter(t => isDone(subject, grade, unit.id, t.id)).length;
+              const unitCompleted = unit.topics.length > 0 && unitDone === unit.topics.length;
+              const unitProgress = unit.topics.length ? Math.round((unitDone / unit.topics.length) * 100) : 0;
 
               return `
                 <div class="premium-card" style="padding: 0; overflow: hidden; background: #fff; border: 1px solid var(--border);">
@@ -405,16 +409,25 @@ function buildDetailBody(student, subjects, state, activeSubjects) {
                   </div>
                   <div style="padding: 16px;">
                     ${unit.topics.map(topic => {
-                      const done = completedSet.has(topic.id);
+                      const key = topicKey(subject, grade, unit.id, topic.id);
+                      const st = topicState(student, { key, topicId: topic.id });
+                      const done = st.s === 'done';
+                      const partial = st.s === 'partial';
+                      const isNext = key === nextKey;
                       const topicMaterials = materials.filter(m => m.unitId === unit.id && m.topicId === topic.id);
                       return `
-                        <div class="list-item-hover" style="display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px; margin-bottom: 4px;">
-                          <button class="btn-icon" style="width: 28px; height: 28px; border-radius: 10px; background: ${done ? 'var(--success)' : '#fff'}; border: 2px solid ${done ? 'var(--success)' : 'var(--border)'}; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s;" 
-                            data-toggle-topic="${topic.id}" data-student-id="${student.id}">
-                            ${done ? icon('check', 14, '#fff') : ''}
+                        <div class="list-item-hover" style="display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px; margin-bottom: 4px; ${isNext ? `background: ${partial ? STATUS.partial.soft : 'var(--brand-green-soft)'};` : ''}">
+                          <button class="btn-icon" title="${done ? 'İşareti kaldır' : 'Bitti olarak işaretle'}" style="width: 28px; height: 28px; border-radius: 10px; background: ${done ? 'var(--success)' : partial ? STATUS.partial.soft : '#fff'}; border: 2px solid ${done ? 'var(--success)' : partial ? STATUS.partial.color : 'var(--border)'}; color: ${STATUS.partial.color}; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s;" 
+                            data-toggle-topic="${escHtml(key)}" data-state="${st.s}" data-student-id="${student.id}">
+                            ${done ? icon('check', 14, '#fff') : partial ? '◐' : ''}
                           </button>
                           <div style="flex: 1;">
-                            <div style="font-size: 13px; font-weight: 600; ${done ? 'text-decoration: line-through; color: var(--text-muted);' : 'color: var(--text-primary);'}">${escHtml(topic.name)}</div>
+                            <div style="font-size: 13px; font-weight: 600; ${done ? 'text-decoration: line-through; color: var(--text-muted);' : partial ? `color: ${STATUS.partial.color};` : 'color: var(--text-primary);'}">
+                              ${escHtml(topic.name)}
+                              ${isAssessment(topic.name) ? `<span style="font-size:10px;font-weight:700;background:#ede9fe;color:#6d28d9;padding:1px 6px;border-radius:6px;display:inline-block;">değerlendirme</span>` : ''}
+                              ${isNext ? `<span style="font-size:11px;font-weight:700;color:var(--brand-green-light);"> ← şu an burada</span>` : ''}
+                            </div>
+                            ${partial && st.note ? `<div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Kaldığı yer: ${escHtml(st.note)}</div>` : ''}
                             <div style="display: flex; gap: 6px; margin-top: 4px;">
                               ${topicMaterials.map(m => `
                                 <a href="${escHtml(m.link)}" target="_blank" style="text-decoration: none; font-size: 10px; font-weight: 700; color: ${primaryColor}; background: ${primaryColor}15; padding: 2px 8px; border-radius: 6px; display: flex; align-items: center; gap: 4px;">
